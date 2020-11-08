@@ -3,15 +3,14 @@ from typing import Optional, Union, List
 import uuid
 import aiohttp
 
-from blob import BlobContext
 from config import Config
 from lib import logger
-from objects import Countries, Privileges
-from objects.BanchoRanks import BanchoRanks
-from objects.GameModes import GameModes
-from objects.IdleStatuses import Action
-from objects.KurikkuPrivileges import KurikkuPrivileges
-from objects.Modificatiors import Modifications
+from objects.constants import Countries, Privileges
+from objects.constants.BanchoRanks import BanchoRanks
+from objects.constants.GameModes import GameModes
+from objects.constants.IdleStatuses import Action
+from objects.constants.KurikkuPrivileges import KurikkuPrivileges
+from objects.constants.Modificatiors import Modifications
 from objects.TypedDicts import TypedStats, TypedStatus
 
 
@@ -55,11 +54,11 @@ class Status:
         self.map_id: int = 0
 
     def update(self, **kwargs: TypedStatus):
-        self.action = kwargs.get('action', Action.Idle)
+        self.action = Action(kwargs.get('action', 0))
         self.action_text = kwargs.get('action_text', '')
         self.map_md5 = kwargs.get('map_md5', '')
-        self.mode = kwargs.get('mode', GameModes.STD)
-        self.mods = kwargs.get('mods', Modifications.NOMOD)
+        self.mode = GameModes(kwargs.get('mode', 0))
+        self.mods = Modifications(kwargs.get('mods', 0))
         self.map_id = kwargs.get('map_id', 0)
 
 
@@ -125,6 +124,7 @@ class Player:
         return str(uuid.uuid4())
 
     async def parse_friends(self) -> bool:
+        from blob import BlobContext
         async for friend in BlobContext.mysql.iterall(
                 'select user2 from users_relationships where user1 = %s',
                 [self.id]
@@ -134,6 +134,7 @@ class Player:
         return True
 
     async def parse_country(self, ip: str) -> bool:
+        from blob import BlobContext
         if (self.privileges & Privileges.USER_DONOR) > 0:
             # we need to remember donor have locked location
             donor_location: str = (await BlobContext.mysql.fetch(
@@ -160,6 +161,7 @@ class Player:
             return True
 
     async def update_stats(self, selected_mode: GameModes = None) -> bool:
+        from blob import BlobContext
         for mode in GameModes if not selected_mode else [selected_mode]:
             res = await BlobContext.mysql.fetch(
                 'select total_score_{0} as total_score, ranked_score_{0} as ranked_score, '
@@ -172,14 +174,11 @@ class Player:
                 logger.elog(f"[Player/{self.name}] Can't parse stats for {GameModes.resolve_to_str(mode)}")
                 return False
 
-            print(f"ripple:leaderboard:{GameModes.resolve_to_str(mode)}")
             position = await BlobContext.redis.zrevrank(
                 f"ripple:leaderboard:{GameModes.resolve_to_str(mode)}",
                 str(self.id)
             )
-            print(position, type(position))
             res['leaderboard_rank'] = int(position) + 1 if position else 0
-            print(res['leaderboard_rank'])
 
             self.stats[mode].update(**res)
 

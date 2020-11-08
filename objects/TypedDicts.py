@@ -1,8 +1,8 @@
 from typing_extensions import TypedDict
 
-from objects.GameModes import GameModes
-from objects.IdleStatuses import Action
-from objects.Modificatiors import Modifications
+from objects.constants.GameModes import GameModes
+from objects.constants.IdleStatuses import Action
+from objects.constants.Modificatiors import Modifications
 
 
 class TypedStatus(TypedDict):

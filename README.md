@@ -8,7 +8,7 @@ TODO:
     * [x] Redis
     * [x] MySQL
 - Base information about users
-    * [ ] Stats
+    * [x] Stats
     * [ ] Update osu actions and etc...
 - Chat
     * [ ] Messages

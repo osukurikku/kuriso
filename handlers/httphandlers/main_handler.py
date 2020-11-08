@@ -1,4 +1,4 @@
-import hashlib
+import asyncio
 import time
 
 from lib import logger
@@ -8,8 +8,8 @@ from starlette.responses import HTMLResponse
 from handlers.decorators import HttpEvent, OsuEvent
 from lib.BanchoResponse import BanchoResponse
 from blob import BlobContext
-from objects import Privileges
-from objects.KurikkuPrivileges import KurikkuPrivileges
+from objects.constants import Privileges
+from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from objects.Player import Player
 from packets.builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
@@ -26,13 +26,13 @@ async def main_handler(request: Request):
 
     token = request.headers.get("osu-token", None)
     if token:
-        if token not in BlobContext.players or token == '':
+        if token == '':
             return BanchoResponse(await PacketBuilder.UserID(-1))  # send to re-login
 
-        token_object = BlobContext.players.get(token, None)
+        token_object = BlobContext.players.get_token(token=token)
         if not token_object:
-            # is this even possible?
-            return BanchoResponse(await PacketBuilder.UserID(-5))
+            # send to re-login, because token doesn't exists in storage
+            return BanchoResponse(await PacketBuilder.UserID(-1))
 
         # packets recieve
         raw_bytes = KorchoBuffer(None)
@@ -138,15 +138,17 @@ async def main_handler(request: Request):
                 )
 
         # create Player instance finally!!!!
-        player = Player(user_data['id'], user_data['username'], user_data['privileges'],
+        player = Player(int(user_data['id']), user_data['username'], user_data['privileges'],
                         time_offset, pm_private,
                         0 if user_data['silence_end'] - int(time.time()) < 0 else user_data['silence_end'] - int(
                             time.time())
                         )
 
-        await player.parse_friends()
-        await player.update_stats()
-        await player.parse_country(request.client.host)
+        await asyncio.gather(*[
+            player.parse_friends(),
+            player.update_stats(),
+            player.parse_country(request.client.host)
+        ])
 
         start_bytes = bytes(
             await PacketBuilder.UserID(player.id) +
@@ -166,7 +168,7 @@ async def main_handler(request: Request):
         if BlobContext.bancho_settings['menu_icon']:
             start_bytes += await PacketBuilder.MainMenuIcon(BlobContext.bancho_settings['menu_icon'])
 
-        for p in BlobContext.players:
+        for p in BlobContext.players.get_all_tokens():
             start_bytes += bytes(
                 await PacketBuilder.UserPresence(p) +
                 await PacketBuilder.UserStats(p)
@@ -180,6 +182,6 @@ async def main_handler(request: Request):
         # await CreateBanchoPacket(65, ("#ebat_public", osuTypes.string), ("Welcome to the cum!zone", osuTypes.string), (2, osuTypes.int32))
 
         # await CreateBanchoPacket(89) # send end channel
-        BlobContext.players[player.token] = player
+        BlobContext.players.add_token(player)
 
         return BanchoResponse(start_bytes, player.token)

@@ -77,6 +77,7 @@ class PacketBuilder:
     # server packet: 83
     @staticmethod
     async def UserPresence(player: Player) -> bytes:
+        print(player.id, type(player.id))
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_UserPresence.value,
             (player.id, osuTypes.int32),

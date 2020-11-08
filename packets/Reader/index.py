@@ -117,10 +117,18 @@ class KorchoBuffer:
     async def read_osu_string(self) -> str:
         is_string = (await self.read_byte()) == 11
         if is_string:
-            length = self.read_variant()
+            length = await self.read_variant()
             return await self.read_string(length)
         else:
             return ''
+
+    async def read_i32_list(self) -> List[int]:
+        length = await self.read_u_int_16()
+        integers = []
+        for _ in range(length):
+            integers.append(await self.read_u_int_32())
+
+        return integers
 
     async def write_to_buffer(self, value: Union[bytes, bytearray]):
         self.buffer.write(value)
@@ -208,7 +216,6 @@ class KorchoBuffer:
             await self.write_u_int_32(integer)
 
         return True
-
 
 # 1 - packet id
 # 2 - (data, osuType)

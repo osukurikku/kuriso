@@ -6,6 +6,7 @@ import sys
 import os
 from lib import logger
 
+
 def load_handlers(app: Starlette):
     logger.wlog("[Handlers/Events] Loading handlers & events...")
     paths_to_import = {'handlers': ['httphandlers', 'eventhandlers']}

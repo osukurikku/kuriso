@@ -6,7 +6,7 @@ import bcrypt as bcrypt
 
 from blob import BlobContext
 from lib import logger
-from objects import Privileges
+from objects.constants import Privileges
 
 
 async def check_login(login: str, password: str, ip: str):

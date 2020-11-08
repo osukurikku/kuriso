@@ -7,10 +7,12 @@ from lib import AsyncSQLPoolWrapper
 import asyncio_redis
 import git
 
+from objects.TokenStorage import TokenStorage
+
 
 class BlobContext:
     """Singleton конфигурация"""
-    players: Union[dict] = {}
+    players: TokenStorage = TokenStorage()
     channels = [] # TODO: Union with channels
     matches = [] # TODO: Union with matches
 
