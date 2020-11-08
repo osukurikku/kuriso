@@ -1,20 +1,22 @@
-import asyncio
 import hashlib
 import time
 
 from lib import logger
 from starlette.requests import Request
-from starlette.responses import PlainTextResponse, HTMLResponse
+from starlette.responses import HTMLResponse
 
 from handlers.decorators import HttpEvent, OsuEvent
+from lib.BanchoResponse import BanchoResponse
+from blob import BlobContext
 from objects import Privileges
-from objects.Token import Token
+from objects.KurikkuPrivileges import KurikkuPrivileges
+from objects.Player import Player
+from packets.builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.OsuTypes import osuTypes
 from packets.Reader.index import CreateBanchoPacket, KorchoBuffer
 from helpers import userHelper
-from blob import BlobContext
-from packets.builder.index import PacketBuilder
+
 
 
 @HttpEvent.register_handler("/", methods=['GET', 'POST'])
@@ -24,13 +26,13 @@ async def main_handler(request: Request):
 
     token = request.headers.get("osu-token", None)
     if token:
-        if token not in BlobContext.tokens:
-            return HTMLResponse(await PacketBuilder.UserID(-1))  # send to re-login
+        if token not in BlobContext.players or token == '':
+            return BanchoResponse(await PacketBuilder.UserID(-1))  # send to re-login
 
-        token_object = BlobContext.tokens.get(token, None)
+        token_object = BlobContext.players.get(token, None)
         if not token_object:
             # is this even possible?
-            return HTMLResponse(await PacketBuilder.UserID(-5))
+            return BanchoResponse(await PacketBuilder.UserID(-5))
 
         # packets recieve
         raw_bytes = KorchoBuffer(None)
@@ -43,7 +45,7 @@ async def main_handler(request: Request):
             _ = await raw_bytes.read_int_8()  # empty byte
             packet_length = await raw_bytes.read_int_32()
 
-            if packet_id == OsuPacketID.Client_Pong:
+            if packet_id == OsuPacketID.Client_Pong.value:
                 # client just spamming it and tries to say, that he is normal :sip:
                 continue
 
@@ -59,11 +61,7 @@ async def main_handler(request: Request):
         while not token_object.is_queue_empty:
             response += token_object.dequeue()
 
-        response = HTMLResponse(bytes(response))
-        response.headers['cho-protocol'] = '19'
-        response.headers['Server'] = 'bancho'
-        response.headers['connection'] = 'Keep-Alive'
-        response.headers['vary'] = 'Accept-Encoding'
+        response = BanchoResponse(bytes(response), token=token_object.token)
         return response
     else:
         # first login
@@ -76,24 +74,24 @@ async def main_handler(request: Request):
 
         loginData = (await request.body()).decode().split("\n")
         if len(loginData) < 3:
-            return HTMLResponse(await PacketBuilder.UserID(-1))
+            return BanchoResponse(await PacketBuilder.UserID(-1))
 
         if not await userHelper.check_login(loginData[0], loginData[1], request.client.host):
             logger.elog(f"[{loginData}] tried to login but failed with password")
-            return HTMLResponse(await PacketBuilder.UserID(-1))
+            return BanchoResponse(await PacketBuilder.UserID(-1))
 
         user_data = await userHelper.get_start_user(loginData[0])
         if not user_data:
-            return HTMLResponse(await PacketBuilder.UserID(-1))
+            return BanchoResponse(await PacketBuilder.UserID(-1))
 
         if not (user_data["privileges"] & 3 > 0) and \
                 user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION == 0:
             logger.elog(f"[{loginData}] Restricted chmo tried to login")
-            response = await PacketBuilder.UserID(-1) + \
+            response = await PacketBuilder.UserID(-3) + \
                        await PacketBuilder.Notification(
                            'You are restricted/banned. Join our discord for additional information.')
 
-            return HTMLResponse(bytes(response))
+            return BanchoResponse(bytes(response))
         if (user_data["privileges"] & Privileges.USER_PUBLIC > 0) and \
                 user_data["privileges"] & Privileges.USER_NORMAL == 0 and \
                 user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION == 0:
@@ -102,92 +100,86 @@ async def main_handler(request: Request):
                        await PacketBuilder.Notification(
                            'You are locked by staff. Join discord and ask for unlock!')
 
-            return HTMLResponse(bytes(response))
+            return BanchoResponse(bytes(response))
+
+        if bool(BlobContext.bancho_settings['bancho_maintenance']):
+            # send to user that maintenance
+            if not (user_data['privileges'] & KurikkuPrivileges.Developer):
+                response = await PacketBuilder.UserID(-1) + \
+                           await PacketBuilder.Notification(
+                               'Kuriso! is in maintenance mode. Please try to login again later.')
+
+                return BanchoResponse(bytes(response))
 
         data = loginData[2].split("|")
+        hashes = data[3].split(":")
         time_offset = int(data[1])
+        pm_private = data[4] == '1'
 
-        dataBuffer = KorchoBuffer(None)
-        # sending user-id
-        start_packets = (
-            await CreateBanchoPacket(75, (19, osuTypes.int32)),  # send 19 protocol version
-            await CreateBanchoPacket(5, (1000, osuTypes.int32)),  # send 1000 user id
-            await CreateBanchoPacket(83,
-                                     (1000, osuTypes.int32),
-                                     (loginData[0], osuTypes.string),
-                                     (time_offset + 24, osuTypes.u_int8),
-                                     (111, osuTypes.u_int8),
-                                     (1 << 3, osuTypes.u_int8),
-                                     (0.00, osuTypes.float32),
-                                     (0.00, osuTypes.float32),
-                                     (1, osuTypes.int32)
-                                     ),  # send user presence
-            await CreateBanchoPacket(72, ([999, 1001], osuTypes.i32_list)),  # friend list
-            await CreateBanchoPacket(83,
-                                     (999, osuTypes.int32),
-                                     ("peppybot", osuTypes.string),
-                                     (0 + 24, osuTypes.u_int8),
-                                     (1, osuTypes.u_int8),
-                                     (1 << 3, osuTypes.u_int8),
-                                     (0.00, osuTypes.float32),
-                                     (0.00, osuTypes.float32),
-                                     (0, osuTypes.int32)
-                                     ),  # send another presences
-            await CreateBanchoPacket(11,
-                                     (1000, osuTypes.int32),
-                                     (0, osuTypes.u_int8),
-                                     ("flexing on koncho", osuTypes.string),
-                                     ("", osuTypes.string),
-                                     (0, osuTypes.int32),  # mods
-                                     (0, osuTypes.u_int8),  # playmode
-                                     (0, osuTypes.int32),  # beatmap id
-                                     (1, osuTypes.int64),  # ranked score
-                                     (1, osuTypes.float32),  # accuracy
-                                     (1, osuTypes.int32),  # total plays
-                                     (1, osuTypes.int64),  # total score
-                                     (1, osuTypes.int32),  # playmode rank
-                                     (1, osuTypes.int16)  # pp
-                                     ),  # send user stats
-            await CreateBanchoPacket(71, (1 << 3, osuTypes.int32)),  # send owner privs (peppy)
-            await CreateBanchoPacket(64, ("#osu", osuTypes.string)),
-            await CreateBanchoPacket(92, (0, osuTypes.u_int32)),  # send end silence time
+        await BlobContext.mysql.execute('''
+            INSERT INTO hw_user (userid, mac, unique_id, disk_id, occurencies) VALUES (%s, %s, %s, %s, 1)
+            ON DUPLICATE KEY UPDATE occurencies = occurencies + 1''',
+                                        [user_data['id'], hashes[2], hashes[3], hashes[4]]
+                                        )  # log hardware и не ебёт что
 
-            await CreateBanchoPacket(11,
-                                     (999, osuTypes.int32),
-                                     (0, osuTypes.u_int8),
-                                     ("flexing on peppy's island", osuTypes.string),
-                                     ("", osuTypes.string),
-                                     (0, osuTypes.int32),  # mods
-                                     (0, osuTypes.u_int8),  # playmode
-                                     (0, osuTypes.int32),  # beatmap id
-                                     (1, osuTypes.int64),  # ranked score
-                                     (1.00, osuTypes.float32),  # accuracy
-                                     (1, osuTypes.int32),  # total plays
-                                     (1, osuTypes.int64),  # total score
-                                     (1, osuTypes.int32),  # playmode rank
-                                     (1, osuTypes.int16)  # pp
-                                     ),  # send bot stats
+        if user_data['privileges'] & Privileges.USER_PENDING_VERIFICATION > 0 or \
+                not await userHelper.user_have_hardware(user_data['id']):
+            # we need to verify our user
+            is_success_verify = await userHelper.activate_user(user_data['id'], user_data['username'], hashes)
+            if not is_success_verify:
+                response = await PacketBuilder.UserID(-1) + \
+                           await PacketBuilder.Notification(
+                               'Your HWID is not clear. Contact Staff to create account!')
+                return BanchoResponse(bytes(response))
+            else:
+                await BlobContext.mysql.execute(
+                    "UPDATE hw_user SET activated = 1 WHERE userid = %s AND mac = %s AND unique_id = %s AND disk_id = %s",
+                    [user_data['id'], hashes[2], hashes[3], hashes[4]]
+                )
 
-            await CreateBanchoPacket(24, ("Welcome to HUETA", osuTypes.string))  # send 1000 user id
+        # create Player instance finally!!!!
+        player = Player(user_data['id'], user_data['username'], user_data['privileges'],
+                        time_offset, pm_private,
+                        0 if user_data['silence_end'] - int(time.time()) < 0 else user_data['silence_end'] - int(
+                            time.time())
+                        )
+
+        await player.parse_friends()
+        await player.update_stats()
+        await player.parse_country(request.client.host)
+
+        start_bytes = bytes(
+            await PacketBuilder.UserID(player.id) +
+            await PacketBuilder.ProtocolVersion(19) +
+            await PacketBuilder.BanchoPrivileges(player.bancho_privs) +
+            await PacketBuilder.UserPresence(player) +
+            await PacketBuilder.UserStats(player) +
+            await PacketBuilder.FriendList(player.friends) +
+            await PacketBuilder.SilenceEnd(player.silence_end) +
+            await PacketBuilder.Notification(f'''Welcome to kuriso!\nBuild ver: v{BlobContext.version}\nCommit: {BlobContext.commit_id}''')
         )
-        for p in start_packets:
-            print(p)
-            await dataBuffer.write_to_buffer(p)
 
+        if bool(BlobContext.bancho_settings['bancho_maintenance']):
+            start_bytes += await PacketBuilder.Notification(
+                               'Don\'t forget enable server after maintenance :sip:')
+
+        if BlobContext.bancho_settings['menu_icon']:
+            start_bytes += await PacketBuilder.MainMenuIcon(BlobContext.bancho_settings['menu_icon'])
+
+        for p in BlobContext.players:
+            start_bytes += bytes(
+                await PacketBuilder.UserPresence(p) +
+                await PacketBuilder.UserStats(p)
+            )
+
+        start_bytes += await CreateBanchoPacket(64, ("#osu", osuTypes.string)) # Empty channel, because i haven't channels right now
+        # 64 - is channels which i should join
+        # 65 - is available channels for channel list
         # await CreateBanchoPacket(96, ([999, 1000], osuTypes.i32_list))
         # await CreateBanchoPacket(89)
         # await CreateBanchoPacket(65, ("#ebat_public", osuTypes.string), ("Welcome to the cum!zone", osuTypes.string), (2, osuTypes.int32))
 
         # await CreateBanchoPacket(89) # send end channel
-        new_token = Token(hashlib.md5(f"{loginData[0]}:{loginData[1]}:{int(time.time())}".encode()).hexdigest())
-        BlobContext.tokens[new_token.token] = new_token
+        BlobContext.players[player.token] = player
 
-        response = HTMLResponse(dataBuffer.get_string())
-        print(new_token.token)
-        response.headers['cho-token'] = new_token.token
-        response.headers['cho-protocol'] = '19'
-        response.headers['Server'] = 'bancho'
-        response.headers['connection'] = 'Keep-Alive'
-        response.headers['vary'] = 'Accept-Encoding'
-
-        return response
+        return BanchoResponse(start_bytes, player.token)

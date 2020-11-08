@@ -159,14 +159,10 @@ class KorchoBuffer:
         return await self.write_int(value, 4)
 
     async def write_u_int_64(self, value: int) -> bool:
-        await self.write_u_int_32(value >> 8)
-        await self.write_u_int_32(value & 0x00ff)
-        return True
+        return await self.write_to_buffer(struct.pack("<Q", value))
 
     async def write_int_64(self, value: int) -> bool:
-        await self.write_int_32(value >> 8)
-        await self.write_int_32(value & 0x00ff)
-        return True
+        return await self.write_to_buffer(struct.pack("<q", value))
 
     async def write_float(self, value: float) -> bool:
         return await self.write_to_buffer(struct.pack("<f", value))
@@ -190,7 +186,6 @@ class KorchoBuffer:
                 arr[len] |= 0x80
             len += 1
 
-        print(arr)
         return await self.write_to_buffer(bytearray(arr))
 
     async def write_osu_string(self, value: str) -> bool:
@@ -221,7 +216,6 @@ async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[An
     # writing packet
     dataBuffer = KorchoBuffer(None)
     packet_header = struct.pack("<Hx", pid.value if type(pid) is OsuPacketID else pid)
-    print(packet_header)
 
     ptypes = {
         OsuTypes.i32_list: dataBuffer.write_i32_list,

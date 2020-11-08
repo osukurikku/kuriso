@@ -1,29 +1,13 @@
-import objects.Token
+from typing import Union, List
+
+import objects.Player
+from objects import Player
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.OsuTypes import osuTypes
 from packets.Reader.index import CreateBanchoPacket
 
 
 class PacketBuilder:
-
-    # client packet: 3, bancho response: 11
-    @staticmethod
-    async def RefreshUserStats(player: objects.Token.Token) -> bytes:
-        return await CreateBanchoPacket(OsuPacketID.Bancho_HandleOsuUpdate,
-                                        (1000, osuTypes.int32),  # userID
-                                        (0, osuTypes.u_int8),  # status
-                                        ("flexing on kuriso", osuTypes.string),  # title
-                                        ("", osuTypes.string),  # beatmap-md5
-                                        (0, osuTypes.int32),  # mods
-                                        (0, osuTypes.u_int8),  # playmode
-                                        (0, osuTypes.int32),  # beatmap id
-                                        (1, osuTypes.int64),  # ranked score
-                                        (1, osuTypes.float32),  # accuracy in probability
-                                        (1, osuTypes.int32),  # total plays
-                                        (1, osuTypes.int64),  # total score
-                                        (1, osuTypes.int32),  # playmode rank
-                                        (1, osuTypes.int16)  # pp
-                                        )
 
     # server packet: 5
     @staticmethod
@@ -43,10 +27,84 @@ class PacketBuilder:
             (user_id, osuTypes.int32)
         )
 
+    @staticmethod
+    async def MainMenuIcon(icon: str) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_TitleUpdate.value,
+            (icon, osuTypes.string)
+        )
+
     # server packet: 25
     @staticmethod
     async def Notification(message: str) -> bytes:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_Announce,
             (message, osuTypes.string)
+        )
+
+    # server packet: 75
+    @staticmethod
+    async def ProtocolVersion(version: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_ProtocolNegotiation.value,
+            (version, osuTypes.int32)
+        )
+
+    # server packet: 71
+    @staticmethod
+    async def BanchoPrivileges(privs: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_LoginPermissions.value,
+            (privs, osuTypes.int32)
+        )
+
+    # server packet: 72
+    @staticmethod
+    async def FriendList(friend_list: Union[List[int]]) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_FriendsList.value,
+            (friend_list, osuTypes.i32_list)
+        )
+
+    # server packet: 92
+    @staticmethod
+    async def SilenceEnd(silence_time: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_BanInfo.value,
+            (silence_time, osuTypes.u_int32)
+        )
+
+    # server packet: 83
+    @staticmethod
+    async def UserPresence(player: Player) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_UserPresence.value,
+            (player.id, osuTypes.int32),
+            (player.name, osuTypes.string),
+            (player.timezone, osuTypes.u_int8),
+            (player.country[0], osuTypes.u_int8),
+            (player.bancho_privs.value, osuTypes.u_int8),
+            (player.location[0], osuTypes.float64),
+            (player.location[1], osuTypes.float64),
+            (player.current_stats.leaderboard_rank, osuTypes.int32)
+        )
+
+    # client packet: 3, bancho response: 11
+    @staticmethod
+    async def UserStats(player: Player) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_HandleOsuUpdate.value,
+            (player.id, osuTypes.int32),
+            (player.pr_status.action.value, osuTypes.u_int8),
+            (player.pr_status.action_text, osuTypes.string),
+            (player.pr_status.map_md5, osuTypes.string),
+            (player.pr_status.mods.value, osuTypes.int32),
+            (player.pr_status.mode.value, osuTypes.u_int8),
+            (player.pr_status.map_id, osuTypes.int32),
+            (player.current_stats.ranked_score, osuTypes.int64),
+            (player.current_stats.accuracy/100.0, osuTypes.float32),
+            (player.current_stats.total_plays, osuTypes.int32),
+            (player.current_stats.total_score, osuTypes.u_int64),
+            (player.current_stats.leaderboard_rank, osuTypes.int32),
+            (player.current_stats.pp, osuTypes.int16)
         )

@@ -35,7 +35,8 @@ class Config:
                     'address': '127.0.0.1',
                     'port': 13371,
                     'irc_port': 0 # TODO: IRC
-                }
+                },
+                'geoloc_ip': 'https://country.kurikku.pw/'
             }
             return
         config_raw = config_file.read()
