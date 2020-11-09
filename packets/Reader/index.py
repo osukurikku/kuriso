@@ -179,7 +179,7 @@ class KorchoBuffer:
         return await self.write_to_buffer(struct.pack("<d", value))
 
     async def write_string(self, value: str) -> bool:
-        return await self.write_to_buffer(value.encode(encoding="latin_1", errors="ignore"))
+        return await self.write_to_buffer(value.encode("latin_1", errors="ignore"))
 
     async def write_bool(self, value: bool) -> bool:
         return await self.write_byte(1 if value else 0)

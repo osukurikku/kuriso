@@ -11,7 +11,7 @@ from blob import BlobContext
 from objects.constants import Privileges
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from objects.Player import Player
-from packets.builder.index import PacketBuilder
+from packets.Builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.OsuTypes import osuTypes
 from packets.Reader.index import CreateBanchoPacket, KorchoBuffer
@@ -27,12 +27,12 @@ async def main_handler(request: Request):
     token = request.headers.get("osu-token", None)
     if token:
         if token == '':
-            return BanchoResponse(await PacketBuilder.UserID(-1))  # send to re-login
+            return BanchoResponse(await PacketBuilder.UserID(-5))  # send to re-login
 
         token_object = BlobContext.players.get_token(token=token)
         if not token_object:
             # send to re-login, because token doesn't exists in storage
-            return BanchoResponse(await PacketBuilder.UserID(-1))
+            return BanchoResponse(await PacketBuilder.UserID(-5))
 
         # packets recieve
         raw_bytes = KorchoBuffer(None)
@@ -54,7 +54,7 @@ async def main_handler(request: Request):
                 # This packet can be handled by OsuEvent Class, call it now!
                 # Oh wait let go this thing in async executor.
                 await OsuEvent.handlers[packet_id](data, token_object)
-                logger.klog(f"[{token_object.token}] Has triggered {packet_id} with packet length: {packet_length}")
+                logger.klog(f"[{token_object.token}/{token_object.name}] Has triggered {packet_id} with packet length: {packet_length}")
             else:
                 logger.wlog(f"[Events] Packet ID: {packet_id} not found in events handlers")
 
@@ -74,15 +74,20 @@ async def main_handler(request: Request):
 
         loginData = (await request.body()).decode().split("\n")
         if len(loginData) < 3:
-            return BanchoResponse(await PacketBuilder.UserID(-1))
+            return BanchoResponse(await PacketBuilder.UserID(-5))
 
         if not await userHelper.check_login(loginData[0], loginData[1], request.client.host):
-            logger.elog(f"[{loginData}] tried to login but failed with password")
+            logger.elog(f"[{loginData[0]}] tried to login but failed with password")
             return BanchoResponse(await PacketBuilder.UserID(-1))
 
         user_data = await userHelper.get_start_user(loginData[0])
         if not user_data:
             return BanchoResponse(await PacketBuilder.UserID(-1))
+
+        # check if user already on kuriso
+        if BlobContext.players.get_token(uid=user_data['id']):
+            # wtf osu
+            await BlobContext.players.get_token(uid=user_data['id']).logout()
 
         if not (user_data["privileges"] & 3 > 0) and \
                 user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION == 0:
@@ -173,15 +178,25 @@ async def main_handler(request: Request):
                 await PacketBuilder.UserPresence(p) +
                 await PacketBuilder.UserStats(p)
             )
+            p.enqueue(bytes(
+                await PacketBuilder.UserPresence(player) +
+                await PacketBuilder.UserStats(player)
+            ))
+
+        # default channels to join is #osu, #announce and #english
 
         start_bytes += await CreateBanchoPacket(64, ("#osu", osuTypes.string)) # Empty channel, because i haven't channels right now
-        # 64 - is channels which i should join
-        # 65 - is available channels for channel list
-        # await CreateBanchoPacket(96, ([999, 1000], osuTypes.i32_list))
-        # await CreateBanchoPacket(89)
-        # await CreateBanchoPacket(65, ("#ebat_public", osuTypes.string), ("Welcome to the cum!zone", osuTypes.string), (2, osuTypes.int32))
-
-        # await CreateBanchoPacket(89) # send end channel
         BlobContext.players.add_token(player)
+        logger.klog(f"[{player.token}/{player.name}] Joined kuriso!")
+
+        await BlobContext.channels['#osu'].join_channel(player)
+        await BlobContext.channels['#announce'].join_channel(player)
+        await BlobContext.channels['#english'].join_channel(player)
+
+        for (_, chan) in BlobContext.channels.items():
+            if not chan.temp_channel and chan.can_read:
+                start_bytes += await PacketBuilder.ChannelAvailable(chan)
+
+        start_bytes += await PacketBuilder.ChannelListeningEnd()
 
         return BanchoResponse(start_bytes, player.token)

@@ -172,6 +172,7 @@ async def activate_user(user_id: int, user_name: str, hashes: Union[Tuple[str], 
         # уведомляем стафф, что это читерюга и как-бы ну нафиг.
         await append_notes(user_id, [f"{source_user_name}\'s multiaccount ({hashes[2:5]}),found HWID match while verifying account ({user_id})"])
         await append_notes(source_user_id, [f"Has created multiaccount {user_name} ({user_id})"])
+        logger.klog(f"[{source_user_name}] Has created multiaccount {user_name} ({user_id})")
         return False
     else:
         await BlobContext.mysql.execute(

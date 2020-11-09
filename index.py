@@ -18,13 +18,11 @@ import nest_asyncio # fix asyncio loops
 
 nest_asyncio.apply()
 
+
 async def main():
     # create simple Starlette through uvicorn app
     app = Starlette(debug=True)
     app.add_middleware(ProxyHeadersMiddleware)
-
-    # say goodbye to info logging by uvicorn
-    logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
     # load version
     BlobContext.load_version()
@@ -62,6 +60,7 @@ async def main():
 
     # now load bancho settings
     await BlobContext.load_bancho_settings()
+    await BlobContext.load_default_channels()
 
     logger.slog(f"[Uvicorn] HTTP server started at {Config.config['host']['address']}:{Config.config['host']['port']}")
     uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'],

@@ -1,5 +1,6 @@
 from typing import List
 
+from objects.BanchoObjects import Message
 from packets.Reader.index import KorchoBuffer
 
 
@@ -23,3 +24,20 @@ class PacketResolver:
         buffer = KorchoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_i32_list()
+
+    @staticmethod
+    async def read_pr_filter(data: bytes) -> int:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return await buffer.read_int_32()
+
+    @staticmethod
+    async def read_message(data: bytes) -> Message:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return Message(
+            sender=await buffer.read_osu_string(),
+            body=await buffer.read_osu_string(),
+            to=await buffer.read_osu_string(),
+            client_id=await buffer.read_int_32()
+        )

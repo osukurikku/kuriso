@@ -1,10 +1,12 @@
 import queue
+import time
 from typing import Optional, Union, List
 import uuid
 import aiohttp
 
 from config import Config
 from lib import logger
+from objects.BanchoObjects import Message
 from objects.constants import Countries, Privileges
 from objects.constants.BanchoRanks import BanchoRanks
 from objects.constants.GameModes import GameModes
@@ -16,6 +18,10 @@ from objects.TypedDicts import TypedStats, TypedStatus
 
 # I wan't use construction in python like <class>.__dict__.update
 # but i forgot if class has __slots__ __dict__ is unavailable, sadly ;-;
+from objects.constants.PresenceFilter import PresenceFilter
+from packets.Builder.index import PacketBuilder
+
+
 class StatsMode:
     __slots__ = ("game_mode", "total_score", "ranked_score", "pp",
                  "accuracy", "total_plays", "playtime", "max_combo", "leaderboard_rank")
@@ -86,7 +92,7 @@ class Player:
         self.away_msg: Optional[str] = None
         self.silence_end = silence_end
 
-        self.presence_filter: int = 0  # TODO: Enum
+        self.presence_filter: PresenceFilter = PresenceFilter(1)
         self.bot_np: Optional[dict] = None  # TODO: Beatmap
 
         self.channels: Union[List[dict]] = []  # TODO: Channels
@@ -94,23 +100,29 @@ class Player:
         self.friends: Union[List[int]] = []  # bot by default xd
 
         self.queue: queue.Queue = queue.Queue()  # main thing
+        self.login_time: int = int(time.time())
 
     @property
     def is_queue_empty(self) -> bool:
         return self.queue.empty()
 
     @property
-    def bancho_privs(self) -> bool:
+    def silenced(self) -> bool:
+        return self.silence_end > 0
+
+    @property
+    def bancho_privs(self) -> BanchoRanks:
         privs = BanchoRanks(0)
-        if self.privileges & KurikkuPrivileges.Normal:
+        if (self.privileges & KurikkuPrivileges.Normal.value) == KurikkuPrivileges.Normal.value:
             privs |= (BanchoRanks.PLAYER | BanchoRanks.SUPPORTER)
-        if self.privileges & KurikkuPrivileges.Bat:
+        if (self.privileges & KurikkuPrivileges.Bat.value) == KurikkuPrivileges.Bat.value:
             privs |= BanchoRanks.BAT
-        if (self.privileges & KurikkuPrivileges.ChatMod) or (self.privileges & KurikkuPrivileges.ReplayModerator):
+        if (self.privileges & KurikkuPrivileges.ChatMod.value) == KurikkuPrivileges.ChatMod.value or \
+                (self.privileges & KurikkuPrivileges.ReplayModerator.value) == KurikkuPrivileges.ReplayModerator.value:
             privs |= BanchoRanks.MOD
-        if self.privileges & KurikkuPrivileges.CM:
+        if (self.privileges & KurikkuPrivileges.CM.value) == KurikkuPrivileges.CM.value:
             privs |= BanchoRanks.ADMIN
-        if self.privileges & KurikkuPrivileges.Owner:
+        if (self.privileges & KurikkuPrivileges.Owner.value) == KurikkuPrivileges.Owner.value:
             privs |= BanchoRanks.PEPPY
 
         return privs
@@ -181,6 +193,53 @@ class Player:
             res['leaderboard_rank'] = int(position) + 1 if position else 0
 
             self.stats[mode].update(**res)
+
+    async def logout(self) -> None:
+        from blob import BlobContext
+        # logic
+        # leave multiplayer
+        # leave specatating
+        # leave channels
+
+        BlobContext.players.delete_token(self)
+        for (_, chan) in BlobContext.channels.items():
+            if self.id in chan.users:
+                await chan.leave_channel(self)
+
+        for p in BlobContext.players.get_all_tokens():
+            p.enqueue(await PacketBuilder.Logout(self.id))
+        return
+
+    async def send_message(self, message: Message) -> bool:
+        from blob import BlobContext
+        chan: str = message.to
+        if chan.startswith("#"):
+            # this is channel object
+            if chan.startswith("#multi"):
+                # TODO: Convert it to #multi_<id>
+                pass
+            elif chan.startswith("#spec"):
+                chan = f"#spec_{self.id}"
+
+            channel: 'Channel' = BlobContext.channels.get(chan, None)
+            if not channel:
+                logger.klog(f"[{self.name}] Tried to send message in unknown channel. Ignoring it...")
+                return False
+
+            await channel.send_message(self.id, message)
+
+        # DM
+        receiver = BlobContext.players.get_token(name=message.to)
+        if not receiver:
+            logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
+            return False
+
+        logger.klog(f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}")
+        bm = await PacketBuilder.BuildMessage(self.id, message)
+        receiver.enqueue(
+            bm
+        )
+        return True
 
     def enqueue(self, b: bytes) -> None:
         self.queue.put_nowait(b)

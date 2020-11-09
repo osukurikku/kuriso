@@ -3,7 +3,7 @@ This file contains context features :sip:
 '''
 from typing import Union
 
-from lib import AsyncSQLPoolWrapper
+from lib import AsyncSQLPoolWrapper, logger
 import asyncio_redis
 import git
 
@@ -13,7 +13,7 @@ from objects.TokenStorage import TokenStorage
 class BlobContext:
     """Singleton конфигурация"""
     players: TokenStorage = TokenStorage()
-    channels = [] # TODO: Union with channels
+    channels: dict = {}
     matches = [] # TODO: Union with matches
 
     mysql: AsyncSQLPoolWrapper = None
@@ -48,3 +48,13 @@ class BlobContext:
         if menu_icon:
             image_url = f"https://i.kurikku.pw/{menu_icon['file_id']}.png"
             cls.bancho_settings['menu_icon'] = f"{image_url}|{menu_icon['url']}"
+
+    @classmethod
+    async def load_default_channels(cls):
+        async for channel in cls.mysql.iterall(
+                "select name as server_name, description, public_read, public_write from bancho_channels"
+        ):
+            from objects.Channel import Channel
+            cls.channels[channel['server_name']] = Channel(**channel)
+
+            logger.slog(f"[Channels] Create channel {channel['server_name']}")

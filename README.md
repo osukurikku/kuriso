@@ -9,7 +9,7 @@ TODO:
     * [x] MySQL
 - Base information about users
     * [x] Stats
-    * [ ] Update osu actions and etc...
+    * [x] Update osu actions and etc...
 - Chat
     * [ ] Messages
     * [ ] Channels

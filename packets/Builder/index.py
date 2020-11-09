@@ -2,6 +2,7 @@ from typing import Union, List
 
 import objects.Player
 from objects import Player
+from objects.BanchoObjects import Message
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.OsuTypes import osuTypes
 from packets.Reader.index import CreateBanchoPacket
@@ -77,7 +78,6 @@ class PacketBuilder:
     # server packet: 83
     @staticmethod
     async def UserPresence(player: Player) -> bytes:
-        print(player.id, type(player.id))
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_UserPresence.value,
             (player.id, osuTypes.int32),
@@ -108,4 +108,63 @@ class PacketBuilder:
             (player.current_stats.total_score, osuTypes.u_int64),
             (player.current_stats.leaderboard_rank, osuTypes.int32),
             (player.current_stats.pp, osuTypes.int16)
+        )
+
+    # client packet: 2, bancho response: 12
+    @staticmethod
+    async def Logout(uid: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_HandleUserQuit.value,
+            (uid, osuTypes.int32),
+            (0, osuTypes.u_int8)
+        )
+
+    # bancho response: 64
+    @staticmethod
+    async def SuccessJoinChannel(name: str) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_ChannelJoinSuccess.value,
+            (name, osuTypes.string)
+        )
+
+    @staticmethod
+    async def ErrorJoinChannel(name: str) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_ChannelJoinSuccess.value,
+            (name, osuTypes.string)
+        )
+
+    # bancho response: 66
+    @staticmethod
+    async def PartChannel(name: str) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_ChannelRevoked.value,
+            (name, osuTypes.string)
+        )
+
+    # bancho response: 7
+    @staticmethod
+    async def BuildMessage(uid: int, message: Message) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_SendMessage.value,
+            (message.sender, osuTypes.string),
+            (message.body, osuTypes.string),
+            (message.to, osuTypes.string),
+            (uid, osuTypes.int32)
+        )
+
+    # bancho response: 65
+    @staticmethod
+    async def ChannelAvailable(channel) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_ChannelAvailable.value,
+            (channel.name, osuTypes.string),
+            (channel.description, osuTypes.string),
+            (len(channel.users), osuTypes.int32)
+        )
+
+    @staticmethod
+    async def ChannelListeningEnd() -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_ChannelListingComplete.value
         )
