@@ -2,7 +2,7 @@ from typing_extensions import TypedDict
 
 from objects.constants.GameModes import GameModes
 from objects.constants.IdleStatuses import Action
-from objects.constants.Modificatiors import Modifications
+from objects.constants.Modificators import Modifications
 
 
 class TypedStatus(TypedDict):

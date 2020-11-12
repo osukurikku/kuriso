@@ -18,14 +18,6 @@ class osuTypes(IntEnum):
     u_int64 = 8
     float64 = 9
 
-    # osu
-    message = 11
-    channel = 12
-    match = 13
-    score_frame = 14
-    map_info_request = 15
-    map_info_reply = 16
-
     # misc
     i32_list = 17 # 2 bytes len
     i32_list4l = 18 # 4 bytes len

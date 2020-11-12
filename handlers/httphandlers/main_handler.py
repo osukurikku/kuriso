@@ -27,12 +27,14 @@ async def main_handler(request: Request):
     token = request.headers.get("osu-token", None)
     if token:
         if token == '':
-            return BanchoResponse(await PacketBuilder.UserID(-5))  # send to re-login
+            response = await PacketBuilder.UserID(-5)
+            return BanchoResponse(response)  # send to re-login
 
         token_object = BlobContext.players.get_token(token=token)
         if not token_object:
             # send to re-login, because token doesn't exists in storage
-            return BanchoResponse(await PacketBuilder.UserID(-5))
+            response = await PacketBuilder.UserID(-5)
+            return BanchoResponse(response)
 
         # packets recieve
         raw_bytes = KorchoBuffer(None)
@@ -183,12 +185,10 @@ async def main_handler(request: Request):
                 await PacketBuilder.UserStats(player)
             ))
 
-        # default channels to join is #osu, #announce and #english
-
-        start_bytes += await CreateBanchoPacket(64, ("#osu", osuTypes.string)) # Empty channel, because i haven't channels right now
         BlobContext.players.add_token(player)
         logger.klog(f"[{player.token}/{player.name}] Joined kuriso!")
 
+        # default channels to join is #osu, #announce and #english
         await BlobContext.channels['#osu'].join_channel(player)
         await BlobContext.channels['#announce'].join_channel(player)
         await BlobContext.channels['#english'].join_channel(player)

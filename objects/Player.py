@@ -12,7 +12,7 @@ from objects.constants.BanchoRanks import BanchoRanks
 from objects.constants.GameModes import GameModes
 from objects.constants.IdleStatuses import Action
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
-from objects.constants.Modificatiors import Modifications
+from objects.constants.Modificators import Modifications
 from objects.TypedDicts import TypedStats, TypedStatus
 
 
@@ -200,14 +200,14 @@ class Player:
         # leave multiplayer
         # leave specatating
         # leave channels
-
-        BlobContext.players.delete_token(self)
         for (_, chan) in BlobContext.channels.items():
             if self.id in chan.users:
                 await chan.leave_channel(self)
 
         for p in BlobContext.players.get_all_tokens():
             p.enqueue(await PacketBuilder.Logout(self.id))
+
+        BlobContext.players.delete_token(self)
         return
 
     async def send_message(self, message: Message) -> bool:
@@ -227,6 +227,7 @@ class Player:
                 return False
 
             await channel.send_message(self.id, message)
+            return True
 
         # DM
         receiver = BlobContext.players.get_token(name=message.to)
@@ -234,10 +235,27 @@ class Player:
             logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
             return False
 
-        logger.klog(f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}")
-        bm = await PacketBuilder.BuildMessage(self.id, message)
+        if receiver.pm_private and self.id not in receiver.friends:
+            self.enqueue(await PacketBuilder.PMBlocked(message.to))
+            logger.klog(f"[{self.name}] Tried message {message.to} which has private PM.")
+            return False
+
+        if self.pm_private and receiver.id not in self.friends:
+            self.pm_private = False
+            logger.klog(f"[{self.name}] which has private pm sended message to non-friend user. PM unlocked")
+
+        if receiver.silenced:
+            self.enqueue(await PacketBuilder.TargetSilenced(message.to))
+            logger.klog(f'[{self.name}] Tried message {message.to}, but has been silenced.')
+            return False
+
+        message.body = f'{message.body[:2045]}...' if message.body[2048:] else message.body
+
+        logger.klog(
+            f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}"
+        )
         receiver.enqueue(
-            bm
+            await PacketBuilder.BuildMessage(self.id, message)
         )
         return True
 

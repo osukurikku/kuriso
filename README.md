@@ -11,9 +11,9 @@ TODO:
     * [x] Stats
     * [x] Update osu actions and etc...
 - Chat
-    * [ ] Messages
-    * [ ] Channels
-    * [ ] DM
+    * [x] Messages
+    * [x] Channels
+    * [x] DM
     * [ ] Bot
 - Multiplayer
     * [ ] Lobby creation

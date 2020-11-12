@@ -41,3 +41,9 @@ class PacketResolver:
             to=await buffer.read_osu_string(),
             client_id=await buffer.read_int_32()
         )
+
+    @staticmethod
+    async def read_channel_name(data: bytes) -> str:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return await buffer.read_osu_string()

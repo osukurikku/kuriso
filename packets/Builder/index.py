@@ -142,6 +142,15 @@ class PacketBuilder:
             (name, osuTypes.string)
         )
 
+    @staticmethod
+    async def UpdateChannelInfo(channel) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_ChannelAvailable.value,
+            (channel.name, osuTypes.string),
+            (channel.description, osuTypes.string),
+            (len(channel.users), osuTypes.int16),
+        )
+
     # bancho response: 7
     @staticmethod
     async def BuildMessage(uid: int, message: Message) -> bytes:
@@ -160,11 +169,34 @@ class PacketBuilder:
             OsuPacketID.Bancho_ChannelAvailable.value,
             (channel.name, osuTypes.string),
             (channel.description, osuTypes.string),
-            (len(channel.users), osuTypes.int32)
+            (len(channel.users), osuTypes.int16)
         )
 
+    # bancho response: 89
     @staticmethod
     async def ChannelListeningEnd() -> bytes:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_ChannelListingComplete.value
+        )
+
+    # bancho response: 100
+    @staticmethod
+    async def PMBlocked(target: str) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_UserPMBlocked.value,
+            ('', osuTypes.string),
+            ('', osuTypes.string),
+            (target, osuTypes.string),
+            (0, osuTypes.int32)
+        )
+
+    # bancho response: 101
+    @staticmethod
+    async def TargetSilenced(target: str) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_TargetIsSilenced.value,
+            ('', osuTypes.string),
+            ('', osuTypes.string),
+            (target, osuTypes.string),
+            (0, osuTypes.int32)
         )
