@@ -1,5 +1,6 @@
 import io
 import json
+import sys
 
 
 class Config:
@@ -34,7 +35,7 @@ class Config:
                 'host': {
                     'address': '127.0.0.1',
                     'port': 13371,
-                    'irc_port': 0 # TODO: IRC
+                    'irc_port': 0  # TODO: IRC
                 },
                 'geoloc_ip': 'https://country.kurikku.pw/'
             }
@@ -44,4 +45,4 @@ class Config:
             cls.config = json.loads(config_raw)
         except json.decoder.JSONDecodeError:
             print("Config file is not correct")
-            exit()
+            sys.exit()

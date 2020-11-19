@@ -1,17 +1,19 @@
-import objects.Player
-from blob import BlobContext
+from blob import Context
 from handlers.decorators import OsuEvent
 from objects.constants.GameModes import GameModes
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.PacketResolver import PacketResolver
 from packets.Builder.index import PacketBuilder
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from objects.Player import Player
+
 
 @OsuEvent.register_handler(OsuPacketID.Client_SendUserStatus)
-async def update_action(packet_data: bytes, p: objects.Player.Player):
+async def update_action(packet_data: bytes, p: 'Player'):
     resolved_data = await PacketResolver.read_new_presence(packet_data)
 
-    need_presence = False
     if GameModes(resolved_data['mode']) != p.selected_game_mode:
         # okay, we have new gamemode here. We need to send userstats and new user panel
         p.selected_game_mode = GameModes(resolved_data['mode'])
@@ -21,9 +23,8 @@ async def update_action(packet_data: bytes, p: objects.Player.Player):
     p.selected_game_mode = GameModes(resolved_data['mode'])
     p.pr_status.update(**resolved_data)
 
-    for p1 in BlobContext.players.get_all_tokens():
-        data = await PacketBuilder.UserStats(p1) + \
-                await PacketBuilder.UserPresence(p1)
+    for p1 in Context.players.get_all_tokens():
+        data = await PacketBuilder.UserStats(p1) + await PacketBuilder.UserPresence(p1)
         p1.enqueue(data)
 
     return True

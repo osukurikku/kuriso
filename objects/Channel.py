@@ -1,16 +1,22 @@
 from typing import List
 
 from lib import logger
-from objects.BanchoObjects import Message
+
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
-from objects.Player import Player
 from packets.Builder.index import PacketBuilder
+from blob import Context
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from objects.BanchoObjects import Message
+    from objects.Player import Player
 
 
 class Channel:
 
     def __init__(self, server_name: str = '', description: str = '', public_read: bool = False,
-                       public_write: bool = False, temp_channel: bool = False):
+                 public_write: bool = False, temp_channel: bool = False):
         self.users: List[int] = []
         # for use this client should be like #osu, #admin, #osu, #specatator, #multiplayer, #lobby and etc.
         # server can store it like #banana, #spec_<id>, #multi_<id> and etc.
@@ -18,13 +24,13 @@ class Channel:
         self.description: str = description
         self.can_read: bool = public_read
         self.can_write: bool = public_write
-        self.temp_channel: bool = temp_channel # True if spectator or multi lobby channel
+        self.temp_channel: bool = temp_channel  # True if spectator or multi lobby channel
 
     @property
     def name(self):
         if self.server_name.startswith("#spec_"):
             return "#spectator"
-        elif self.server_name.startswith("#multi_"):
+        if self.server_name.startswith("#multi_"):
             return "#multiplayer"  # don't remember that this values only OSU CLIENT, for irc we will send server name
 
         return self.server_name
@@ -36,20 +42,18 @@ class Channel:
                     (privs & KurikkuPrivileges.ChatMod) == KurikkuPrivileges.ChatMod or \
                     (privs & KurikkuPrivileges.ReplayModerator) == KurikkuPrivileges.ReplayModerator)
 
-    async def send_message(self, from_id: int, message: Message) -> bool:
+    async def send_message(self, from_id: int, message: 'Message') -> bool:
         # handle channel message
-        from blob import BlobContext
-        receivers = [BlobContext.players.get_token(uid=player) for player in self.users]
+        receivers = [Context.players.get_token(uid=player) for player in self.users]
         for receiver in receivers:
             if receiver.id == from_id:
-                continue # ignore ourself
+                continue  # ignore ourself
             receiver.enqueue(
                 await PacketBuilder.BuildMessage(from_id, message)
             )
         return True
 
-    async def join_channel(self, p: Player) -> bool:
-        from blob import BlobContext
+    async def join_channel(self, p: 'Player') -> bool:
         if p.id in self.users:
             p.enqueue(await PacketBuilder.SuccessJoinChannel(self.name))
             return True
@@ -66,17 +70,16 @@ class Channel:
 
         # now we need update channel stats
         if self.temp_channel:
-            receivers = [BlobContext.players.get_token(uid=uid) for uid in self.users]
+            receivers = [Context.players.get_token(uid=uid) for uid in self.users]
         else:
-            receivers = BlobContext.players.get_all_tokens()
+            receivers = Context.players.get_all_tokens()
         for receiver in receivers:
             receiver.enqueue(
                 await PacketBuilder.UpdateChannelInfo(self)
             )
         return True
 
-    async def leave_channel(self, p: Player) -> bool:
-        from blob import BlobContext
+    async def leave_channel(self, p: 'Player') -> bool:
         if p.id not in self.users:
             return False
 
@@ -87,11 +90,16 @@ class Channel:
 
         # now we need update channel stats
         if self.temp_channel:
-            receivers = [BlobContext.players.get_token(uid=uid) for uid in self.users]
+            receivers = [Context.players.get_token(uid=uid) for uid in self.users]
         else:
-            receivers = BlobContext.players.get_all_tokens()
+            receivers = Context.players.get_all_tokens()
         for receiver in receivers:
             receiver.enqueue(
                 await PacketBuilder.UpdateChannelInfo(self)
             )
+
+        if len(self.users) < 1 and self.temp_channel:
+            # clean channel because all left and channel is temp(for multi lobby or spectator)
+            Context.channels.pop(self.server_name)
+
         return True

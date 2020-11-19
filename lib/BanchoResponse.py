@@ -16,4 +16,7 @@ class BanchoResponse(HTMLResponse):
         if token:
             headers['cho-token'] = token
 
+        if len(response_text) < 1:
+            response_text = b""
+
         super().__init__(content=response_text, status_code=200, headers=headers)

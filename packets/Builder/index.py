@@ -1,11 +1,12 @@
-from typing import Union, List
+from typing import Union, List, TYPE_CHECKING
 
-import objects.Player
-from objects import Player
-from objects.BanchoObjects import Message
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.OsuTypes import osuTypes
 from packets.Reader.index import CreateBanchoPacket
+
+if TYPE_CHECKING:
+    from objects import Player
+    from objects.BanchoObjects import Message
 
 
 class PacketBuilder:
@@ -77,7 +78,7 @@ class PacketBuilder:
 
     # server packet: 83
     @staticmethod
-    async def UserPresence(player: Player) -> bytes:
+    async def UserPresence(player: 'Player') -> bytes:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_UserPresence.value,
             (player.id, osuTypes.int32),
@@ -92,7 +93,7 @@ class PacketBuilder:
 
     # client packet: 3, bancho response: 11
     @staticmethod
-    async def UserStats(player: Player) -> bytes:
+    async def UserStats(player: 'Player') -> bytes:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_HandleOsuUpdate.value,
             (player.id, osuTypes.int32),
@@ -103,7 +104,7 @@ class PacketBuilder:
             (player.pr_status.mode.value, osuTypes.u_int8),
             (player.pr_status.map_id, osuTypes.int32),
             (player.current_stats.ranked_score, osuTypes.int64),
-            (player.current_stats.accuracy/100.0, osuTypes.float32),
+            (player.current_stats.accuracy / 100.0, osuTypes.float32),
             (player.current_stats.total_plays, osuTypes.int32),
             (player.current_stats.total_score, osuTypes.u_int64),
             (player.current_stats.leaderboard_rank, osuTypes.int32),
@@ -153,7 +154,7 @@ class PacketBuilder:
 
     # bancho response: 7
     @staticmethod
-    async def BuildMessage(uid: int, message: Message) -> bytes:
+    async def BuildMessage(uid: int, message: 'Message') -> bytes:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_SendMessage.value,
             (message.sender, osuTypes.string),
@@ -199,4 +200,52 @@ class PacketBuilder:
             ('', osuTypes.string),
             (target, osuTypes.string),
             (0, osuTypes.int32)
+        )
+
+    # bancho response: 42
+    @staticmethod
+    async def FellowSpectatorJoined(uid: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_FellowSpectatorJoined.value,
+            (uid, osuTypes.int32)
+        )
+
+    # bancho response: 13
+    @staticmethod
+    async def SpectatorJoined(uid: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_SpectatorJoined.value,
+            (uid, osuTypes.int32)
+        )
+
+    # bancho response: 43
+    @staticmethod
+    async def FellowSpectatorLeft(uid: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_FellowSpectatorLeft.value,
+            (uid, osuTypes.int32)
+        )
+
+    # bancho response: 14
+    @staticmethod
+    async def SpectatorLeft(uid: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_SpectatorLeft.value,
+            (uid, osuTypes.int32)
+        )
+
+    # bancho response: 22
+    @staticmethod
+    async def CantSpectate(uid: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_SpectatorCantSpectate.value,
+            (uid, osuTypes.int32)
+        )
+
+    # bancho response: 15
+    @staticmethod
+    async def QuickSpectatorFrame(data: bytes) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_SpectateFrames.value,
+            (data, osuTypes.raw)
         )

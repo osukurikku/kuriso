@@ -1,6 +1,6 @@
-from typing import Union
-
-from objects.Player import Player
+from typing import Union, TYPE_CHECKING
+if TYPE_CHECKING:
+    from objects.Player import Player
 
 
 class TokenStorage:
@@ -11,7 +11,7 @@ class TokenStorage:
         self.store_by_id = {}
         self.store_by_name = {}
 
-    def add_token(self, player: Player) -> bool:
+    def add_token(self, player: 'Player') -> bool:
         if player.id in self.store_by_id or \
                 player.token in self.store_by_token or \
                 player.name in self.store_by_name:
@@ -20,8 +20,9 @@ class TokenStorage:
         self.store_by_token[player.token] = player
         self.store_by_id[player.id] = player
         self.store_by_name[player.name] = player
+        return True
 
-    def get_token(self, uid: int = None, token: str = None, name: str = None) -> Union[Player, None]:
+    def get_token(self, uid: int = None, token: str = None, name: str = None) -> Union['Player', None]:
         if uid:  # if uid presents
             return self.store_by_id.get(uid, None)
 
@@ -33,15 +34,15 @@ class TokenStorage:
 
         return None
 
-    def delete_token(self, token: Player) -> bool:
-        if token.id not in self.store_by_id or \
-                token.token not in self.store_by_token or \
-                token.name not in self.store_by_name:
+    def delete_token(self, token: 'Player') -> bool:
+        if (token.id not in self.store_by_id or
+                token.token not in self.store_by_token or
+                token.name not in self.store_by_name):
             return False
-        res = self.store_by_token.pop(token.token, False) and self.store_by_id.pop(token.id, False) \
-              and self.store_by_name.pop(token.name, False)
+        res = (self.store_by_token.pop(token.token, False) and self.store_by_id.pop(token.id, False) and
+               self.store_by_name.pop(token.name, False))
         token.token = ''
         return res
 
     def get_all_tokens(self):
-        return [v for (k, v) in self.store_by_token.items()] # just return all player instances
+        return [v for (k, v) in self.store_by_token.items()]  # just return all player instances

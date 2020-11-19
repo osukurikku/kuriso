@@ -9,12 +9,12 @@ import uvicorn
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 
 from config import Config
-from blob import BlobContext
+from blob import Context
 
 from lib import AsyncSQLPoolWrapper
 from lib import logger
 
-import nest_asyncio # fix asyncio loops
+import nest_asyncio  # fix asyncio loops
 
 nest_asyncio.apply()
 
@@ -25,8 +25,8 @@ async def main():
     app.add_middleware(ProxyHeadersMiddleware)
 
     # load version
-    BlobContext.load_version()
-    logger.klog(f"Hey! Starting kuriso! v{BlobContext.version} (commit-id: {BlobContext.commit_id})")
+    Context.load_version()
+    logger.klog(f"Hey! Starting kuriso! v{Context.version} (commit-id: {Context.commit_id})")
 
     # Load all events & handlers
     registrator.load_handlers(app)
@@ -37,12 +37,12 @@ async def main():
 
     # Create Redis connection :sip:
     logger.wlog("[Redis] Trying connection to Redis")
-    loop = asyncio.get_event_loop()
-    transport, protocol = await loop.create_connection(asyncio_redis.RedisProtocol, Config.config['redis']['host'],
-                                                       Config.config['redis']['port'])
+    main_loop = asyncio.get_event_loop()
+    _, protocol = await main_loop.create_connection(asyncio_redis.RedisProtocol, Config.config['redis']['host'],
+                                                    Config.config['redis']['port'])
     await protocol.auth(password=Config.config['redis']['password'])
     await protocol.select(Config.config['redis']['db'])
-    BlobContext.redis = protocol
+    Context.redis = protocol
     logger.slog("[Redis] Connection to Redis established! Well done!")
 
     logger.wlog("[MySQL] Making connection to MySQL Database...")
@@ -53,14 +53,14 @@ async def main():
         'password': Config.config['mysql']['password'],
         'port': Config.config['mysql']['port'],
         'db': Config.config['mysql']['database'],
-        'loop': loop,
+        'loop': main_loop,
     })
-    BlobContext.mysql = mysql_pool
+    Context.mysql = mysql_pool
     logger.slog("[MySQL] Connection established!")
 
     # now load bancho settings
-    await BlobContext.load_bancho_settings()
-    await BlobContext.load_default_channels()
+    await Context.load_bancho_settings()
+    await registrator.load_default_channels()
 
     logger.slog(f"[Uvicorn] HTTP server started at {Config.config['host']['address']}:{Config.config['host']['port']}")
     uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'],

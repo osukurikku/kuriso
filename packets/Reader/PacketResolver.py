@@ -47,3 +47,15 @@ class PacketResolver:
         buffer = KorchoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_osu_string()
+
+    @staticmethod
+    async def read_specatator_id(data: bytes) -> int:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return await buffer.read_int_32()
+
+    @staticmethod
+    async def read_friend_id(data: bytes) -> int:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return await buffer.read_int_32()

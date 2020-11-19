@@ -5,12 +5,11 @@ from typing import Union, Tuple, List, Any, Optional
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.OsuTypes import osuTypes as OsuTypes
 
-'''
-Partly full port from JS osu-buffer
-'''
-
 
 class KorchoBuffer:
+    """
+    Very important class ported from JS osu-buffer by @KotRikD
+    """
     __slots__ = ("buffer", "position")
 
     def __init__(self, input_str: Optional[str]):
@@ -56,7 +55,7 @@ class KorchoBuffer:
         self.position += 4  # float size = 4
         return struct.unpack("<f", bytes(self.buffer.getbuffer()[slice(self.position - 4, self.position)]))[0]
 
-    async def read_double(self, byte_length: int) -> float:
+    async def read_double(self) -> float:
         self.position += 8  # double size = 8
         return struct.unpack("<d", bytes(self.buffer.getbuffer()[slice(self.position - 8, self.position)]))[0]
 
@@ -97,7 +96,7 @@ class KorchoBuffer:
             end = False
             while not end:
                 if shift:
-                    byte = self.read_u_int_8()
+                    byte = await self.read_u_int_8()
                 total |= ((byte & 0x7F) << shift)
                 if (byte & 0x80) == 0:
                     end = True
@@ -119,8 +118,8 @@ class KorchoBuffer:
         if is_string:
             length = await self.read_variant()
             return await self.read_string(length)
-        else:
-            return ''
+
+        return ''
 
     async def read_i32_list(self) -> List[int]:
         length = await self.read_u_int_16()
@@ -186,13 +185,13 @@ class KorchoBuffer:
 
     async def write_variant(self, value: int) -> bool:
         arr = []
-        len = 0
+        length = 0
         while value > 0:
             arr.append(value & 0x7F)
             value >>= 7
             if value != 0:
-                arr[len] |= 0x80
-            len += 1
+                arr[length] |= 0x80
+            length += 1
 
         return await self.write_to_buffer(bytearray(arr))
 
@@ -217,16 +216,18 @@ class KorchoBuffer:
 
         return True
 
+
 # 1 - packet id
 # 2 - (data, osuType)
 async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[Any, int]]) -> bytes:
     # writing packet
     dataBuffer = KorchoBuffer(None)
-    packet_header = struct.pack("<Hx", pid.value if type(pid) is OsuPacketID else pid)
+    packet_header = struct.pack("<Hx", pid.value if isinstance(pid, OsuPacketID) else pid)
 
     ptypes = {
         OsuTypes.i32_list: dataBuffer.write_i32_list,
         OsuTypes.string: dataBuffer.write_osu_string,
+        OsuTypes.raw: dataBuffer.write_to_buffer,
         # TODO: add another custom bancho types
 
         OsuTypes.int8: dataBuffer.write_int_8,
@@ -245,7 +246,7 @@ async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[An
     for packet, packet_type in args:
         writer = ptypes.get(packet_type, None)
         if not writer:
-            continue # can't identify packet type
+            continue  # can't identify packet type
 
         await writer(packet)
 

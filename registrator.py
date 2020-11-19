@@ -1,10 +1,13 @@
 from starlette.applications import Starlette
 from starlette.routing import Route, Router
 
-from handlers.decorators import HttpEvent
 import sys
 import os
+
+from blob import Context
+from handlers.decorators import HttpEvent
 from lib import logger
+from objects.Channel import Channel
 
 
 def load_handlers(app: Starlette):
@@ -30,3 +33,12 @@ def load_handlers(app: Starlette):
 
     app.mount('', Router(handlers))
     return True
+
+
+async def load_default_channels():
+    async for channel in Context.mysql.iterall(
+            "select name as server_name, description, public_read, public_write from bancho_channels"
+    ):
+        Context.channels[channel['server_name']] = Channel(**channel)
+
+        logger.slog(f"[Channels] Create channel {channel['server_name']}")

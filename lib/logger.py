@@ -1,9 +1,5 @@
 import logging
-'''
-I like this class
-'''
 
-"""Console colors"""
 PINK = '\033[95m'
 BLUE = '\033[94m'
 GREEN = '\033[92m'
@@ -26,20 +22,20 @@ logging.getLogger('').addHandler(console)
 
 
 def printColored(string: str, color: str):
-    logging.info("{}{}{}".format(color, string, ENDC))
+    logging.info("%s%s%s", color, string, ENDC)
 
 
-def klog(msg: str): # kuriso log
+def klog(msg: str):  # kuriso log
     printColored(msg, PINK)
 
 
-def elog(msg: str): # error log
+def elog(msg: str):  # error log
     printColored(msg, RED)
 
 
-def wlog(msg: str): # warning log
+def wlog(msg: str):  # warning log
     printColored(msg, YELLOW)
 
 
-def slog(msg: str): # success log
+def slog(msg: str):  # success log
     printColored(msg, GREEN)

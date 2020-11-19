@@ -1,5 +1,6 @@
 from enum import IntFlag, unique
 
+
 @unique
 class KurikkuPrivileges(IntFlag):
     Banned = 0

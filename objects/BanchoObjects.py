@@ -1,5 +1,3 @@
-from collections import namedtuple
-
 
 class Message:
 

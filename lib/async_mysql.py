@@ -48,7 +48,7 @@ class AsyncSQLPoolWrapper:
             params = []
         return await self.fetch(query, params, _all=True, _dict=_dict)
 
-    async def  iterall(self, query: str, params=None,
+    async def iterall(self, query: str, params=None,
                       _dict: bool = True) -> AsyncGenerator[Optional[Dict[str, Any]], None]:
         if params is None:
             params = []

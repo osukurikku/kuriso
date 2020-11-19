@@ -4,23 +4,28 @@ from typing import Optional, Union, List
 import uuid
 import aiohttp
 
+from blob import Context
 from config import Config
 from lib import logger
-from objects.BanchoObjects import Message
-from objects.constants import Countries, Privileges
+from objects.constants import Privileges, Countries
 from objects.constants.BanchoRanks import BanchoRanks
 from objects.constants.GameModes import GameModes
 from objects.constants.IdleStatuses import Action
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from objects.constants.Modificators import Modifications
-from objects.TypedDicts import TypedStats, TypedStatus
+from objects.constants.PresenceFilter import PresenceFilter
+
+from packets.Builder.index import PacketBuilder
+from objects.Channel import Channel
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from objects.TypedDicts import TypedStats, TypedStatus
+    from objects.BanchoObjects import Message
 
 
 # I wan't use construction in python like <class>.__dict__.update
 # but i forgot if class has __slots__ __dict__ is unavailable, sadly ;-;
-from objects.constants.PresenceFilter import PresenceFilter
-from packets.Builder.index import PacketBuilder
-
 
 class StatsMode:
     __slots__ = ("game_mode", "total_score", "ranked_score", "pp",
@@ -35,7 +40,7 @@ class StatsMode:
         self.playtime: int = 0
         self.leaderboard_rank: int = 0
 
-    def update(self, **kwargs: TypedStats):
+    def update(self, **kwargs: 'TypedStats'):
         self.total_score = kwargs.get('total_score', 0)
         self.ranked_score = kwargs.get('ranked_score', 0)
         self.pp = kwargs.get('pp', 0)
@@ -59,7 +64,7 @@ class Status:
         self.mods: Modifications = Modifications.NOMOD
         self.map_id: int = 0
 
-    def update(self, **kwargs: TypedStatus):
+    def update(self, **kwargs: 'TypedStatus'):
         self.action = Action(kwargs.get('action', 0))
         self.action_text = kwargs.get('action_text', '')
         self.map_md5 = kwargs.get('map_md5', '')
@@ -82,6 +87,9 @@ class Player:
         self.stats: dict = {mode: StatsMode() for mode in GameModes}  # setup dictionary with stats
         self.pr_status: Status = Status()
 
+        self.spectators: List[Player] = []
+        self.spectating: Optional[Player] = None
+
         self.country = (0, 'XX')
         self.location = (0.0, 0.0)
         self.timezone = 24 + utc_offset
@@ -95,7 +103,6 @@ class Player:
         self.presence_filter: PresenceFilter = PresenceFilter(1)
         self.bot_np: Optional[dict] = None  # TODO: Beatmap
 
-        self.channels: Union[List[dict]] = []  # TODO: Channels
         self.match: Optional[dict] = None  # TODO: Match
         self.friends: Union[List[int]] = []  # bot by default xd
 
@@ -136,8 +143,7 @@ class Player:
         return str(uuid.uuid4())
 
     async def parse_friends(self) -> bool:
-        from blob import BlobContext
-        async for friend in BlobContext.mysql.iterall(
+        async for friend in Context.mysql.iterall(
                 'select user2 from users_relationships where user1 = %s',
                 [self.id]
         ):
@@ -146,10 +152,9 @@ class Player:
         return True
 
     async def parse_country(self, ip: str) -> bool:
-        from blob import BlobContext
         if (self.privileges & Privileges.USER_DONOR) > 0:
             # we need to remember donor have locked location
-            donor_location: str = (await BlobContext.mysql.fetch(
+            donor_location: str = (await Context.mysql.fetch(
                 'select country from users_stats where id = %s',
                 [self.id]
             ))['country'].upper()
@@ -173,9 +178,8 @@ class Player:
             return True
 
     async def update_stats(self, selected_mode: GameModes = None) -> bool:
-        from blob import BlobContext
         for mode in GameModes if not selected_mode else [selected_mode]:
-            res = await BlobContext.mysql.fetch(
+            res = await Context.mysql.fetch(
                 'select total_score_{0} as total_score, ranked_score_{0} as ranked_score, '
                 'pp_{0} as pp, playcount_{0} as total_plays, avg_accuracy_{0} as accuracy, playtime_{0} as playtime '
                 'from users_stats where id = %s'.format(GameModes.resolve_to_str(mode)),
@@ -186,7 +190,7 @@ class Player:
                 logger.elog(f"[Player/{self.name}] Can't parse stats for {GameModes.resolve_to_str(mode)}")
                 return False
 
-            position = await BlobContext.redis.zrevrank(
+            position = await Context.redis.zrevrank(
                 f"ripple:leaderboard:{GameModes.resolve_to_str(mode)}",
                 str(self.id)
             )
@@ -195,23 +199,21 @@ class Player:
             self.stats[mode].update(**res)
 
     async def logout(self) -> None:
-        from blob import BlobContext
         # logic
         # leave multiplayer
         # leave specatating
         # leave channels
-        for (_, chan) in BlobContext.channels.items():
+        for (_, chan) in Context.channels.items():
             if self.id in chan.users:
                 await chan.leave_channel(self)
 
-        for p in BlobContext.players.get_all_tokens():
+        for p in Context.players.get_all_tokens():
             p.enqueue(await PacketBuilder.Logout(self.id))
 
-        BlobContext.players.delete_token(self)
+        Context.players.delete_token(self)
         return
 
-    async def send_message(self, message: Message) -> bool:
-        from blob import BlobContext
+    async def send_message(self, message: 'Message') -> bool:
         chan: str = message.to
         if chan.startswith("#"):
             # this is channel object
@@ -219,9 +221,13 @@ class Player:
                 # TODO: Convert it to #multi_<id>
                 pass
             elif chan.startswith("#spec"):
-                chan = f"#spec_{self.id}"
+                if self.spectating:
+                    chan = f"#spec_{self.spectating.id}"
+                else:
+                    chan = f"#spec_{self.id}"
 
-            channel: 'Channel' = BlobContext.channels.get(chan, None)
+            print(chan)
+            channel: 'Channel' = Context.channels.get(chan, None)
             if not channel:
                 logger.klog(f"[{self.name}] Tried to send message in unknown channel. Ignoring it...")
                 return False
@@ -230,7 +236,7 @@ class Player:
             return True
 
         # DM
-        receiver = BlobContext.players.get_token(name=message.to)
+        receiver = Context.players.get_token(name=message.to)
         if not receiver:
             logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
             return False
@@ -257,6 +263,57 @@ class Player:
         receiver.enqueue(
             await PacketBuilder.BuildMessage(self.id, message)
         )
+        return True
+
+    async def add_spectator(self, new_spec: 'Player') -> bool:
+        spec_chan_name = f"#spec_{self.id}"
+        if not Context.channels.get(spec_chan_name):
+            # in this case, we need to create channel for our spectator in temp mode
+            spec = Channel(
+                server_name=spec_chan_name,
+                description=f"Spectator channel for {self.name}",
+                public_read=True,
+                public_write=True,
+                temp_channel=True
+            )
+
+            Context.channels[spec_chan_name] = spec
+            await spec.join_channel(self)
+
+        c: 'Channel' = Context.channels.get(spec_chan_name)
+        if not await c.join_channel(new_spec):
+            logger.elog(f"{self.name} failed to join in {spec_chan_name} spectator channel!")
+            return False
+
+        fellow_packet = await PacketBuilder.FellowSpectatorJoined(new_spec.id)
+        for spectator in self.spectators:
+            spectator.enqueue(fellow_packet)
+            new_spec.enqueue(await PacketBuilder.FellowSpectatorJoined(spectator.id))
+
+        self.spectators.append(new_spec)
+        new_spec.spectating = self
+
+        self.enqueue(await PacketBuilder.SpectatorJoined(new_spec.id))
+        logger.slog(f"{new_spec.name} started to spectating {self.name}!")
+        return True
+
+    async def remove_spectator(self, old_spec: 'Player') -> bool:
+        spec_chan_name = f"#spec_{self.id}"
+        self.spectators.remove(old_spec)  # attempt to remove old player from array
+        old_spec.spectating = None
+
+        spec_chan: Channel = Context.channels.get(spec_chan_name)
+        await spec_chan.leave_channel(old_spec)  # remove our spectator from channel
+
+        fellow_packet = await PacketBuilder.FellowSpectatorLeft(old_spec.id)
+        if not self.spectators:
+            await spec_chan.leave_channel(self)
+        else:
+            for spectator in self.spectators:
+                spectator.enqueue(fellow_packet)
+
+        self.enqueue(await PacketBuilder.SpectatorLeft(old_spec.id))
+        logger.slog(f"{old_spec.name} has stopped spectating for {self.name}")
         return True
 
     def enqueue(self, b: bytes) -> None:

@@ -1,6 +1,6 @@
 from enum import IntEnum, unique
 
-__all__ = 'osuTypes',
+__all__ = 'osuTypes'
 __author__ = "cmyui"
 
 
@@ -19,7 +19,7 @@ class osuTypes(IntEnum):
     float64 = 9
 
     # misc
-    i32_list = 17 # 2 bytes len
-    i32_list4l = 18 # 4 bytes len
+    i32_list = 17  # 2 bytes len
+    i32_list4l = 18  # 4 bytes len
     string = 19
     raw = 20
