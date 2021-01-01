@@ -289,3 +289,18 @@ class PacketBuilder:
             OsuPacketID.Bancho_MatchStart.value,
             ((match, True), osuTypes.match)
         )
+
+    # bancho response: 28
+    @staticmethod
+    async def DisbandMatch(match: 'Match') -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchDisband.value,
+            (match.id, osuTypes.int32)
+        )
+
+    # bancho response: 50
+    @staticmethod
+    async def MatchHostTransfer() -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchTransferHost.value
+        )

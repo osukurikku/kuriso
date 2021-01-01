@@ -39,6 +39,12 @@ class PacketResolver:
         return await buffer.read_int_32()
 
     @staticmethod
+    async def read_slot_index(data: bytes) -> int:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return await buffer.read_int_32()
+
+    @staticmethod
     async def read_message(data: bytes) -> Message:
         buffer = KorchoBuffer(None)
         await buffer.write_to_buffer(data)
@@ -133,3 +139,9 @@ class PacketResolver:
         buffer = KorchoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32(), await buffer.read_osu_string()
+
+    @staticmethod
+    async def read_mods(data: bytes) -> int:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return await buffer.read_int_32()

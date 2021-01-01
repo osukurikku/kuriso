@@ -230,8 +230,11 @@ class KorchoBuffer:
         await self.write_byte(match.match_type.value)
         await self.write_int_32(match.mods.value)
         await self.write_osu_string(match.name)
-        if match.password and send_pw:
-            await self.write_osu_string(match.password)
+        if match.password:
+            if send_pw:
+                await self.write_osu_string(match.password)
+            else:
+                await self.write_osu_string(" ")
         else:
             await self.write_to_buffer(b"\x00")
         await self.write_osu_string(match.beatmap_name)

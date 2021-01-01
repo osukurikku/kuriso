@@ -64,8 +64,5 @@ async def update_match(data: bytes, token: 'Player'):
 
     match.match_freemod = newMatch['match_freemod']
 
-    update_packet = await PacketBuilder.UpdateMatch(match)
-    for a_slot in match.active_slots:
-        a_slot.token.enqueue(update_packet)
-
+    await match.update_match()
     return True

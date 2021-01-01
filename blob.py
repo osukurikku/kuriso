@@ -12,12 +12,13 @@ from objects.TokenStorage import TokenStorage
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from objects.Multiplayer import Match
+    from objects.Channel import Channel
 
 
 class Context:
     """Singleton конфигурация"""
     players: TokenStorage = TokenStorage()
-    channels: dict = {}
+    channels: Dict[str, 'Channel'] = {}
     matches: Dict[int, 'Match'] = {}  # TODO: Union with matches
     matches_id: int = 1  # default value when bancho is up!
 

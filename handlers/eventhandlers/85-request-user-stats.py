@@ -22,4 +22,6 @@ async def request_user_stats(packet_data: bytes, token: 'Player'):
         if searched_player:
             token.enqueue(await PacketBuilder.UserStats(searched_player) +
                           await PacketBuilder.UserPresence(searched_player))
+            break
+
     return True

@@ -74,14 +74,6 @@ class Match:
         return bool(self.password)
 
     @property
-    def active_slots(self) -> List[Slot]:
-        formatted_slots = []
-        for slot in self.slots:
-            if slot.token:
-                formatted_slots.append(slot)
-        return formatted_slots
-
-    @property
     def free_slot(self) -> Union[Slot, None]:
         for slot in self.slots:
             if slot.status == SlotStatus.Open:
@@ -103,6 +95,13 @@ class Match:
 
         return True
 
+    async def update_match(self) -> bool:
+        info_packet = await PacketBuilder.UpdateMatch(self)
+        for user in self.channel.users:
+            Context.players.get_token(uid=user).enqueue(info_packet)
+
+        return True
+
     async def join_player(self, player: 'Player', entered_password: str = None) -> bool:
         if player.match or \
                 (self.is_password_required and self.password != entered_password):
@@ -120,10 +119,7 @@ class Match:
         player.match = self
         player.enqueue(await PacketBuilder.MatchJoinSuccess(self))
 
-        packet_to_send = await PacketBuilder.UpdateMatch(self)
-        for a_slot in self.active_slots:
-            a_slot.token.enqueue(packet_to_send)
-
+        await self.update_match()
         await self.channel.join_channel(player)
         return True
 
@@ -141,12 +137,16 @@ class Match:
 
         await self.channel.leave_channel(player)  # try to part user
 
-        if len(self.active_slots) == 0:
+        if len(self.channel.users) == 0:
             # опа ча, игроки поливали, дизбендим матч
             Context.matches.pop(self.id)  # bye match
+            info_packet = await PacketBuilder.DisbandMatch(self)
+            for user in Context.channels["#lobby"].users:
+                if user == player.id:
+                    continue  # ignore us, because we will receive it first
+                Context.players.get_token(uid=user).enqueue(info_packet)
         else:
-            for a_slot in self.active_slots:
-                a_slot.token.enqueue(await PacketBuilder.UpdateMatch(self))
+            await self.update_match()
 
         player.match = None
         return True
