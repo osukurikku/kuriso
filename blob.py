@@ -1,6 +1,7 @@
 """
 This file contains context features :sip:
 """
+from typing import Dict
 
 from lib import AsyncSQLPoolWrapper
 import asyncio_redis
@@ -8,12 +9,17 @@ import git
 
 from objects.TokenStorage import TokenStorage
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from objects.Multiplayer import Match
+
 
 class Context:
     """Singleton конфигурация"""
     players: TokenStorage = TokenStorage()
     channels: dict = {}
-    matches = []  # TODO: Union with matches
+    matches: Dict[int, 'Match'] = {}  # TODO: Union with matches
+    matches_id: int = 1  # default value when bancho is up!
 
     mysql: AsyncSQLPoolWrapper = None
     redis: asyncio_redis.RedisProtocol = None

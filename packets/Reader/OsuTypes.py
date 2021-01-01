@@ -17,6 +17,11 @@ class osuTypes(IntEnum):
     int64 = 7
     u_int64 = 8
     float64 = 9
+    bool = 10
+    byte = 11
+
+    # eh?!
+    match = 12
 
     # misc
     i32_list = 17  # 2 bytes len

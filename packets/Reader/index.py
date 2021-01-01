@@ -2,8 +2,13 @@ import io
 import struct  # for unpacking/packing float, double
 from typing import Union, Tuple, List, Any, Optional
 
+from objects.constants.Slots import SlotStatus
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.OsuTypes import osuTypes as OsuTypes
+
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from objects.Multiplayer import Match
 
 
 class KorchoBuffer:
@@ -216,6 +221,46 @@ class KorchoBuffer:
 
         return True
 
+    async def write_mp_match(self, arguments: List[Union['Match', bool]]) -> bool:
+        match: 'Match' = arguments[0]
+        send_pw: bool = arguments[1]
+
+        await self.write_int_16(match.id)
+        await self.write_bool(match.in_progress)
+        await self.write_byte(match.match_type.value)
+        await self.write_int_32(match.mods.value)
+        await self.write_osu_string(match.name)
+        if match.password and send_pw:
+            await self.write_osu_string(match.password)
+        else:
+            await self.write_to_buffer(b"\x00")
+        await self.write_osu_string(match.beatmap_name)
+        await self.write_int_32(match.beatmap_id)
+        await self.write_osu_string(match.beatmap_md5)
+
+        for slot in match.slots:  # add slot status
+            await self.write_byte(slot.status.value)
+
+        for slot in match.slots:  # add slot team color
+            await self.write_byte(slot.team.value)
+
+        for slot in match.slots:
+            if (slot.status.value & SlotStatus.HasPlayer.value) > 0:  # if player exists in that slot, add it
+                await self.write_int_32(slot.token.id)
+
+        await self.write_int_32(match.host.id)  # match -> token (host) -> id
+        await self.write_byte(match.match_playmode.value)
+        await self.write_byte(match.match_scoring_type.value)
+        await self.write_byte(match.match_team_type.value)
+        await self.write_byte(match.match_freemod.value)
+
+        if match.is_freemod:
+            for slot in match.slots:
+                await self.write_int_32(slot.mods.value)
+
+        await self.write_int_32(match.seed)
+        return True
+
 
 # 1 - packet id
 # 2 - (data, osuType)
@@ -228,8 +273,11 @@ async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[An
         OsuTypes.i32_list: dataBuffer.write_i32_list,
         OsuTypes.string: dataBuffer.write_osu_string,
         OsuTypes.raw: dataBuffer.write_to_buffer,
+        OsuTypes.match: dataBuffer.write_mp_match,
         # TODO: add another custom bancho types
 
+        OsuTypes.byte: dataBuffer.write_byte,
+        OsuTypes.bool: dataBuffer.write_bool,
         OsuTypes.int8: dataBuffer.write_int_8,
         OsuTypes.u_int8: dataBuffer.write_u_int_8,
         OsuTypes.int16: dataBuffer.write_int_16,

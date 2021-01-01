@@ -6,6 +6,7 @@ from packets.Reader.index import CreateBanchoPacket
 
 if TYPE_CHECKING:
     from objects import Player
+    from objects.Multiplayer import Match
     from objects.BanchoObjects import Message
 
 
@@ -248,4 +249,43 @@ class PacketBuilder:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_SpectateFrames.value,
             (data, osuTypes.raw)
+        )
+
+    # bancho response: 26
+    @staticmethod
+    async def UpdateMatch(match: 'Match') -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchUpdate.value,
+            ((match, True), osuTypes.match)
+        )
+
+    # bancho response: 27
+    @staticmethod
+    async def NewMatch(match: 'Match') -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchNew.value,
+            ((match, False), osuTypes.match)
+        )
+
+    # bancho response: 36
+    @staticmethod
+    async def MatchJoinSuccess(match: 'Match') -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchJoinSuccess.value,
+            ((match, True), osuTypes.match)
+        )
+
+    # bancho response: 37
+    @staticmethod
+    async def MatchJoinFailed() -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchJoinFail.value
+        )
+
+    # bancho response: 46
+    @staticmethod
+    async def InitiateStartMatch(match: 'Match') -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchStart.value,
+            ((match, True), osuTypes.match)
         )

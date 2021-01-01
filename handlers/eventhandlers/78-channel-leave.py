@@ -15,7 +15,9 @@ if TYPE_CHECKING:
 async def channel_join(packet_data: bytes, token: 'Player'):
     chan_name = await PacketResolver.read_channel_name(packet_data)
     if not chan_name.startswith("#") or \
-            chan_name.startswith("#spec"):  # don't touch spectator leave handlers because another handler control it
+            chan_name.startswith("#spec") or \
+            chan_name.startswith("#multiplayer"):
+        # don't touch spectator, multiplayer leave handlers because another handler control it
         return False
 
     chan: 'Channel' = Context.channels.get(chan_name, None)

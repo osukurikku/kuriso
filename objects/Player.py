@@ -7,12 +7,13 @@ import aiohttp
 from blob import Context
 from config import Config
 from lib import logger
+from objects.Multiplayer import Match
 from objects.constants import Privileges, Countries
 from objects.constants.BanchoRanks import BanchoRanks
 from objects.constants.GameModes import GameModes
 from objects.constants.IdleStatuses import Action
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
-from objects.constants.Modificators import Modifications
+from objects.constants.Modificators import Mods
 from objects.constants.PresenceFilter import PresenceFilter
 
 from packets.Builder.index import PacketBuilder
@@ -61,7 +62,7 @@ class Status:
         self.action_text: str = ''
         self.map_md5: str = ''
         self.mode: GameModes = GameModes.STD
-        self.mods: Modifications = Modifications.NOMOD
+        self.mods: Mods = Mods.NoMod
         self.map_id: int = 0
 
     def update(self, **kwargs: 'TypedStatus'):
@@ -69,7 +70,7 @@ class Status:
         self.action_text = kwargs.get('action_text', '')
         self.map_md5 = kwargs.get('map_md5', '')
         self.mode = GameModes(kwargs.get('mode', 0))
-        self.mods = Modifications(kwargs.get('mods', 0))
+        self.mods = Mods(kwargs.get('mods', 0))
         self.map_id = kwargs.get('map_id', 0)
 
 
@@ -103,7 +104,7 @@ class Player:
         self.presence_filter: PresenceFilter = PresenceFilter(1)
         self.bot_np: Optional[dict] = None  # TODO: Beatmap
 
-        self.match: Optional[dict] = None  # TODO: Match
+        self.match: Optional[Match] = None  # TODO: Match
         self.friends: Union[List[int]] = []  # bot by default xd
 
         self.queue: queue.Queue = queue.Queue()  # main thing
@@ -219,19 +220,21 @@ class Player:
             # this is channel object
             if chan.startswith("#multi"):
                 # TODO: Convert it to #multi_<id>
-                pass
+                chan = f"#multi_{self.match.id}"
             elif chan.startswith("#spec"):
                 if self.spectating:
                     chan = f"#spec_{self.spectating.id}"
                 else:
                     chan = f"#spec_{self.id}"
 
-            print(chan)
             channel: 'Channel' = Context.channels.get(chan, None)
             if not channel:
                 logger.klog(f"[{self.name}] Tried to send message in unknown channel. Ignoring it...")
                 return False
 
+            logger.klog(
+                f"{self.name}({self.id}) -> {channel.server_name}: {bytes(message.body, 'latin_1').decode()}"
+            )
             await channel.send_message(self.id, message)
             return True
 
