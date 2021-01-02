@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 # client packet: 38, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchChangeSlot)
-async def slot_lock(packet_data: bytes, token: 'Player'):
+async def move_in_slot(packet_data: bytes, token: 'Player'):
     if not token.match:
         return False
 
@@ -31,9 +31,6 @@ async def slot_lock(packet_data: bytes, token: 'Player'):
         if m_slot.token == token:
             currentSlot = m_slot
             break
-
-    print(slot.token)
-    print(currentSlot.token)
 
     slot.mods = currentSlot.mods
     slot.token = currentSlot.token

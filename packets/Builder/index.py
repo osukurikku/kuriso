@@ -304,3 +304,40 @@ class PacketBuilder:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_MatchTransferHost.value
         )
+
+    # bancho response: 61
+    @staticmethod
+    async def MultiSkip():
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchSkip.value
+        )
+
+    # bancho response: 53
+    @staticmethod
+    async def AllPlayersLoaded():
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchAllPlayersLoaded.value
+        )
+
+    # bancho response: 48
+    @staticmethod
+    async def MultiScoreUpdate(packet_data: bytearray) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchScoreUpdate.value,
+            (packet_data, osuTypes.raw)
+        )
+
+    # bancho response: 58
+    @staticmethod
+    async def MatchFinished() -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchComplete.value
+        )
+
+    # bancho response: 57
+    @staticmethod
+    async def MatchPlayerFailed(slot_ind: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_MatchPlayerFailed.value,
+            (slot_ind, osuTypes.int16),
+        )

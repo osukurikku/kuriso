@@ -51,13 +51,7 @@ class Match:
         self.seed: int = 0
         self.need_load: int = 0
 
-        self.channel: Channel = Channel(
-            server_name=f"#multi_{self.id}",
-            description=f"Channel for #multi_{self.id}",
-            public_read=True,
-            public_write=True,
-            temp_channel=True
-        )
+        self.channel: Channel = None
 
         self.match_type: MatchTypes = MatchTypes.Standart
         self.match_playmode: GameModes = GameModes.STD
@@ -99,6 +93,12 @@ class Match:
         info_packet = await PacketBuilder.UpdateMatch(self)
         for user in self.channel.users:
             Context.players.get_token(uid=user).enqueue(info_packet)
+
+        return True
+
+    async def enqueue_to_all(self, packet: bytes) -> bool:
+        for user in self.channel.users:
+            Context.players.get_token(uid=user).enqueue(packet)
 
         return True
 
@@ -169,4 +169,9 @@ class Match:
             # enqueue MatchStart
             dude.enqueue(match_start_packet)
 
+        return True
+
+    async def all_players_loaded(self) -> bool:
+        ready_packet = await PacketBuilder.AllPlayersLoaded()
+        await self.enqueue_to_all(ready_packet)
         return True
