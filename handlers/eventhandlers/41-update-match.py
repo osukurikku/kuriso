@@ -33,7 +33,7 @@ async def update_match(data: bytes, token: 'Player'):
     match.name = newMatch['name'] if len(newMatch['name']) > 0 else f"{match.host.name}'s game"
 
     if match.match_team_type != newMatch['team_type']:
-        if match.match_team_type == MatchTeamTypes.TagTeamVs or match.match_team_type == MatchTeamTypes.TeamVs:
+        if newMatch['team_type'] == MatchTeamTypes.TagTeamVs or newMatch['team_type'] == MatchTeamTypes.TeamVs:
             for (i, slot) in enumerate(match.slots):
                 if slot.team == SlotTeams.Neutral:
                     slot.team = SlotTeams.Red if i % 2 == 1 else SlotTeams.Blue

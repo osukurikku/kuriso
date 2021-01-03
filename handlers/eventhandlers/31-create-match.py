@@ -61,10 +61,8 @@ async def create_match(packet_data: bytes, token: 'Player'):
 
     info_packet = await PacketBuilder.NewMatch(match)
     for user in Context.channels["#lobby"].users:
-        if user == token.id:
+        if user == token:
             continue  # ignore us, because we will receive it first
-        Context.players.get_token(uid=user).enqueue(info_packet)
+        user.enqueue(info_packet)
 
     return True
-
-# TODO: 51 packets for full mp settings work

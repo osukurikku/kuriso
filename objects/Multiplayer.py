@@ -1,3 +1,4 @@
+import random
 from typing import List, Union
 from typing import TYPE_CHECKING
 
@@ -75,6 +76,14 @@ class Match:
 
         return None
 
+    def slots_with_status(self, status: SlotStatus) -> List[Slot]:
+        res = []
+        for slot in self.slots:
+            if slot.status & status:
+                res.append(slot)
+
+        return res
+
     async def unready_completed(self) -> bool:
         for slot in self.slots:
             if slot.status == SlotStatus.Complete:
@@ -92,13 +101,24 @@ class Match:
     async def update_match(self) -> bool:
         info_packet = await PacketBuilder.UpdateMatch(self)
         for user in self.channel.users:
-            Context.players.get_token(uid=user).enqueue(info_packet)
+            user.enqueue(info_packet)
+
+        info_packet_for_foreign = await PacketBuilder.UpdateMatch(self, False)
+        for user in Context.channels.get("#lobby").users:
+            user.enqueue(info_packet_for_foreign)
 
         return True
 
     async def enqueue_to_all(self, packet: bytes) -> bool:
         for user in self.channel.users:
-            Context.players.get_token(uid=user).enqueue(packet)
+            user.enqueue(packet)
+
+        return True
+
+    async def enqueue_to_specific(self, packet: bytes, status: SlotStatus) -> bool:
+        for slot in self.slots:
+            if slot.status & status:
+                slot.token.enqueue(packet)
 
         return True
 
@@ -129,6 +149,8 @@ class Match:
             if slot.token == player:
                 pl_slot = slot
 
+        is_was_host = pl_slot.token == self.host
+
         if pl_slot:
             pl_slot.status = SlotStatus.Open
             pl_slot.token = None
@@ -144,8 +166,19 @@ class Match:
             for user in Context.channels["#lobby"].users:
                 if user == player.id:
                     continue  # ignore us, because we will receive it first
-                Context.players.get_token(uid=user).enqueue(info_packet)
+                user.enqueue(info_packet)
         else:
+            # case when host leaves the lobby
+            if is_was_host:
+                # randomly give host
+                slot = None
+                while not slot:
+                    slot = random.choice(self.slots)
+                    if not slot.status & SlotStatus.HasPlayer:
+                        slot = None
+                self.host = slot.token
+                self.host.enqueue(await PacketBuilder.MatchHostTransfer())  # notify new host, that he become host
+
             await self.update_match()
 
         player.match = None

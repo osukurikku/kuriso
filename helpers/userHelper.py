@@ -202,3 +202,11 @@ async def remove_friend(user_id: int, friend_id: int) -> bool:
         [user_id, friend_id]
     )
     return True
+
+
+async def setUserLastOsuVer(user_id: int, osu_ver: str) -> bool:
+    await Context.mysql.execute(
+        "UPDATE users SET osuver = %s WHERE id = %s LIMIT 1",
+        [osu_ver, user_id]
+    )
+    return True

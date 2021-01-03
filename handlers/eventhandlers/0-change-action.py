@@ -23,8 +23,10 @@ async def update_action(packet_data: bytes, p: 'Player'):
     p.selected_game_mode = GameModes(resolved_data['mode'])
     p.pr_status.update(**resolved_data)
 
-    for p1 in Context.players.get_all_tokens():
-        data = await PacketBuilder.UserStats(p1) + await PacketBuilder.UserPresence(p1)
-        p1.enqueue(data)
+    data = await PacketBuilder.UserStats(p) + await PacketBuilder.UserPresence(p)
+    recvs = [p]
+    recvs.extend(p.spectators)
+    for user in recvs:
+        user.enqueue(data)
 
     return True

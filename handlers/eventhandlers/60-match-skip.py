@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 # client packet: 60, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchSkipRequest)
-async def match_change_team(_, token: 'Player'):
+async def match_skip(_, token: 'Player'):
     if not token.match:
         return False
 
@@ -27,5 +27,5 @@ async def match_change_team(_, token: 'Player'):
             return
 
     match_skip_packet = await PacketBuilder.MultiSkip()
-    await match.enqueue_to_all(match_skip_packet)
+    await match.enqueue_to_specific(match_skip_packet, SlotStatus.Playing)
     return True

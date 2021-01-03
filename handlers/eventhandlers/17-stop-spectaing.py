@@ -16,5 +16,8 @@ async def leave_spectator(_, token: 'Player'):
         logger.elog(f"{token.name} tried to stop spectating empty old victim...")
         return False  # because this is bug and impossible in context
 
-    await old_victim.remove_spectator(token)
+    if token.is_tourneymode:
+        await old_victim.remove_hidden_spectator(token)
+    else:
+        await old_victim.remove_spectator(token)
     return True

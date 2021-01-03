@@ -145,3 +145,15 @@ class PacketResolver:
         buffer = KorchoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32()
+
+    @staticmethod
+    async def read_user_id(data: bytes) -> int:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return await buffer.read_int_32()
+
+    @staticmethod
+    async def read_match_id(data: bytes) -> int:
+        buffer = KorchoBuffer(None)
+        await buffer.write_to_buffer(data)
+        return await buffer.read_int_32()

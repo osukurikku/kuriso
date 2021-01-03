@@ -29,6 +29,6 @@ async def match_change_team(_, token: 'Player'):
     match.in_progress = False
 
     packet_complete = await PacketBuilder.MatchFinished()
-    await match.enqueue_to_all(packet_complete)
+    await match.enqueue_to_specific(packet_complete, SlotStatus.HasPlayer)
     await match.update_match()
     return True

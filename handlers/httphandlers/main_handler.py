@@ -1,5 +1,6 @@
 import asyncio
 import time
+import datetime
 
 from lib import logger
 from starlette.requests import Request
@@ -8,6 +9,7 @@ from starlette.responses import HTMLResponse
 from handlers.decorators import HttpEvent, OsuEvent
 from lib.BanchoResponse import BanchoResponse
 from blob import Context
+from objects.TourneyPlayer import TourneyPlayer
 from objects.constants import Privileges
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from objects.Player import Player
@@ -61,6 +63,7 @@ async def main_handler(request: Request):
         while not token_object.is_queue_empty:
             response += token_object.dequeue()
 
+        token_object.last_packet_unix = int(time.time())
         response = BanchoResponse(bytes(response), token=token_object.token)
         return response
     else:
@@ -84,8 +87,15 @@ async def main_handler(request: Request):
         if not user_data:
             return BanchoResponse(await PacketBuilder.UserID(-1))
 
+        data = loginData[2].split("|")
+        hashes = data[3].split(":")
+        time_offset = int(data[1])
+        pm_private = data[4] == '1'
+
+        isTourney = "tourney" in data[0]
+
         # check if user already on kuriso
-        if Context.players.get_token(uid=user_data['id']):
+        if Context.players.get_token(uid=user_data['id']) and not isTourney:
             # wtf osu
             await Context.players.get_token(uid=user_data['id']).logout()
 
@@ -94,7 +104,7 @@ async def main_handler(request: Request):
             logger.elog(f"[{loginData}] Restricted chmo tried to login")
             response = (await PacketBuilder.UserID(-3) +
                         await PacketBuilder.Notification(
-                        'You are restricted/banned. Join our discord for additional information.'))
+                            'You are restricted/banned. Join our discord for additional information.'))
 
             return BanchoResponse(bytes(response))
         if (user_data["privileges"] & Privileges.USER_PUBLIC > 0) and \
@@ -103,7 +113,7 @@ async def main_handler(request: Request):
             logger.elog(f"[{loginData}] Locked dude tried to login")
             response = (await PacketBuilder.UserID(-1) +
                         await PacketBuilder.Notification(
-                        'You are locked by staff. Join discord and ask for unlock!'))
+                            'You are locked by staff. Join discord and ask for unlock!'))
 
             return BanchoResponse(bytes(response))
 
@@ -112,14 +122,9 @@ async def main_handler(request: Request):
             if not (user_data['privileges'] & KurikkuPrivileges.Developer):
                 response = (await PacketBuilder.UserID(-1) +
                             await PacketBuilder.Notification(
-                            'Kuriso! is in maintenance mode. Please try to login again later.'))
+                                'Kuriso! is in maintenance mode. Please try to login again later.'))
 
                 return BanchoResponse(bytes(response))
-
-        data = loginData[2].split("|")
-        hashes = data[3].split(":")
-        time_offset = int(data[1])
-        pm_private = data[4] == '1'
 
         await Context.mysql.execute('''
             INSERT INTO hw_user (userid, mac, unique_id, disk_id, occurencies) VALUES (%s, %s, %s, %s, 1)
@@ -134,7 +139,7 @@ async def main_handler(request: Request):
             if not is_success_verify:
                 response = (await PacketBuilder.UserID(-1) +
                             await PacketBuilder.Notification(
-                            'Your HWID is not clear. Contact Staff to create account!'))
+                                'Your HWID is not clear. Contact Staff to create account!'))
                 return BanchoResponse(bytes(response))
             else:
                 await Context.mysql.execute(
@@ -142,18 +147,48 @@ async def main_handler(request: Request):
                     [user_data['id'], hashes[2], hashes[3], hashes[4]]
                 )
 
-        # create Player instance finally!!!!
-        player = Player(int(user_data['id']), user_data['username'], user_data['privileges'],
-                        time_offset, pm_private,
-                        0 if user_data['silence_end'] - int(time.time()) < 0 else user_data['silence_end'] - int(
-                            time.time())
-                        )
+        osu_version = data[0]
+        await userHelper.setUserLastOsuVer(user_data['id'], osu_version)
+        osuVersionInt = osu_version[1:9]
 
-        await asyncio.gather(*[
-            player.parse_friends(),
-            player.update_stats(),
-            player.parse_country(request.client.host)
-        ])
+        now = datetime.datetime.now()
+        vernow = datetime.datetime(int(osuVersionInt[:4]), int(osuVersionInt[4:6]), int(osuVersionInt[6:8]), 00, 00)
+        deltanow = now - vernow
+
+        if not osuVersionInt[0].isdigit() or \
+                deltanow.days > 360 or int(osuVersionInt) < 20200811:
+            response = (await PacketBuilder.UserID(-2) +
+                        await PacketBuilder.Notification(
+                            'Sorry, you use outdated/bad osu!version. Please update your game to join server'))
+            return BanchoResponse(bytes(response))
+
+        if isTourney:
+            if Context.players.get_token(uid=user_data['id']):
+                # manager was logged before, we need just add additional token
+                token, player = Context.players.get_token(uid=user_data['id']).add_additional_client()
+            else:
+                player = TourneyPlayer(int(user_data['id']), user_data['username'], user_data['privileges'],
+                                       time_offset, pm_private,
+                                       0 if user_data['silence_end'] - int(time.time()) < 0 else user_data['silence_end'] - int(
+                                           time.time()), is_tourneymode=True)
+                await asyncio.gather(*[
+                    player.parse_friends(),
+                    player.update_stats(),
+                    player.parse_country(request.client.host)
+                ])
+        else:
+            # create Player instance finally!!!!
+            player = Player(int(user_data['id']), user_data['username'], user_data['privileges'],
+                            time_offset, pm_private,
+                            0 if user_data['silence_end'] - int(time.time()) < 0 else user_data['silence_end'] - int(
+                                time.time())
+                            )
+
+            await asyncio.gather(*[
+                player.parse_friends(),
+                player.update_stats(),
+                player.parse_country(request.client.host)
+            ])
 
         start_bytes = bytes(
             await PacketBuilder.UserID(player.id) +
@@ -162,7 +197,7 @@ async def main_handler(request: Request):
             await PacketBuilder.UserPresence(player) +
             await PacketBuilder.UserStats(player) +
             await PacketBuilder.FriendList(player.friends) +
-            await PacketBuilder.SilenceEnd(player.silence_end) +
+            await PacketBuilder.SilenceEnd(player.silence_end if player.silence_end > 0 else 0) +
             await PacketBuilder.Notification(
                 f'''Welcome to kuriso!\nBuild ver: v{Context.version}\nCommit: {Context.commit_id}''')
         )
@@ -174,18 +209,26 @@ async def main_handler(request: Request):
         if Context.bancho_settings['menu_icon']:
             start_bytes += await PacketBuilder.MainMenuIcon(Context.bancho_settings['menu_icon'])
 
-        for p in Context.players.get_all_tokens():
-            start_bytes += bytes(
-                await PacketBuilder.UserPresence(p) +
-                await PacketBuilder.UserStats(p)
-            )
-            p.enqueue(bytes(
-                await PacketBuilder.UserPresence(player) +
-                await PacketBuilder.UserStats(player)
-            ))
+        if isTourney and Context.players.get_token(uid=user_data['id']):
+            logger.klog(f"[{player.token}/{player.name}] Joined kuriso as additional client for origin!")
+            for p in Context.players.get_all_tokens():
+                start_bytes += bytes(
+                    await PacketBuilder.UserPresence(p) +
+                    await PacketBuilder.UserStats(p)
+                )
+        else:
+            for p in Context.players.get_all_tokens():
+                start_bytes += bytes(
+                    await PacketBuilder.UserPresence(p) +
+                    await PacketBuilder.UserStats(p)
+                )
+                p.enqueue(bytes(
+                    await PacketBuilder.UserPresence(player) +
+                    await PacketBuilder.UserStats(player)
+                ))
 
-        Context.players.add_token(player)
-        logger.klog(f"[{player.token}/{player.name}] Joined kuriso!")
+            Context.players.add_token(player)
+            logger.klog(f"[{player.token}/{player.name}] Joined kuriso!")
 
         # default channels to join is #osu, #announce and #english
         await Context.channels['#osu'].join_channel(player)

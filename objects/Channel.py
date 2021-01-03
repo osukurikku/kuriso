@@ -17,7 +17,7 @@ class Channel:
 
     def __init__(self, server_name: str = '', description: str = '', public_read: bool = False,
                  public_write: bool = False, temp_channel: bool = False):
-        self.users: List[int] = []
+        self.users: List['Player'] = []
         # for use this client should be like #osu, #admin, #osu, #specatator, #multiplayer, #lobby and etc.
         # server can store it like #banana, #spec_<id>, #multi_<id> and etc.
         self.server_name: str = server_name
@@ -44,8 +44,7 @@ class Channel:
 
     async def send_message(self, from_id: int, message: 'Message') -> bool:
         # handle channel message
-        receivers = [Context.players.get_token(uid=player) for player in self.users]
-        for receiver in receivers:
+        for receiver in self.users:
             if receiver.id == from_id:
                 continue  # ignore ourself
             receiver.enqueue(
@@ -54,7 +53,7 @@ class Channel:
         return True
 
     async def join_channel(self, p: 'Player') -> bool:
-        if p.id in self.users:
+        if p in self.users:
             p.enqueue(await PacketBuilder.SuccessJoinChannel(self.name))
             return True
 
@@ -65,12 +64,12 @@ class Channel:
 
         # enqueue join channel
         p.enqueue(await PacketBuilder.SuccessJoinChannel(self.name))
-        self.users.append(p.id)
+        self.users.append(p)
         logger.klog(f"[{p.name}] Joined to {self.server_name}")
 
         # now we need update channel stats
         if self.temp_channel:
-            receivers = [Context.players.get_token(uid=uid) for uid in self.users]
+            receivers = self.users
         else:
             receivers = Context.players.get_all_tokens()
         for receiver in receivers:
@@ -80,17 +79,17 @@ class Channel:
         return True
 
     async def leave_channel(self, p: 'Player') -> bool:
-        if p.id not in self.users:
+        if p not in self.users:
             return False
 
         # enqueue leave channel
         p.enqueue(await PacketBuilder.PartChannel(self.name))
-        self.users.pop(self.users.index(p.id))
+        self.users.pop(self.users.index(p))
         logger.klog(f"[{p.name}] Parted from {self.server_name}")
 
         # now we need update channel stats
         if self.temp_channel:
-            receivers = [Context.players.get_token(uid=uid) for uid in self.users]
+            receivers = self.users
         else:
             receivers = Context.players.get_all_tokens()
         for receiver in receivers:

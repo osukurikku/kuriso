@@ -1,6 +1,5 @@
-korcho/kuriso(name in dev)
+Kuriso W.I.P.
 ---
-Шутки про харчу официально принимаются\
 Future bancho of kurikku.pw
 
 TODO:
@@ -16,13 +15,13 @@ TODO:
     * [x] DM
     * [ ] Bot
 - Multiplayer
-    * [ ] Lobby creation
-    * [ ] Lobby updating
-    * [ ] Lobby starting
-    * [ ] Match score updates
+    * [x] Lobby creation
+    * [x] Lobby updating
+    * [x] Lobby starting
+    * [x] Match score updates
 - Tournaments
-    * [ ] Handle osu-tourney
-    * [ ] Handle osu-tourney when it want to spectate user
+    * [x] Handle osu-tourney
+    * [x] Handle osu-tourney when it want to spectate user
 - IRC
     * [ ] IRC server
     * [ ] Handle connections

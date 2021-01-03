@@ -2,6 +2,7 @@ import asyncio
 import asyncio_redis
 import logging
 
+import loops
 import registrator
 from starlette.applications import Starlette
 
@@ -62,9 +63,9 @@ async def main():
     await Context.load_bancho_settings()
     await registrator.load_default_channels()
 
+    # asyncio.ensure_future(loops.clean_timeouts())
     logger.slog(f"[Uvicorn] HTTP server started at {Config.config['host']['address']}:{Config.config['host']['port']}")
-    uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'],
-                log_level=logging.WARNING)
+    uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'], log_level=logging.WARNING)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

@@ -78,7 +78,7 @@ class Player:
 
     def __init__(self, user_id: Union[int], user_name: Union[str],
                  privileges: Union[int], utc_offset: Optional[int] = 0,
-                 pm_private: bool = False, silence_end: int = 0):
+                 pm_private: bool = False, silence_end: int = 0, is_tourneymode: bool = False):
         self.token: str = self.generate_token()
         self.id: int = user_id
         self.name: str = user_name
@@ -104,11 +104,15 @@ class Player:
         self.presence_filter: PresenceFilter = PresenceFilter(1)
         self.bot_np: Optional[dict] = None  # TODO: Beatmap
 
-        self.match: Optional[Match] = None  # TODO: Match
+        self.match: Optional[Match] = None
         self.friends: Union[List[int]] = []  # bot by default xd
 
         self.queue: queue.Queue = queue.Queue()  # main thing
         self.login_time: int = int(time.time())
+        self.last_packet_unix: int = int(time.time())
+
+        self.is_tourneymode: bool = is_tourneymode
+        self.id_tourney: int = -1
 
     @property
     def is_queue_empty(self) -> bool:
@@ -202,14 +206,20 @@ class Player:
     async def logout(self) -> None:
         # logic
         # leave multiplayer
+        if self.match:
+            await self.match.leave_player(self)
         # leave specatating
+        if self.spectating:
+            await self.spectating.remove_spectator(self)
+
         # leave channels
         for (_, chan) in Context.channels.items():
             if self.id in chan.users:
                 await chan.leave_channel(self)
 
-        for p in Context.players.get_all_tokens():
-            p.enqueue(await PacketBuilder.Logout(self.id))
+        if not self.is_tourneymode:
+            for p in Context.players.get_all_tokens():
+                p.enqueue(await PacketBuilder.Logout(self.id))
 
         Context.players.delete_token(self)
         return
@@ -219,8 +229,10 @@ class Player:
         if chan.startswith("#"):
             # this is channel object
             if chan.startswith("#multi"):
-                # TODO: Convert it to #multi_<id>
-                chan = f"#multi_{self.match.id}"
+                if self.is_tourneymode and self.id_tourney > 0:
+                    chan = f"#multi_{self.id_tourney}"
+                else:
+                    chan = f"#multi_{self.match.id}"
             elif chan.startswith("#spec"):
                 if self.spectating:
                     chan = f"#spec_{self.spectating.id}"
@@ -300,6 +312,14 @@ class Player:
         logger.slog(f"{new_spec.name} started to spectating {self.name}!")
         return True
 
+    async def add_hidden_spectator(self, new_spec: 'Player') -> bool:
+        self.spectators.append(new_spec)
+        new_spec.spectating = self
+
+        self.enqueue(await PacketBuilder.SpectatorJoined(new_spec.id))
+        logger.slog(f"{new_spec.name} started to spectating {self.name}!")
+        return True
+
     async def remove_spectator(self, old_spec: 'Player') -> bool:
         spec_chan_name = f"#spec_{self.id}"
         self.spectators.remove(old_spec)  # attempt to remove old player from array
@@ -316,7 +336,15 @@ class Player:
                 spectator.enqueue(fellow_packet)
 
         self.enqueue(await PacketBuilder.SpectatorLeft(old_spec.id))
-        logger.slog(f"{old_spec.name} has stopped spectating for {self.name}")
+        logger.slog(f"{old_spec.name} has stopped hidden spectating for {self.name}")
+        return True
+
+    async def remove_hidden_spectator(self, old_spec: 'Player') -> bool:
+        self.spectators.remove(old_spec)  # attempt to remove old player from array
+        old_spec.spectating = None
+
+        self.enqueue(await PacketBuilder.SpectatorLeft(old_spec.id))
+        logger.slog(f"{old_spec.name} has stopped hidden spectating for {self.name}")
         return True
 
     def enqueue(self, b: bytes) -> None:

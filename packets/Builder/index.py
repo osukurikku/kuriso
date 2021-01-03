@@ -253,10 +253,10 @@ class PacketBuilder:
 
     # bancho response: 26
     @staticmethod
-    async def UpdateMatch(match: 'Match') -> bytes:
+    async def UpdateMatch(match: 'Match', send_pw: bool = True) -> bytes:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_MatchUpdate.value,
-            ((match, True), osuTypes.match)
+            ((match, send_pw), osuTypes.match)
         )
 
     # bancho response: 27

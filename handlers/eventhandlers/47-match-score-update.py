@@ -1,4 +1,5 @@
 from handlers.decorators import OsuEvent
+from objects.constants.Slots import SlotStatus
 from packets.Builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
 
@@ -24,5 +25,5 @@ async def match_change_team(packet_data: bytes, token: 'Player'):
     packet_data[4] = slotInd
 
     score_updated = await PacketBuilder.MultiScoreUpdate(packet_data)
-    await match.enqueue_to_all(score_updated)
+    await match.enqueue_to_specific(score_updated, SlotStatus.Playing)
     return True
