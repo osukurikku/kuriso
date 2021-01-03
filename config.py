@@ -1,6 +1,4 @@
-import io
-import json
-import sys
+import os
 
 
 class Config:
@@ -14,35 +12,26 @@ class Config:
 
     @classmethod
     def load_config(cls):
-        try:
-            config_file = io.open("config.json", "r")
-        except FileNotFoundError:
-            cls.config = {
-                'debug': True,
-                'mysql': {
-                    'host': '127.0.0.1',
-                    'user': 'root',
-                    'password': '',
-                    'database': 'ripple',
-                    'port': 3306
-                },
-                'redis': {
-                    'host': '127.0.0.1',
-                    'port': 6379,
-                    'password': '',
-                    'db': 0
-                },
-                'host': {
-                    'address': '127.0.0.1',
-                    'port': 13371,
-                    'irc_port': 0  # TODO: IRC
-                },
-                'geoloc_ip': 'https://country.kurikku.pw/'
-            }
-            return
-        config_raw = config_file.read()
-        try:
-            cls.config = json.loads(config_raw)
-        except json.decoder.JSONDecodeError:
-            print("Config file is not correct")
-            sys.exit()
+        cls.config = {
+            'debug': os.environ.get('DEBUG', False) in (True, 'True'),
+            'mysql': {
+                'host': os.environ.get("MYSQL_HOST", "127.0.0.1"),
+                'user': os.environ.get("MYSQL_USER", "root"),
+                'password': os.environ.get("MYSQL_PASSWORD", ""),
+                'database': os.environ.get("MYSQL_DB", "ripple"),
+                'port': int(os.environ.get("MYSQL_PORT", '3306'))
+            },
+            'redis': {
+                'host': os.environ.get("REDIS_HOST", "127.0.0.1"),
+                'port': int(os.environ.get("REDIS_PORT", '6379')),
+                'password': os.environ.get("REDIS_PASSWORD", ""),
+                'db': int(os.environ.get("REDIS_DB", '0'))
+            },
+            'host': {
+                'address': os.environ.get("WEB_HOST", '127.0.0.1'),
+                'port': int(os.environ.get("WEB_PORT", '13371')),
+                'irc_port': int(os.environ.get("IRC_PORT", '0'))  # TODO: IRC
+            },
+            'geoloc_ip': os.environ.get("GEOLOC_IP", "https://country.kurikku.pw/")
+        }
+        return

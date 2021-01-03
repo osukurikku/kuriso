@@ -1,6 +1,8 @@
-config.json
 .idea/
 .vscode/
 */__pycache__/
 __pycache__/
 *.log
+
+.env.debug
+.env.release
