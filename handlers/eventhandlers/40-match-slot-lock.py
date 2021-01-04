@@ -28,7 +28,7 @@ async def slot_lock(packet_data: bytes, token: 'Player'):
 
     if slot.status == SlotStatus.Locked:
         slot.status = SlotStatus.Open
-    elif (slot.status & SlotStatus.HasPlayer) > 0:
+    elif slot.status & SlotStatus.HasPlayer:
         slot.mods = Mods.NoMod
         slot.token = None
         slot.status = SlotStatus.Locked

@@ -21,13 +21,22 @@ async def check_login(login: str, password: str, ip: str):
     user_bancho_session_exist = (await Context.redis.exists(f"peppy:sessions:{user['id']}")) or \
                                 (await Context.redis.sismember(f"peppy:sessions:{user['id']}", ip)) if ip else False
     if user_bancho_session_exist:
-        return False
+        await Context.redis.srem(f"peppy:sessions:{user['id']}", [ip])
 
     if len(password) != 32:
         return False
 
     password = password.encode("utf-8")
     db_password = user['password_md5'].encode("utf-8")
+
+    # This is 0.43 ms second login guys
+    #
+    # if password + db_password not in Context.password_cache:
+    #     r = bcrypt.checkpw(password, db_password)
+    #     Context.password_cache[password + db_password] = r
+    #     return r
+    #
+    # return Context.password_cache[password + db_password]
     return bcrypt.checkpw(password, db_password)
 
 
@@ -209,4 +218,14 @@ async def setUserLastOsuVer(user_id: int, osu_ver: str) -> bool:
         "UPDATE users SET osuver = %s WHERE id = %s LIMIT 1",
         [osu_ver, user_id]
     )
+    return True
+
+
+async def saveBanchoSession(user_id: int, ip: str) -> bool:
+    await Context.redis.sadd(f"peppy:sessions:{user_id}", [ip])
+    return True
+
+
+async def deleteBanchoSession(user_id: int, ip: str) -> bool:
+    await Context.redis.srem(f"peppy:sessions:{user_id}", [ip])
     return True

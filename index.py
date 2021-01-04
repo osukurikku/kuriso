@@ -46,6 +46,25 @@ async def main():
     Context.redis = protocol
     logger.slog("[Redis] Connection to Redis established! Well done!")
 
+    logger.slog("[Redis] Removing old information about redis...")
+    try:
+        await Context.redis.set("ripple:online_users", '0')
+        del_keys_lua = '''
+local matches = redis.call('KEYS', ARGV[1])
+
+local result = 0
+for _,key in ipairs(matches) do
+    result = result + redis.call('DEL', key)
+end
+
+return result 
+'''
+        script = await protocol.register_script(del_keys_lua)
+        await script.run(keys=[], args=["peppy:sessions:*"])
+        await script.run(keys=[], args=["peppy:*"])
+    except Exception:
+        logger.elog("[Redis] initiation data ruined... Check this!")
+
     logger.wlog("[MySQL] Making connection to MySQL Database...")
     mysql_pool = AsyncSQLPoolWrapper()
     await mysql_pool.connect(**{
@@ -62,6 +81,12 @@ async def main():
     # now load bancho settings
     await Context.load_bancho_settings()
     await registrator.load_default_channels()
+
+    from bot.bot import CrystalBot
+    # now load bot
+    await CrystalBot.connect()
+    # and register bot commands
+    CrystalBot.load_commands()
 
     # asyncio.ensure_future(loops.clean_timeouts())
     logger.slog(f"[Uvicorn] HTTP server started at {Config.config['host']['address']}:{Config.config['host']['port']}")

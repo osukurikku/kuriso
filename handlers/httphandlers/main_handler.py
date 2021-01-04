@@ -74,6 +74,7 @@ async def main_handler(request: Request):
         # [2] mac addresses hash set
         # [3] unique ID
         # [4] disk ID
+        start_time = time.time()  # auth speed benchmark time
 
         loginData = (await request.body()).decode().split("\n")
         if len(loginData) < 3:
@@ -99,17 +100,17 @@ async def main_handler(request: Request):
             # wtf osu
             await Context.players.get_token(uid=user_data['id']).logout()
 
-        if not (user_data["privileges"] & 3 > 0) and \
-                user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION == 0:
+        if not (user_data["privileges"] & 3) and \
+                (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
             logger.elog(f"[{loginData}] Restricted chmo tried to login")
             response = (await PacketBuilder.UserID(-3) +
                         await PacketBuilder.Notification(
                             'You are restricted/banned. Join our discord for additional information.'))
 
             return BanchoResponse(bytes(response))
-        if (user_data["privileges"] & Privileges.USER_PUBLIC > 0) and \
-                user_data["privileges"] & Privileges.USER_NORMAL == 0 and \
-                user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION == 0:
+        if (user_data["privileges"] & Privileges.USER_PUBLIC) and \
+                (user_data["privileges"] & Privileges.USER_NORMAL) == 0 and \
+                (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
             logger.elog(f"[{loginData}] Locked dude tried to login")
             response = (await PacketBuilder.UserID(-1) +
                         await PacketBuilder.Notification(
@@ -132,7 +133,7 @@ async def main_handler(request: Request):
                                     [user_data['id'], hashes[2], hashes[3], hashes[4]]
                                     )  # log hardware и не ебёт что
 
-        if user_data['privileges'] & Privileges.USER_PENDING_VERIFICATION > 0 or \
+        if (user_data['privileges'] & Privileges.USER_PENDING_VERIFICATION) or \
                 not await userHelper.user_have_hardware(user_data['id']):
             # we need to verify our user
             is_success_verify = await userHelper.activate_user(user_data['id'], user_data['username'], hashes)
@@ -170,7 +171,7 @@ async def main_handler(request: Request):
                 player = TourneyPlayer(int(user_data['id']), user_data['username'], user_data['privileges'],
                                        time_offset, pm_private,
                                        0 if user_data['silence_end'] - int(time.time()) < 0 else user_data['silence_end'] - int(
-                                           time.time()), is_tourneymode=True)
+                                           time.time()), is_tourneymode=True, ip=request.client.host)
                 await asyncio.gather(*[
                     player.parse_friends(),
                     player.update_stats(),
@@ -181,7 +182,7 @@ async def main_handler(request: Request):
             player = Player(int(user_data['id']), user_data['username'], user_data['privileges'],
                             time_offset, pm_private,
                             0 if user_data['silence_end'] - int(time.time()) < 0 else user_data['silence_end'] - int(
-                                time.time())
+                                time.time()), ip=request.client.host
                             )
 
             await asyncio.gather(*[
@@ -190,17 +191,20 @@ async def main_handler(request: Request):
                 player.parse_country(request.client.host)
             ])
 
-        start_bytes = bytes(
-            await PacketBuilder.UserID(player.id) +
-            await PacketBuilder.ProtocolVersion(19) +
-            await PacketBuilder.BanchoPrivileges(player.bancho_privs) +
-            await PacketBuilder.UserPresence(player) +
-            await PacketBuilder.UserStats(player) +
-            await PacketBuilder.FriendList(player.friends) +
-            await PacketBuilder.SilenceEnd(player.silence_end if player.silence_end > 0 else 0) +
-            await PacketBuilder.Notification(
-                f'''Welcome to kuriso!\nBuild ver: v{Context.version}\nCommit: {Context.commit_id}''')
-        )
+        start_bytes_async = await asyncio.gather(*[
+            PacketBuilder.UserID(player.id),
+            PacketBuilder.ProtocolVersion(19),
+            PacketBuilder.BanchoPrivileges(player.bancho_privs),
+            PacketBuilder.UserPresence(player),
+            PacketBuilder.UserStats(player),
+            PacketBuilder.FriendList(player.friends),
+            PacketBuilder.SilenceEnd(player.silence_end if player.silence_end > 0 else 0),
+            PacketBuilder.Notification(
+                f'''Welcome to kuriso!\nBuild ver: v{Context.version}\nCommit: {Context.commit_id}'''),
+            PacketBuilder.Notification(
+                f'Authorization took: {round(time.time() - start_time, 4)}ms')
+        ])
+        start_bytes = b''.join(start_bytes_async)
 
         if bool(Context.bancho_settings['bancho_maintenance']):
             start_bytes += await PacketBuilder.Notification(
@@ -227,13 +231,17 @@ async def main_handler(request: Request):
                     await PacketBuilder.UserStats(player)
                 ))
 
+            await userHelper.saveBanchoSession(player.id, request.client.host)
+
             Context.players.add_token(player)
             logger.klog(f"[{player.token}/{player.name}] Joined kuriso!")
 
         # default channels to join is #osu, #announce and #english
-        await Context.channels['#osu'].join_channel(player)
-        await Context.channels['#announce'].join_channel(player)
-        await Context.channels['#english'].join_channel(player)
+        await asyncio.gather(*[
+            Context.channels['#osu'].join_channel(player),
+            Context.channels['#announce'].join_channel(player),
+            Context.channels['#english'].join_channel(player)
+        ])
 
         for (_, chan) in Context.channels.items():
             if not chan.temp_channel and chan.can_read:

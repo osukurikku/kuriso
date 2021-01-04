@@ -1,6 +1,7 @@
 import queue
 from typing import Union, Optional, Dict, Tuple
 
+from helpers import userHelper
 from objects.Player import Player
 
 
@@ -22,15 +23,16 @@ class TourneyPlayer(Player):
 
     def __init__(self, user_id: Union[int], user_name: Union[str], privileges: Union[int],
                  utc_offset: Optional[int] = 0, pm_private: bool = False, silence_end: int = 0,
-                 is_tourneymode: bool = False):
-        super().__init__(user_id, user_name, privileges, utc_offset, pm_private, silence_end, is_tourneymode)
+                 is_tourneymode: bool = False, ip: str = ''):
+        super().__init__(user_id, user_name, privileges, utc_offset, pm_private, silence_end, is_tourneymode, False, ip)
 
         self.additional_clients: Dict[str, 'Player'] = {}
 
     def add_additional_client(self) -> Tuple[str, 'Player']:
         token = self.generate_token()
         self.additional_clients[token] = Player(self.id, self.name, self.privileges, self.timezone_offset,
-                                                self.pm_private, self.silence_end, self.is_tourneymode)
+                                                self.pm_private, self.silence_end, self.is_tourneymode,
+                                                self.is_bot, self.ip)
         self.additional_clients[token].token = token
         self.additional_clients[token].stats = self.stats
         return token, self.additional_clients[token]
@@ -41,8 +43,12 @@ class TourneyPlayer(Player):
 
         return True
 
-    def enqueue(self, b: bytes) -> None:
-        self.queue.put_nowait(b)
+    async def logout(self) -> None:
+        if self.ip != '':
+            await userHelper.deleteBanchoSession(self.id, self.ip)
+
+        await super().logout()  # super() will ignore ^ delete bancho session
+        return
 
     def dequeue(self) -> Optional[bytes]:
         try:

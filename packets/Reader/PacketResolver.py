@@ -99,7 +99,7 @@ class PacketResolver:
             slot.team = SlotTeams(await buffer.read_byte())
 
         for slot in slots:
-            if (slot.status.value & SlotStatus.HasPlayer.value) > 0:
+            if slot.status.value & SlotStatus.HasPlayer:
                 await buffer.read_int_32()
 
         host_id = await buffer.read_int_32()

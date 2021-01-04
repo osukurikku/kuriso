@@ -26,6 +26,7 @@ class Context:
     redis: asyncio_redis.RedisProtocol = None
 
     bancho_settings: dict = {}
+    # password_cache: Dict[str, bool] = {}
 
     version: str = ""
     commit_id: str = ""

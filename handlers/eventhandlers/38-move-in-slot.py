@@ -23,7 +23,7 @@ async def move_in_slot(packet_data: bytes, token: 'Player'):
         return False
 
     slot = match.slots[slotIndex]
-    if (slot.status & SlotStatus.HasPlayer) > 0 or slot.status == SlotStatus.Locked:
+    if (slot.status & SlotStatus.HasPlayer) or slot.status == SlotStatus.Locked:
         return False
 
     currentSlot = None

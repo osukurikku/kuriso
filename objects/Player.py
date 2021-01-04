@@ -6,6 +6,7 @@ import aiohttp
 
 from blob import Context
 from config import Config
+from helpers import userHelper
 from lib import logger
 from objects.Multiplayer import Match
 from objects.constants import Privileges, Countries
@@ -21,7 +22,7 @@ from objects.Channel import Channel
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from objects.TypedDicts import TypedStats, TypedStatus
+    from objects.TypedDicts import TypedStats
     from objects.BanchoObjects import Message
 
 
@@ -65,7 +66,7 @@ class Status:
         self.mods: Mods = Mods.NoMod
         self.map_id: int = 0
 
-    def update(self, **kwargs: 'TypedStatus'):
+    def update(self, **kwargs):
         self.action = Action(kwargs.get('action', 0))
         self.action_text = kwargs.get('action_text', '')
         self.map_md5 = kwargs.get('map_md5', '')
@@ -78,10 +79,12 @@ class Player:
 
     def __init__(self, user_id: Union[int], user_name: Union[str],
                  privileges: Union[int], utc_offset: Optional[int] = 0,
-                 pm_private: bool = False, silence_end: int = 0, is_tourneymode: bool = False):
+                 pm_private: bool = False, silence_end: int = 0, is_tourneymode: bool = False,
+                 is_bot: bool = False, ip: str = ''):
         self.token: str = self.generate_token()
         self.id: int = user_id
         self.name: str = user_name
+        self.ip = ip
         self.privileges = privileges
         self.selected_game_mode = GameModes.STD
 
@@ -113,6 +116,8 @@ class Player:
 
         self.is_tourneymode: bool = is_tourneymode
         self.id_tourney: int = -1
+
+        self.is_bot = is_bot
 
     @property
     def is_queue_empty(self) -> bool:
@@ -157,7 +162,7 @@ class Player:
         return True
 
     async def parse_country(self, ip: str) -> bool:
-        if (self.privileges & Privileges.USER_DONOR) > 0:
+        if self.privileges & Privileges.USER_DONOR:
             # we need to remember donor have locked location
             donor_location: str = (await Context.mysql.fetch(
                 'select country from users_stats where id = %s',
@@ -204,6 +209,9 @@ class Player:
             self.stats[mode].update(**res)
 
     async def logout(self) -> None:
+        if not self.is_tourneymode:
+            if self.ip != '':
+                await userHelper.deleteBanchoSession(self.id, self.ip)
         # logic
         # leave multiplayer
         if self.match:
@@ -225,6 +233,8 @@ class Player:
         return
 
     async def send_message(self, message: 'Message') -> bool:
+        message.body = f'{message.body[:2045]}...' if message.body[2048:] else message.body
+
         chan: str = message.to
         if chan.startswith("#"):
             # this is channel object
@@ -270,11 +280,10 @@ class Player:
             logger.klog(f'[{self.name}] Tried message {message.to}, but has been silenced.')
             return False
 
-        message.body = f'{message.body[:2045]}...' if message.body[2048:] else message.body
-
         logger.klog(
             f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}"
         )
+
         receiver.enqueue(
             await PacketBuilder.BuildMessage(self.id, message)
         )

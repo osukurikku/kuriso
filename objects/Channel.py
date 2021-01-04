@@ -7,7 +7,6 @@ from packets.Builder.index import PacketBuilder
 from blob import Context
 
 from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
     from objects.BanchoObjects import Message
     from objects.Player import Player
@@ -47,9 +46,12 @@ class Channel:
         for receiver in self.users:
             if receiver.id == from_id:
                 continue  # ignore ourself
+
             receiver.enqueue(
                 await PacketBuilder.BuildMessage(from_id, message)
             )
+
+        message.to = self.server_name
         return True
 
     async def join_channel(self, p: 'Player') -> bool:

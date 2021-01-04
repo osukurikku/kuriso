@@ -34,4 +34,3 @@ class Config:
             },
             'geoloc_ip': os.environ.get("GEOLOC_IP", "https://country.kurikku.pw/")
         }
-        return

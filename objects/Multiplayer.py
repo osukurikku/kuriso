@@ -191,7 +191,7 @@ class Match:
         dudes_who_ready_to_play: List['Player'] = []
 
         for slot in self.slots:
-            if (slot.status & SlotStatus.HasPlayer) > 0 and slot.status != SlotStatus.NoMap:
+            if (slot.status & SlotStatus.HasPlayer) and slot.status != SlotStatus.NoMap:
                 slot.status = SlotStatus.Playing
                 self.need_load += 1
                 dudes_who_ready_to_play.append(slot.token)

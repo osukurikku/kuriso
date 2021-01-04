@@ -53,7 +53,7 @@ async def update_match(data: bytes, token: 'Player'):
     if match.match_freemod != newMatch['match_freemod']:
         if newMatch['match_freemod'] == MultiSpecialModes.Freemod:
             for slot in match.slots:
-                if (slot.status & SlotStatus.HasPlayer) > 0:
+                if slot.status & SlotStatus.HasPlayer:
                     slot.mods = match.mods & ~Mods.SpeedAltering
 
             match.mods &= Mods.SpeedAltering

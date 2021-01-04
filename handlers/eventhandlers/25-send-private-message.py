@@ -1,3 +1,4 @@
+from bot.bot import CrystalBot
 from handlers.decorators import OsuEvent
 from lib import logger
 from objects.BanchoObjects import Message
@@ -17,6 +18,13 @@ async def send_private_message(packet_data: bytes, token: 'Player'):
         return False
 
     message = await PacketResolver.read_message(packet_data)
+    message.client_id = token.id
+    message.sender = token.name
+    if message.to == CrystalBot.bot_name:
+        crystal_answer = await CrystalBot.proceed_command(message)
+        if not crystal_answer:
+            return True  # just ignore it
+
     await token.send_message(Message(
         sender=token.name,
         body=message.body,

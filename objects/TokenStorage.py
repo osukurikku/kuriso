@@ -1,4 +1,4 @@
-from typing import Union, TYPE_CHECKING, Dict
+from typing import Union, TYPE_CHECKING, Dict, List
 
 if TYPE_CHECKING:
     from objects.Player import Player
@@ -63,7 +63,7 @@ class TokenStorage:
         token.token = ''
         return res
 
-    def get_all_tokens(self):
+    def get_all_tokens(self) -> List['Player']:
         normal_tokens = [v for (k, v) in self.store_by_token.items()]  # just return all player instances
         additional_tokens = []
         for (_, user) in self.store_by_token.items():

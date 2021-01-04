@@ -248,7 +248,7 @@ class KorchoBuffer:
             await self.write_byte(slot.team.value)
 
         for slot in match.slots:
-            if (slot.status.value & SlotStatus.HasPlayer.value) > 0:  # if player exists in that slot, add it
+            if slot.status.value & SlotStatus.HasPlayer:  # if player exists in that slot, add it
                 await self.write_int_32(slot.token.id)
 
         await self.write_int_32(match.host.id)  # match -> token (host) -> id

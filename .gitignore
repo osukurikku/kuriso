@@ -5,4 +5,4 @@ __pycache__/
 *.log
 
 .env.debug
-.env.release
+.env.production
