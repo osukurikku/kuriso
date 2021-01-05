@@ -27,6 +27,8 @@ async def update_action(packet_data: bytes, p: 'Player'):
     recvs = [p]
     recvs.extend(p.spectators)
     for user in recvs:
+        if user.is_restricted:
+            continue
         user.enqueue(data)
 
     return True

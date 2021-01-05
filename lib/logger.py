@@ -9,16 +9,17 @@ ENDC = '\033[0m'
 BOLD = '\033[1m'
 UNDERLINE = '\033[4m'
 
-logging.basicConfig(format='[%(asctime)s] %(message)s',
+logging.basicConfig(format=u'[%(asctime)s] %(message)s',
                     filemode='at',
                     filename='kuriso.log',
+
                     level=logging.INFO)
 
 console = logging.StreamHandler()
 console.setLevel(logging.INFO)
-formatter = logging.Formatter('[%(asctime)s] %(message)s')
+formatter = logging.Formatter(u'[%(asctime)s] %(message)s')
 console.setFormatter(formatter)
-logging.getLogger('').addHandler(console)
+logging.getLogger().addHandler(console)
 
 
 def printColored(string: str, color: str):

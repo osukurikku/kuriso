@@ -44,7 +44,7 @@ class TourneyPlayer(Player):
         return True
 
     async def logout(self) -> None:
-        if self.ip != '':
+        if self.ip:
             await userHelper.deleteBanchoSession(self.id, self.ip)
 
         await super().logout()  # super() will ignore ^ delete bancho session

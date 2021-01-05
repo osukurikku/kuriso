@@ -1,12 +1,12 @@
 import queue
 import time
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Dict, Tuple
 import uuid
 import aiohttp
 
 from blob import Context
 from config import Config
-from helpers import userHelper
+from helpers import userHelper, new_utils
 from lib import logger
 from objects.Multiplayer import Match
 from objects.constants import Privileges, Countries
@@ -84,25 +84,25 @@ class Player:
         self.token: str = self.generate_token()
         self.id: int = user_id
         self.name: str = user_name
-        self.ip = ip
-        self.privileges = privileges
-        self.selected_game_mode = GameModes.STD
+        self.ip: str = ip
+        self.privileges: int = privileges
+        self.selected_game_mode: GameModes = GameModes.STD
 
-        self.stats: dict = {mode: StatsMode() for mode in GameModes}  # setup dictionary with stats
+        self.stats: Dict[GameModes, StatsMode] = {mode: StatsMode() for mode in GameModes}  # setup dictionary with stats
         self.pr_status: Status = Status()
 
         self.spectators: List[Player] = []
         self.spectating: Optional[Player] = None
 
-        self.country = (0, 'XX')
-        self.location = (0.0, 0.0)
-        self.timezone = 24 + utc_offset
-        self.timezone_offset = utc_offset
+        self.country: Tuple[int, str] = (0, 'XX')
+        self.location: Tuple[float, float] = (0.0, 0.0)
+        self.timezone: int = 24 + utc_offset
+        self.timezone_offset: int = utc_offset
 
-        self.pm_private = pm_private  # Как я понял, это типо только друзья могут писать
+        self.pm_private: bool = pm_private  # Как я понял, это типо только друзья могут писать
         self.friends: Union[List[int]] = []
         self.away_msg: Optional[str] = None
-        self.silence_end = silence_end
+        self.silence_end: int = silence_end
 
         self.presence_filter: PresenceFilter = PresenceFilter(1)
         self.bot_np: Optional[dict] = None  # TODO: Beatmap
@@ -117,7 +117,7 @@ class Player:
         self.is_tourneymode: bool = is_tourneymode
         self.id_tourney: int = -1
 
-        self.is_bot = is_bot
+        self.is_bot: bool = is_bot
 
     @property
     def is_queue_empty(self) -> bool:
@@ -126,6 +126,14 @@ class Player:
     @property
     def silenced(self) -> bool:
         return self.silence_end > 0
+
+    @property
+    def safe_name(self) -> str:
+        return self.name.lower().strip().replace(" ", "_")
+
+    @property
+    def is_restricted(self) -> bool:
+        return bool((self.privileges & Privileges.USER_NORMAL) and not (self.privileges & Privileges.USER_PUBLIC))
 
     @property
     def bancho_privs(self) -> BanchoRanks:
@@ -143,6 +151,15 @@ class Player:
             privs |= BanchoRanks.PEPPY
 
         return privs
+
+    @property
+    def is_admin(self) -> bool:
+        if (self.privileges & KurikkuPrivileges.Developer) == KurikkuPrivileges.Developer or \
+                (self.privileges & KurikkuPrivileges.ChatMod) == KurikkuPrivileges.ChatMod or \
+                (self.privileges & KurikkuPrivileges.CM) == KurikkuPrivileges.CM:
+            return True
+
+        return False
 
     @property
     def current_stats(self) -> StatsMode:
@@ -210,7 +227,7 @@ class Player:
 
     async def logout(self) -> None:
         if not self.is_tourneymode:
-            if self.ip != '':
+            if self.ip:
                 await userHelper.deleteBanchoSession(self.id, self.ip)
         # logic
         # leave multiplayer
@@ -231,6 +248,41 @@ class Player:
 
         Context.players.delete_token(self)
         return
+
+    async def kick(self, message: str = "You have been kicked from the server. Please login again.",
+                   reason: str = "kick") -> bool:
+        if self.is_bot:
+            return False
+
+        logger.wlog(f"[Player/{self.name}] has been disconnected. {reason}")
+        if message:
+            self.enqueue(await PacketBuilder.Notification(message))
+        self.enqueue(await PacketBuilder.UserID(-1))  # login failed
+
+        await self.logout()
+        return True
+
+    # legacy code
+    async def silence(self, seconds: int = None, reason: str = "", author: int = 999) -> bool:
+        if seconds is None:
+            # Get silence expire from db if needed
+            seconds = max(0, await new_utils.getSilenceEnd(self.id) - int(time.time()))
+        else:
+            # Silence in db and token
+            await userHelper.silence(self.id, seconds, reason, author)
+
+        # Silence token
+        self.silence_end = int(time.time()) + seconds
+
+        # Send silence packet to user
+        self.enqueue(await PacketBuilder.SilenceEnd(seconds))
+
+        # Send silenced packet to everyone else
+        user_silenced = await PacketBuilder.UserSilenced(self.id)
+        for user in Context.players.get_all_tokens():
+            user.enqueue(user_silenced)
+
+        return True
 
     async def send_message(self, message: 'Message') -> bool:
         message.body = f'{message.body[:2045]}...' if message.body[2048:] else message.body
@@ -261,7 +313,7 @@ class Player:
             return True
 
         # DM
-        receiver = Context.players.get_token(name=message.to)
+        receiver = Context.players.get_token(name=message.to.lower())
         if not receiver:
             logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
             return False

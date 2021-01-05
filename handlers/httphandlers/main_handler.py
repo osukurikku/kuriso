@@ -2,6 +2,7 @@ import asyncio
 import time
 import datetime
 
+from bot.bot import CrystalBot
 from lib import logger
 from starlette.requests import Request
 from starlette.responses import HTMLResponse
@@ -18,11 +19,21 @@ from packets.OsuPacketID import OsuPacketID
 from packets.Reader.index import KorchoBuffer
 from helpers import userHelper
 
+ALLOWED_RESTRICT_PACKETS = [
+    OsuPacketID.Client_Exit.value,
+    OsuPacketID.Client_UserStatsRequest.value,
+    OsuPacketID.Client_RequestStatusUpdate.value,
+    OsuPacketID.Client_UserPresenceRequest.value,
+    OsuPacketID.Client_SendUserStatus.value,
+    OsuPacketID.Client_ChannelJoin.value,
+    OsuPacketID.Client_ChannelLeave.value,
+]  # these packets available in restrict mode
+
 
 @HttpEvent.register_handler("/", methods=['GET', 'POST'])
 async def main_handler(request: Request):
     if request.headers.get("user-agent", "") != "osu!":
-        return HTMLResponse("<html><h1>HEY BRO NICE DICK</h1></html>")
+        return HTMLResponse(f"<html>{Context.motd_html}</html>")
 
     token = request.headers.get("osu-token", None)
     if token:
@@ -35,6 +46,8 @@ async def main_handler(request: Request):
             # send to re-login, because token doesn't exists in storage
             response = await PacketBuilder.UserID(-5)
             return BanchoResponse(response)
+
+        token_object.last_packet_unix = int(time.time())
 
         # packets recieve
         raw_bytes = KorchoBuffer(None)
@@ -50,6 +63,10 @@ async def main_handler(request: Request):
                 # client just spamming it and tries to say, that he is normal :sip:
                 continue
 
+            if token_object.is_restricted and packet_id not in ALLOWED_RESTRICT_PACKETS:
+                logger.wlog(f"[{token_object.token}/{token_object.name}] Ignored packet {packet_id}(account in restricted)")
+                continue
+
             data = await raw_bytes.slice_buffer(packet_length)
             if packet_id in OsuEvent.handlers:
                 # This packet can be handled by OsuEvent Class, call it now!
@@ -63,7 +80,6 @@ async def main_handler(request: Request):
         while not token_object.is_queue_empty:
             response += token_object.dequeue()
 
-        token_object.last_packet_unix = int(time.time())
         response = BanchoResponse(bytes(response), token=token_object.token)
         return response
     else:
@@ -102,10 +118,10 @@ async def main_handler(request: Request):
 
         if not (user_data["privileges"] & 3) and \
                 (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
-            logger.elog(f"[{loginData}] Restricted chmo tried to login")
+            logger.elog(f"[{loginData}] Banned chmo tried to login")
             response = (await PacketBuilder.UserID(-3) +
                         await PacketBuilder.Notification(
-                            'You are restricted/banned. Join our discord for additional information.'))
+                            'You are banned. Join our discord for additional information.'))
 
             return BanchoResponse(bytes(response))
         if (user_data["privileges"] & Privileges.USER_PUBLIC) and \
@@ -216,12 +232,18 @@ async def main_handler(request: Request):
         if isTourney and Context.players.get_token(uid=user_data['id']):
             logger.klog(f"[{player.token}/{player.name}] Joined kuriso as additional client for origin!")
             for p in Context.players.get_all_tokens():
+                if p.is_restricted:
+                    continue
+
                 start_bytes += bytes(
                     await PacketBuilder.UserPresence(p) +
                     await PacketBuilder.UserStats(p)
                 )
         else:
             for p in Context.players.get_all_tokens():
+                if p.is_restricted:
+                    continue
+
                 start_bytes += bytes(
                     await PacketBuilder.UserPresence(p) +
                     await PacketBuilder.UserStats(p)
@@ -248,5 +270,12 @@ async def main_handler(request: Request):
                 start_bytes += await PacketBuilder.ChannelAvailable(chan)
 
         start_bytes += await PacketBuilder.ChannelListeningEnd()
+
+        if player.is_restricted:
+            start_bytes += await PacketBuilder.UserRestricted()
+            await CrystalBot.ez_message(
+                player.safe_name,
+                "Your account is currently in restricted mode. Please visit kurikku's website for more information."
+            )
 
         return BanchoResponse(start_bytes, player.token)

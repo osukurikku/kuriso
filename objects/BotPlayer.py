@@ -105,7 +105,7 @@ class BotPlayer(Player):
             return True
 
         # DM
-        receiver = Context.players.get_token(name=message.to)
+        receiver = Context.players.get_token(name=message.to.lower())
         if not receiver:
             logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
             return False
@@ -118,20 +118,26 @@ class BotPlayer(Player):
         )
         return True
 
-    async def add_spectator(self, *_, **__) -> bool:
+    async def kick(self, *_) -> bool:
         return True
 
-    async def add_hidden_spectator(self, *_, **__) -> bool:
+    async def silence(self, *_) -> bool:
         return True
 
-    async def remove_spectator(self, *_, **__) -> bool:
+    async def add_spectator(self, *_) -> bool:
         return True
 
-    async def remove_hidden_spectator(self, *_, **__) -> bool:
+    async def add_hidden_spectator(self, *_) -> bool:
         return True
 
-    def enqueue(self, *_, **__):
+    async def remove_spectator(self, *_) -> bool:
+        return True
+
+    async def remove_hidden_spectator(self, *_) -> bool:
+        return True
+
+    def enqueue(self, *_):
         return
 
-    def dequeue(self, *_, **__) -> bytes:
+    def dequeue(self, *_) -> bytes:
         return b''

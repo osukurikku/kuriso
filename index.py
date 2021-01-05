@@ -2,6 +2,8 @@ import asyncio
 import asyncio_redis
 import logging
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+
 import loops
 import registrator
 from starlette.applications import Starlette
@@ -28,6 +30,7 @@ async def main():
     # load version
     Context.load_version()
     logger.klog(f"Hey! Starting kuriso! v{Context.version} (commit-id: {Context.commit_id})")
+    logger.printColored(open("kuriso.MOTD", mode="r", encoding="utf-8").read(), logger.YELLOW)
 
     # Load all events & handlers
     registrator.load_handlers(app)
@@ -88,7 +91,14 @@ return result
     # and register bot commands
     CrystalBot.load_commands()
 
-    # asyncio.ensure_future(loops.clean_timeouts())
+    logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
+
+    scheduler = AsyncIOScheduler()
+    scheduler.start()
+    scheduler.add_job(loops.clean_timeouts, "interval", seconds=60)
+
+    Context.load_motd()
+
     logger.slog(f"[Uvicorn] HTTP server started at {Config.config['host']['address']}:{Config.config['host']['port']}")
     uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'], log_level=logging.WARNING)
 

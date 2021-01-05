@@ -107,10 +107,10 @@ async def remove_from_leaderboard(user_id: int) -> bool:
     tasks = []
     for mode in ["std", "taiko", "ctb", "mania"]:
         # я не буду это трогать, тк подозреваю, что оно там всё хранится в стрингАх
-        tasks.append(Context.redis.zrem("ripple:leaderboard:{}".format(mode), str(user_id)))
+        tasks.append(Context.redis.zrem("ripple:leaderboard:{}".format(mode), [str(user_id)]))
         # этож надо было сравнивать длину, когда у нативтайпа всегда будет False, если объект пустой *кхм-кхм*
         if country and country != "xx":
-            tasks.append(Context.redis.zrem("ripple:leaderboard:{}:{}".format(mode, country), str(user_id)))
+            tasks.append(Context.redis.zrem("ripple:leaderboard:{}:{}".format(mode, country), [str(user_id)]))
 
     await asyncio.gather(*tasks)  # запускаем это в асинхрон, потому что меня не ебёт
     return True
@@ -124,22 +124,31 @@ async def ban(user_id: int) -> bool:
     )
 
     # Notify our ban handler about the ban
-    await Context.redis.publish("peppy:ban", user_id)
+    await Context.redis.publish("peppy:ban", str(user_id))
     # Remove the user from global and country leaderboards
     await remove_from_leaderboard(user_id)
     return True
 
 
+async def unban(user_id: int) -> bool:
+    await Context.mysql.execute(
+        "UPDATE users SET privileges = privileges | %s, ban_datetime = 0 WHERE id = %s LIMIT 1",
+        [(Privileges.USER_NORMAL | Privileges.USER_PUBLIC), user_id]
+    )
+    await Context.redis.publish("peppy:ban", str(user_id))
+    return True
+
+
 async def restrict(user_id: int) -> bool:
     user = await get_start_user_id(user_id)
-    if not ((user["privileges"] & Privileges.USER_NORMAL) and (user["privileges"] & Privileges.USER_PUBLIC)):
+    if not ((user["privileges"] & Privileges.USER_NORMAL) and not (user["privileges"] & Privileges.USER_PUBLIC)):
         ban_datetime = int(time.time())
         await Context.mysql.execute(
             'update users set privileges = privileges & %s, ban_datetime = %s where id = %s LIMIT 1',
             [~Privileges.USER_PUBLIC, ban_datetime, user_id]
         )
 
-        await Context.redis.publish("peppy:ban", user_id)  # а вот тут передаётся integer, вот какого чёрта
+        await Context.redis.publish("peppy:ban", str(user_id))  # а вот тут передаётся integer, вот какого чёрта
         await remove_from_leaderboard(user_id)
 
     return True
@@ -228,4 +237,41 @@ async def saveBanchoSession(user_id: int, ip: str) -> bool:
 
 async def deleteBanchoSession(user_id: int, ip: str) -> bool:
     await Context.redis.srem(f"peppy:sessions:{user_id}", [ip])
+    return True
+
+
+async def log_rap(user_id: int, message: str, through: str = "Crystal"):
+    await Context.mysql.execute(
+        "INSERT INTO rap_logs (id, userid, text, datetime, through) VALUES (NULL, %s, %s, %s, %s)",
+        [user_id, message, int(time.time()), through]
+    )
+    return True
+
+
+async def getSilenceEnd(id: int) -> int:
+    return (await Context.mysql.fetch(
+        "SELECT silence_end FROM users WHERE id = %s LIMIT 1",
+        [id]
+    ))["silence_end"]
+
+
+async def silence(user_id: int, seconds: int, silence_reason: str, author: int = 999) -> bool:
+    # db qurey
+    silenceEndTime = int(time.time()) + seconds
+    await Context.mysql.execute(
+        "UPDATE users SET silence_end = %s, silence_reason = %s WHERE id = %s LIMIT 1",
+        [silenceEndTime, silence_reason, user_id]
+    )
+
+    # Log
+    targetUsername = await get_username(user_id)
+    if not targetUsername:
+        return False
+
+    if seconds > 0:
+        await log_rap(author, "has silenced {} for {} seconds for the following reason: \"{}\""
+                      .format(targetUsername, seconds, silence_reason))
+    else:
+        await log_rap(author, "has removed {}'s silence".format(targetUsername))
+
     return True

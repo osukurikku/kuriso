@@ -22,6 +22,9 @@ class Context:
     matches: Dict[int, 'Match'] = {}  # TODO: Union with matches
     matches_id: int = 1  # default value when bancho is up!
 
+    motd: str = ""
+    motd_html: str = ""
+
     mysql: AsyncSQLPoolWrapper = None
     redis: asyncio_redis.RedisProtocol = None
 
@@ -53,5 +56,16 @@ class Context:
 
         menu_icon = await cls.mysql.fetch("select file_id, url from main_menu_icons where is_current = 1 limit 1")
         if menu_icon:
+            menu_icon['file_id'] = "cPYDfc20fWIdyIwXVBl8P6kdTXAIDQMU"
             image_url = f"https://i.kurikku.pw/{menu_icon['file_id']}.png"
             cls.bancho_settings['menu_icon'] = f"{image_url}|{menu_icon['url']}"
+
+    @classmethod
+    def load_motd(cls):
+        motd_file = open("kuriso.MOTD", "r", encoding="utf-8")
+        cls.motd = motd_file.read()
+        motd_file.close()
+
+        motd_file = open("kuriso.HTTP", "r", encoding="utf-8")
+        cls.motd_html = motd_file.read()
+        motd_file.close()

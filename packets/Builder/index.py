@@ -341,3 +341,18 @@ class PacketBuilder:
             OsuPacketID.Bancho_MatchPlayerFailed.value,
             (slot_ind, osuTypes.int16),
         )
+
+    # bancho response: 94
+    @staticmethod
+    async def UserSilenced(user_id: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_UserSilenced.value,
+            (user_id, osuTypes.u_int32)
+        )
+
+    # bancho response: 104
+    @staticmethod
+    async def UserRestricted() -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_AccountRestricted.value
+        )

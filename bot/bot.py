@@ -1,17 +1,17 @@
 import asyncio
 import os
+import shlex
 import sys
 import time
 import traceback
 from typing import Callable, Dict, List, TYPE_CHECKING, Optional, Union
 
-from objects.BanchoObjects import Message
 from blob import Context
 from lib import logger
+from objects.BanchoObjects import Message
+from objects.BotPlayer import BotPlayer
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from packets.Builder.index import PacketBuilder
-import shlex
-from objects.BotPlayer import BotPlayer
 
 if TYPE_CHECKING:
     from objects.Player import Player
@@ -73,7 +73,6 @@ class CrystalBot:
 
         for file in folder_files:
             if file.endswith(".py"):
-                logger.slog(f"[Bot commands] command with {file} loaded! ")
                 sys.path.insert(0, f"bot/commands/{file}")
                 __import__(os.path.splitext(file)[0], None, None, [''])
 
@@ -93,6 +92,8 @@ class CrystalBot:
             for alias in aliases:
                 cls.commands[alias] = func
 
+            logger.slog(f"[Bot commands] command {command} (aliases: {aliases}) loaded! ")
+
         return wrapper
 
     @classmethod
@@ -103,7 +104,7 @@ class CrystalBot:
 
         def wrapper(func: Callable):
             async def wrapper_func(args: List[str], player: 'Player') -> str:
-                if (need_perms.value & player.privileges) != need_perms.value:
+                if (player.privileges & need_perms) == need_perms:
                     return await func(args, player)
                 else:
                     return ""
@@ -147,20 +148,28 @@ class CrystalBot:
         except Exception:
             logger.elog(f"[Bot] {sender.name} with {comand} crashed {args}")
             traceback.print_exc()
-
-        msg_to_send = None
-        if not result:
-            msg_to_send = Message(
+            return await cls.token.send_message(Message(
                 sender=cls.token.name,
                 body='Command crashed, write to KotRik!!!',
                 to=message.sender,
                 client_id=cls.token.id
-            )
-        else:
-            msg_to_send = Message(sender=cls.token.name,
-                                  body=result,
-                                  to=message.to if message.to.startswith("#") else message.sender,
-                                  client_id=cls.token.id)
+            ))
 
-        await cls.token.send_message(msg_to_send)
+        if result:
+            await cls.token.send_message(Message(sender=cls.token.name,
+                                                 body=result,
+                                                 to=message.to if message.to.startswith("#") else message.sender,
+                                                 client_id=cls.token.id))
         return True
+
+    @classmethod
+    async def ez_message(cls, to: str = None, message: str = None, is_public: bool = True):
+        if not to or not message:
+            return False
+
+        return await cls.token.send_message(Message(
+            sender=cls.token.name,
+            body=message,
+            to=to,
+            client_id=cls.token.id
+        ))

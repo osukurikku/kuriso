@@ -16,12 +16,12 @@ class TokenStorage:
     def add_token(self, player: 'Player') -> bool:
         if player.id in self.store_by_id or \
                 player.token in self.store_by_token or \
-                player.name in self.store_by_name:
+                player.safe_name in self.store_by_name:
             return False
 
         self.store_by_token[player.token] = player
         self.store_by_id[player.id] = player
-        self.store_by_name[player.name] = player
+        self.store_by_name[player.safe_name] = player
         return True
 
     def get_token(self, uid: int = None, token: str = None, name: str = None) -> Union[Union['Player', 'TourneyPlayer'],
@@ -55,20 +55,21 @@ class TokenStorage:
 
         if (token.id not in self.store_by_id or
                 token.token not in self.store_by_token or
-                token.name not in self.store_by_name):
+                token.safe_name not in self.store_by_name):
             return False
 
         res = (self.store_by_token.pop(token.token, False) and self.store_by_id.pop(token.id, False) and
-               self.store_by_name.pop(token.name, False))
+               self.store_by_name.pop(token.safe_name, False))
         token.token = ''
         return res
 
-    def get_all_tokens(self) -> List['Player']:
+    def get_all_tokens(self, ignore_tournament_clients: bool = False) -> List['Player']:
         normal_tokens = [v for (k, v) in self.store_by_token.items()]  # just return all player instances
         additional_tokens = []
-        for (_, user) in self.store_by_token.items():
-            if hasattr(user, "additional_clients"):
-                additional_tokens.extend([token for (_, token) in user.additional_clients.items()])
+        if not ignore_tournament_clients:
+            for (_, user) in self.store_by_token.items():
+                if hasattr(user, "additional_clients"):
+                    additional_tokens.extend([token for (_, token) in user.additional_clients.items()])
 
         normal_tokens.extend(additional_tokens)
         return normal_tokens

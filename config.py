@@ -32,5 +32,8 @@ class Config:
                 'port': int(os.environ.get("WEB_PORT", '13371')),
                 'irc_port': int(os.environ.get("IRC_PORT", '0'))  # TODO: IRC
             },
-            'geoloc_ip': os.environ.get("GEOLOC_IP", "https://country.kurikku.pw/")
+            'geoloc_ip': os.environ.get("GEOLOC_IP", "https://country.kurikku.pw/"),
+            'pprapi_token': os.environ.get("PPRAPI_TOKEN", ""),
+            'crystalbot_api': os.environ.get("CRYSTALBOT_API", ""),
+            'crystalbot_token': os.environ.get("CRYSTALBOT_TOKEN", "")
         }
