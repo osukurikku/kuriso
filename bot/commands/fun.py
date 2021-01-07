@@ -1,3 +1,4 @@
+import json
 import math
 import random
 from typing import List, TYPE_CHECKING, Any
@@ -8,6 +9,7 @@ from blob import Context
 from bot.bot import CrystalBot
 from config import Config
 from helpers import new_utils
+from objects.constants import Privileges, Countries
 from objects.constants.GameModes import GameModes
 
 if TYPE_CHECKING:
@@ -20,7 +22,7 @@ async def test_command(*_):
 
 
 @CrystalBot.register_command("!roll")
-async def roll(args: List[Any], player: 'Player'):
+async def roll(args: List[Any], player: 'Player', _):
     max_points = 100
     if args:
         if args[0].isdigit() and int(args[0]) > 0:
@@ -31,7 +33,7 @@ async def roll(args: List[Any], player: 'Player'):
 
 
 @CrystalBot.register_command("!recommend")
-async def recommend(_, player: 'Player'):
+async def recommend(_, player: 'Player', __):
     stats = player.stats[GameModes.STD]
 
     params = {
@@ -66,7 +68,7 @@ async def recommend(_, player: 'Player'):
 
 
 @CrystalBot.register_command("!stats", aliases=['!st'])
-async def user_stats(args: List[Any], player: 'Player'):
+async def user_stats(args: List[Any], player: 'Player', _):
     mode = GameModes(0)
     if len(args) < 1:
         nickname = player.name
@@ -98,3 +100,42 @@ async def user_stats(args: List[Any], player: 'Player'):
         f"Total score: {new_utils.humanize(stats.total_score)}\n"
         f"PP count: {new_utils.humanize(stats.pp)}"
     )
+
+
+@CrystalBot.register_command("!flag")
+@CrystalBot.check_perms(need_perms=Privileges.USER_DONOR)
+async def flag_change_donor(args: List[Any], player: 'Player', _):
+    if not args:
+        return 'Enter country in ISO format. Google it, if you dont know what is this'
+
+    flag = Countries.get_country_id(args[0].upper())
+    if not flag:
+        return "Unknowing flag"
+
+    await Context.mysql.execute(
+        "UPDATE users_stats SET country = %s WHERE id = %s",
+        [args[0].upper(), player.id]
+    )
+
+    await player.parse_country(player.ip)
+    return "Your flag is changed"
+
+
+@CrystalBot.register_command("!clantop")
+async def clantop(args: List[Any], player: 'Player', _):
+    if not args:
+        return 'Enter in format: <on/off>'
+
+    status = args[0].lower() == "on"
+
+    user_settings = await Context.redis.get(f"kr:user_settings:{player.id}")
+    if not user_settings:
+        user_settings = {
+            'clan_top_enabled': status
+        }
+    else:
+        user_settings = json.loads(user_settings)
+        user_settings['clan_top_enabled'] = status
+
+    await Context.redis.set(f'kr:user_settings:{player.id}', json.dumps(user_settings))
+    return f"Okay, you switch this feature to: {status}. This feature replace Top Country to Top Clans"

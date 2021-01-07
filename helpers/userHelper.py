@@ -7,6 +7,13 @@ import bcrypt
 from blob import Context
 from lib import logger
 from objects.constants import Privileges
+from functools import lru_cache
+
+
+@lru_cache(maxsize=64)
+def check_pw(password: bytes, db_password: bytes) -> bool:
+    """Just wondering how it will work"""
+    return bcrypt.checkpw(password, db_password)
 
 
 async def check_login(login: str, password: str, ip: str):
@@ -29,15 +36,7 @@ async def check_login(login: str, password: str, ip: str):
     password = password.encode("utf-8")
     db_password = user['password_md5'].encode("utf-8")
 
-    # This is 0.43 ms second login guys
-    #
-    # if password + db_password not in Context.password_cache:
-    #     r = bcrypt.checkpw(password, db_password)
-    #     Context.password_cache[password + db_password] = r
-    #     return r
-    #
-    # return Context.password_cache[password + db_password]
-    return bcrypt.checkpw(password, db_password)
+    return check_pw(password, db_password)
 
 
 async def get_start_user(login: str) -> Union[None, dict]:
@@ -248,10 +247,10 @@ async def log_rap(user_id: int, message: str, through: str = "Crystal"):
     return True
 
 
-async def getSilenceEnd(id: int) -> int:
+async def getSilenceEnd(user_id: int) -> int:
     return (await Context.mysql.fetch(
         "SELECT silence_end FROM users WHERE id = %s LIMIT 1",
-        [id]
+        [user_id]
     ))["silence_end"]
 
 

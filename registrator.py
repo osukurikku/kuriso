@@ -39,6 +39,9 @@ async def load_default_channels():
     async for channel in Context.mysql.iterall(
             "select name as server_name, description, public_read, public_write from bancho_channels"
     ):
+        if channel['server_name'] in Context.channels:
+            continue
+
         Context.channels[channel['server_name']] = Channel(**channel)
 
         logger.slog(f"[Channels] Create channel {channel['server_name']}")

@@ -253,11 +253,11 @@ countryCodes = {
 }
 
 
-def get_country_id(code):
+def get_country_id(code: str) -> int:
     return countryCodes.get(code, 0)
 
 
-def get_country_letters(code):
+def get_country_letters(code: int) -> str:
     for key, value in countryCodes.items():
         if value == code:
             return key

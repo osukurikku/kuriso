@@ -5,6 +5,7 @@ from typing import Dict
 
 from lib import AsyncSQLPoolWrapper
 import asyncio_redis
+import time
 import git
 
 from objects.TokenStorage import TokenStorage
@@ -29,10 +30,11 @@ class Context:
     redis: asyncio_redis.RedisProtocol = None
 
     bancho_settings: dict = {}
-    # password_cache: Dict[str, bool] = {}
 
     version: str = ""
     commit_id: str = ""
+
+    start_time: int = int(time.time())
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):
@@ -56,7 +58,6 @@ class Context:
 
         menu_icon = await cls.mysql.fetch("select file_id, url from main_menu_icons where is_current = 1 limit 1")
         if menu_icon:
-            menu_icon['file_id'] = "cPYDfc20fWIdyIwXVBl8P6kdTXAIDQMU"
             image_url = f"https://i.kurikku.pw/{menu_icon['file_id']}.png"
             cls.bancho_settings['menu_icon'] = f"{image_url}|{menu_icon['url']}"
 

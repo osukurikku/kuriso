@@ -76,7 +76,7 @@ class Channel:
             receivers = Context.players.get_all_tokens()
         for receiver in receivers:
             receiver.enqueue(
-                await PacketBuilder.UpdateChannelInfo(self)
+                await PacketBuilder.ChannelAvailable(self)
             )
         return True
 
@@ -96,7 +96,7 @@ class Channel:
             receivers = Context.players.get_all_tokens()
         for receiver in receivers:
             receiver.enqueue(
-                await PacketBuilder.UpdateChannelInfo(self)
+                await PacketBuilder.ChannelAvailable(self)
             )
 
         if len(self.users) < 1 and self.temp_channel:

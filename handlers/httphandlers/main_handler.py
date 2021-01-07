@@ -48,6 +48,7 @@ async def main_handler(request: Request):
             return BanchoResponse(response)
 
         token_object.last_packet_unix = int(time.time())
+        print("unix stamp updated")
 
         # packets recieve
         raw_bytes = KorchoBuffer(None)
@@ -63,11 +64,12 @@ async def main_handler(request: Request):
                 # client just spamming it and tries to say, that he is normal :sip:
                 continue
 
+            data = await raw_bytes.slice_buffer(packet_length)
+
             if token_object.is_restricted and packet_id not in ALLOWED_RESTRICT_PACKETS:
-                logger.wlog(f"[{token_object.token}/{token_object.name}] Ignored packet {packet_id}(account in restricted)")
+                logger.wlog(f"[{token_object.token}/{token_object.name}] Ignored packet {packet_id}(account restrict)")
                 continue
 
-            data = await raw_bytes.slice_buffer(packet_length)
             if packet_id in OsuEvent.handlers:
                 # This packet can be handled by OsuEvent Class, call it now!
                 # Oh wait let go this thing in async executor.

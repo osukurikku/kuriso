@@ -99,12 +99,17 @@ class Match:
         return True
 
     async def update_match(self) -> bool:
+        asked = []
         info_packet = await PacketBuilder.UpdateMatch(self)
         for user in self.channel.users:
+            asked.append(user.id)
             user.enqueue(info_packet)
 
         info_packet_for_foreign = await PacketBuilder.UpdateMatch(self, False)
         for user in Context.channels.get("#lobby").users:
+            if user.id in asked:
+                continue  # we send this packet already
+
             user.enqueue(info_packet_for_foreign)
 
         return True

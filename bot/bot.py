@@ -103,11 +103,11 @@ class CrystalBot:
         """
 
         def wrapper(func: Callable):
-            async def wrapper_func(args: List[str], player: 'Player') -> str:
+            async def wrapper_func(args: List[str], player: 'Player', message: 'Message') -> str:
                 if (player.privileges & need_perms) == need_perms:
-                    return await func(args, player)
-                else:
-                    return ""
+                    return await func(args, player, message)
+
+                return ""
 
             return wrapper_func
 
@@ -122,14 +122,18 @@ class CrystalBot:
         if not sender:
             return False
 
-        text_sheet = shlex.split(message.body.replace("'", "\\'").replace('"', '\\"'), posix=True)
-        comand = text_sheet[0]
-        args = text_sheet[1:]
+        message.body = message.body.strip()
+        cmd, func_command = None, None
+        for (k, func) in cls.commands.items():
+            if message.body.startswith(k):
+                cmd, func_command = k, func
+                break
 
-        func_comand = cls.commands.get(comand, None)
-        if not func_comand:
-            logger.printColored(f"[Bot] {sender.name} trying to call unknown command {comand}", logger.PINK)
+        if not cmd:
             return False
+
+        comand = cmd
+        args = shlex.split(message.body[len(cmd):].replace("'", "\\'").replace('"', '\\"'), posix=True)
 
         cdUser = cls.cd.get(sender.id, None)
         nowTime = int(time.time())
@@ -144,7 +148,7 @@ class CrystalBot:
 
         result = None
         try:
-            result = await func_comand(args, sender)
+            result = await func_command(args, sender, message)
         except Exception:
             logger.elog(f"[Bot] {sender.name} with {comand} crashed {args}")
             traceback.print_exc()

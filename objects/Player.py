@@ -118,6 +118,15 @@ class Player:
         self.id_tourney: int = -1
 
         self.is_bot: bool = is_bot
+        self.tillerino: List[Union[int, Mods]] = [0, Mods(0)]  # 1 - map id, 2 - current_mods <- legacy code
+        self.user_chat_log: List['Message'] = []
+
+    @property
+    def get_formatted_chatlog(self):
+        return "\n".join(
+            f"{time.strftime('%H:%M', time.localtime(message.when))} - {self.name}@{message.to}: {message.body[:50]}"
+            for message in self.user_chat_log
+        )
 
     @property
     def is_queue_empty(self) -> bool:
@@ -306,6 +315,7 @@ class Player:
                 logger.klog(f"[{self.name}] Tried to send message in unknown channel. Ignoring it...")
                 return False
 
+            self.user_chat_log.append(message)
             logger.klog(
                 f"{self.name}({self.id}) -> {channel.server_name}: {bytes(message.body, 'latin_1').decode()}"
             )
@@ -332,6 +342,7 @@ class Player:
             logger.klog(f'[{self.name}] Tried message {message.to}, but has been silenced.')
             return False
 
+        self.user_chat_log.append(message)
         logger.klog(
             f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}"
         )

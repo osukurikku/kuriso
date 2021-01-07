@@ -95,6 +95,9 @@ class PacketBuilder:
     # client packet: 3, bancho response: 11
     @staticmethod
     async def UserStats(player: 'Player') -> bytes:
+        if player.is_bot or player.is_tourneymode:
+            return b''  # return empty data to hide stats
+
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_HandleOsuUpdate.value,
             (player.id, osuTypes.int32),
@@ -142,15 +145,6 @@ class PacketBuilder:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_ChannelRevoked.value,
             (name, osuTypes.string)
-        )
-
-    @staticmethod
-    async def UpdateChannelInfo(channel) -> bytes:
-        return await CreateBanchoPacket(
-            OsuPacketID.Bancho_ChannelAvailable.value,
-            (channel.name, osuTypes.string),
-            (channel.description, osuTypes.string),
-            (len(channel.users), osuTypes.int16),
         )
 
     # bancho response: 7
@@ -355,4 +349,28 @@ class PacketBuilder:
     async def UserRestricted() -> bytes:
         return await CreateBanchoPacket(
             OsuPacketID.Bancho_AccountRestricted.value
+        )
+
+    # bancho response: 107
+    @staticmethod
+    async def SwitchServer(new_server: str) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_SwitchTourneyServer.value,
+            (new_server, osuTypes.string)
+        )
+
+    # bancho response: 105
+    @staticmethod
+    async def RTX(message: str) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_RTX.value,
+            (message, osuTypes.string)
+        )
+
+    # bancho response: 0 but with bad byte
+    @staticmethod
+    async def KillPing():
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_Ping.value,
+            (0, osuTypes.byte)
         )

@@ -4,7 +4,7 @@ import time
 from blob import Context
 from lib import logger
 
-LAST_PACKET_TIMEOUT = 20
+LAST_PACKET_TIMEOUT = 30
 
 
 async def clean_timeouts():
@@ -24,6 +24,7 @@ async def clean_timeouts():
                     # simulate logout packet
                     tasks.append(sub_user.logout())
 
+        print(int(time.time()) - user.last_packet_unix)
         if int(time.time()) - user.last_packet_unix > LAST_PACKET_TIMEOUT:
             logger.slog(f"[Player/{user.name}] was kicked during timeout")
             # simulate logout packet

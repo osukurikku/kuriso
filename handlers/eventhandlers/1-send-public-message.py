@@ -1,7 +1,6 @@
 from handlers.decorators import OsuEvent
 from lib import logger
 from objects.BanchoObjects import Message
-from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.PacketResolver import PacketResolver
 from bot.bot import CrystalBot
@@ -27,7 +26,5 @@ async def send_private_message(packet_data: bytes, token: 'Player'):
         client_id=token.id
     ))
 
-    if (token.privileges & KurikkuPrivileges.Donor) == KurikkuPrivileges.Donor:
-        # proceed channel command if user have donor
-        await CrystalBot.proceed_command(message)
+    await CrystalBot.proceed_command(message)
     return True
