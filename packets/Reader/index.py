@@ -251,7 +251,14 @@ class KorchoBuffer:
             if slot.status.value & SlotStatus.HasPlayer:  # if player exists in that slot, add it
                 await self.write_int_32(slot.token.id)
 
-        await self.write_int_32(match.host.id)  # match -> token (host) -> id
+        if match.is_tourney:
+            if match.host_tourney:
+                await self.write_int_32(match.host_tourney.id)
+            else:
+                await self.write_int_32(-1)
+        else:
+            await self.write_int_32(match.host.id)
+
         await self.write_byte(match.match_playmode.value)
         await self.write_byte(match.match_scoring_type.value)
         await self.write_byte(match.match_team_type.value)

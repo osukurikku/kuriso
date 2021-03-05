@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, TYPE_CHECKING, Any
+from typing import List, TYPE_CHECKING
 
 import aiohttp
 
@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 
 @CrystalBot.register_command("!alert")
 @CrystalBot.check_perms(need_perms=KurikkuPrivileges.CM)
-async def alert(args: List[Any], *_):
+async def alert(args: List[str], *_):
     if not args:
         return 'What do you wanna to say?'
 
@@ -33,7 +33,7 @@ async def alert(args: List[Any], *_):
 
 @CrystalBot.register_command("!useralert", aliases=["!alertuser"])
 @CrystalBot.check_perms(need_perms=KurikkuPrivileges.CM)
-async def user_alert(args: List[Any], *_):
+async def user_alert(args: List[str], *_):
     if args:
         if len(args) < 2:
             return 'What do you wanna to say?'
@@ -68,7 +68,7 @@ async def kick_all(*_):
 
 @CrystalBot.register_command("!kick")
 @CrystalBot.check_perms(need_perms=KurikkuPrivileges.CM)
-async def kick(args: List[Any], *_):
+async def kick(args: List[str], *_):
     if not args:
         return 'Who do you want to kick?'
 
@@ -89,7 +89,7 @@ async def kick(args: List[Any], *_):
 
 @CrystalBot.register_command("!silence")
 @CrystalBot.check_perms(need_perms=KurikkuPrivileges.ChatMod)
-async def silence(args: List[Any], player: 'Player', _):
+async def silence(args: List[str], player: 'Player', _):
     if args:
         if len(args) < 2:
             return 'You need put amount'
@@ -150,7 +150,7 @@ async def silence(args: List[Any], player: 'Player', _):
 
 @CrystalBot.register_command("!removesilence")
 @CrystalBot.check_perms(need_perms=KurikkuPrivileges.ChatMod)
-async def remove_silence(args: List[Any], player: 'Player', _):
+async def remove_silence(args: List[str], player: 'Player', _):
     if not args:
         return 'I need nickname who you want to remove the silence'
 
@@ -176,7 +176,7 @@ async def remove_silence(args: List[Any], player: 'Player', _):
 
 @CrystalBot.register_command("!ban")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_BAN_USERS)
-async def ban(args: List[Any], player: 'Player', _):
+async def ban(args: List[str], player: 'Player', _):
     if not args:
         return 'Which player should be banned?'
 
@@ -212,7 +212,7 @@ async def ban(args: List[Any], player: 'Player', _):
 
 @CrystalBot.register_command("!lock")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_BAN_USERS)
-async def lock(args: List[Any], player: 'Player', _):
+async def lock(args: List[str], player: 'Player', _):
     if not args:
         return 'Which player should be locked?'
 
@@ -229,7 +229,7 @@ async def lock(args: List[Any], player: 'Player', _):
 
 @CrystalBot.register_command("!unban")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_BAN_USERS)
-async def unban(args: List[Any], player: 'Player', _):
+async def unban(args: List[str], player: 'Player', _):
     if not args:
         return 'Which player should unbanned?'
 
@@ -257,7 +257,7 @@ async def unban(args: List[Any], player: 'Player', _):
 
 @CrystalBot.register_command("!restrict")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_BAN_USERS)
-async def restrict(args: List[Any], player: 'Player', _):
+async def restrict(args: List[str], player: 'Player', _):
     if not args:
         return 'Which player should be restricted?'
 
@@ -298,7 +298,7 @@ async def restrict(args: List[Any], player: 'Player', _):
 
 @CrystalBot.register_command("!unrestrict")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_BAN_USERS)
-async def unrestrict(args: List[Any], player: 'Player', _):
+async def unrestrict(args: List[str], player: 'Player', _):
     if not args:
         return 'Which player should unrestrict?'
 
@@ -401,7 +401,7 @@ async def system_status():
 
 @CrystalBot.register_command("!system")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_MANAGE_SERVERS)
-async def system_commands(args: List[Any], *_):
+async def system_commands(args: List[str], *_):
     if not args:
         return 'Use it like !system [maintenance/restart]'
 
@@ -421,7 +421,7 @@ async def system_commands(args: List[Any], *_):
 
 
 @CrystalBot.register_command("!report")
-async def report_user(args: List[Any], token: 'Player', _):
+async def report_user(args: List[str], token: 'Player', _):
     if args:
         if len(args) < 2:
             return 'I need reason!'
@@ -460,7 +460,7 @@ VALUES (NULL, %s, %s, %s, %s, UNIX_TIMESTAMP(), 0)''',
 
 @CrystalBot.register_command("!switchserver")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_MANAGE_SERVERS)
-async def switch_server(args: List[Any], *_):
+async def switch_server(args: List[str], *_):
     if not args or len(args) < 2:
         return 'Enter in format: <username> <server_address>'
 
@@ -478,7 +478,7 @@ async def switch_server(args: List[Any], *_):
 
 @CrystalBot.register_command("!rtx")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_MANAGE_USERS)
-async def rtx(args: List[Any], *_):
+async def rtx(args: List[str], *_):
     if not args or len(args) < 2:
         return 'Enter in format: <username> <message>'
 
@@ -494,7 +494,7 @@ async def rtx(args: List[Any], *_):
 
 @CrystalBot.register_command("!kill")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_MANAGE_USERS)
-async def kill(args: List[Any], token: 'Player', _):
+async def kill(args: List[str], token: 'Player', _):
     if not args:
         return 'Enter in format: <username>'
 
@@ -515,12 +515,11 @@ async def kill(args: List[Any], token: 'Player', _):
 
 @CrystalBot.register_command("!map")
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_MANAGE_BEATMAPS)
-async def map_rank(args: List[Any], token: 'Player', _):
+async def map_rank(args: List[str], token: 'Player', _):
     """
-        SUPER UGLY CODE PORT FROM RIPPLE !!!!! PREPARE YOUR EYES FOR BLOWN UP
+        SUPER UGLY CODE PORT FROM PEP.PY CMYUI !!!!! PREPARE YOUR EYES FOR BLOWN UP
         I warned!
     """
-    print(args[0])
     if args:
         if not args[0] in ['rank', 'love', 'unrank']:
             return '-_-'

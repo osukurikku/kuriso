@@ -11,21 +11,12 @@ if TYPE_CHECKING:
 # client packet: 51, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchChangeMods)
 async def update_match_mods(packet_data: bytes, token: 'Player'):
-    if not token.match:
+    if not token.match or not (token == token.match.host_tourney or token == token.match.host):
         return False
 
     match = token.match
     newMods = Mods(await PacketResolver.read_mods(packet_data))
-    if match.is_freemod:
-        if match.host == token:
-            match.mods = newMods & Mods.SpeedAltering
-
-        for slot in match.slots:
-            if slot.token == token:
-                slot.mods = newMods & ~Mods.SpeedAltering
-                break
-    else:
-        match.mods = newMods
+    await match.change_mods(newMods)
 
     await match.update_match()
     return True

@@ -11,6 +11,8 @@ if TYPE_CHECKING:
 # client packet: 30, bancho response: [Array with id: 27]
 @OsuEvent.register_handler(OsuPacketID.Client_LobbyJoin)
 async def lobby_join(_, token: 'Player'):
+    token.is_in_lobby = True
+
     for _, match in Context.matches.items():
         token.enqueue(await PacketBuilder.NewMatch(match))
 

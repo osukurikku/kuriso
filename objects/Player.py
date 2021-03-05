@@ -1,4 +1,3 @@
-import queue
 import time
 from typing import Optional, Union, List, Dict, Tuple
 import uuid
@@ -6,7 +5,7 @@ import aiohttp
 
 from blob import Context
 from config import Config
-from helpers import userHelper, new_utils
+from helpers import userHelper
 from lib import logger
 from objects.Multiplayer import Match
 from objects.constants import Privileges, Countries
@@ -107,19 +106,24 @@ class Player:
         self.presence_filter: PresenceFilter = PresenceFilter(1)
         self.bot_np: Optional[dict] = None  # TODO: Beatmap
 
-        self.match: Optional[Match] = None
+        self._match: Optional[Match] = None
         self.friends: Union[List[int]] = []  # bot by default xd
 
-        self.queue: queue.Queue = queue.Queue()  # main thing
+        self.queue: bytearray = bytearray()  # main thing
         self.login_time: int = int(time.time())
         self.last_packet_unix: int = int(time.time())
 
         self.is_tourneymode: bool = is_tourneymode
         self.id_tourney: int = -1
+        self.is_in_lobby: bool = False
 
         self.is_bot: bool = is_bot
         self.tillerino: List[Union[int, Mods]] = [0, Mods(0)]  # 1 - map id, 2 - current_mods <- legacy code
         self.user_chat_log: List['Message'] = []
+
+    @property
+    def match(self):
+        return self._match
 
     @property
     def get_formatted_chatlog(self):
@@ -127,10 +131,6 @@ class Player:
             f"{time.strftime('%H:%M', time.localtime(message.when))} - {self.name}@{message.to}: {message.body[:50]}"
             for message in self.user_chat_log
         )
-
-    @property
-    def is_queue_empty(self) -> bool:
-        return self.queue.empty()
 
     @property
     def silenced(self) -> bool:
@@ -275,7 +275,7 @@ class Player:
     async def silence(self, seconds: int = None, reason: str = "", author: int = 999) -> bool:
         if seconds is None:
             # Get silence expire from db if needed
-            seconds = max(0, await new_utils.getSilenceEnd(self.id) - int(time.time()))
+            seconds = max(0, await userHelper.getSilenceEnd(self.id) - int(time.time()))
         else:
             # Silence in db and token
             await userHelper.silence(self.id, seconds, reason, author)
@@ -300,8 +300,11 @@ class Player:
         if chan.startswith("#"):
             # this is channel object
             if chan.startswith("#multi"):
-                if self.is_tourneymode and self.id_tourney > 0:
-                    chan = f"#multi_{self.id_tourney}"
+                if self.is_tourneymode:
+                    if self.id_tourney > 0:
+                        chan = f"#multi_{self.id_tourney}"
+                    else:
+                        return False
                 else:
                     chan = f"#multi_{self.match.id}"
             elif chan.startswith("#spec"):
@@ -420,10 +423,12 @@ class Player:
         return True
 
     def enqueue(self, b: bytes) -> None:
-        self.queue.put_nowait(b)
+        self.queue += b
 
     def dequeue(self) -> Optional[bytes]:
-        try:
-            return self.queue.get_nowait()
-        except queue.Empty:
-            pass
+        if self.queue:
+            data = bytes(self.queue)
+            self.queue.clear()
+            return data
+
+        return b''

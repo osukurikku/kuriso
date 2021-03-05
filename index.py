@@ -1,11 +1,14 @@
 import asyncio
-import asyncio_redis
 import logging
+import traceback
+
+import aioredis
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import loops
 import registrator
+import pubsub_listeners
 from starlette.applications import Starlette
 
 import uvicorn
@@ -16,6 +19,7 @@ from blob import Context
 
 from lib import AsyncSQLPoolWrapper
 from lib import logger
+from dotenv import load_dotenv, find_dotenv
 
 import nest_asyncio  # fix asyncio loops
 
@@ -23,6 +27,9 @@ nest_asyncio.apply()
 
 
 async def main():
+    # load dotenv file
+    load_dotenv(find_dotenv())
+
     # create simple Starlette through uvicorn app
     app = Starlette(debug=True)
     app.add_middleware(ProxyHeadersMiddleware)
@@ -41,18 +48,18 @@ async def main():
 
     # Create Redis connection :sip:
     logger.wlog("[Redis] Trying connection to Redis")
-    main_loop = asyncio.get_event_loop()
-    _, protocol = await main_loop.create_connection(asyncio_redis.RedisProtocol, Config.config['redis']['host'],
-                                                    Config.config['redis']['port'])
-    await protocol.auth(password=Config.config['redis']['password'])
-    await protocol.select(Config.config['redis']['db'])
-    Context.redis = protocol
+    redis_pool = await aioredis.create_redis_pool(
+        f"redis://{Config.config['redis']['host']}",
+        password=Config.config['redis']['password'], db=Config.config['redis']['db'],
+        minsize=5, maxsize=10)
+
+    Context.redis = redis_pool
     logger.slog("[Redis] Connection to Redis established! Well done!")
 
     logger.slog("[Redis] Removing old information about redis...")
     try:
-        await Context.redis.set("ripple:online_users", '0')
-        del_keys_lua = '''
+        await Context.redis.set("ripple:online_users", "0")
+        redis_flush_script = '''
 local matches = redis.call('KEYS', ARGV[1])
 
 local result = 0
@@ -60,13 +67,15 @@ for _,key in ipairs(matches) do
     result = result + redis.call('DEL', key)
 end
 
-return result 
+return result
 '''
-        script = await protocol.register_script(del_keys_lua)
-        await script.run(keys=[], args=["peppy:sessions:*"])
-        await script.run(keys=[], args=["peppy:*"])
+        await Context.redis.eval(redis_flush_script, args=["peppy:*"])
+        await Context.redis.eval(redis_flush_script, args=["peppy:sessions:*"])
     except Exception:
+        traceback.print_exc()
         logger.elog("[Redis] initiation data ruined... Check this!")
+
+    await Context.redis.set("peppy:version", Context.version)
 
     logger.wlog("[MySQL] Making connection to MySQL Database...")
     mysql_pool = AsyncSQLPoolWrapper()
@@ -76,7 +85,7 @@ return result
         'password': Config.config['mysql']['password'],
         'port': Config.config['mysql']['port'],
         'db': Config.config['mysql']['database'],
-        'loop': main_loop,
+        'loop': asyncio.get_event_loop(),
     })
     Context.mysql = mysql_pool
     logger.slog("[MySQL] Connection established!")
@@ -96,6 +105,11 @@ return result
     scheduler = AsyncIOScheduler()
     scheduler.start()
     scheduler.add_job(loops.clean_timeouts, "interval", seconds=60)
+    scheduler.add_job(loops.add_stats, "interval", seconds=120)
+
+    # Setup pub/sub listeners for LETS/old admin panel events
+    event_loop = asyncio.get_event_loop()
+    event_loop.create_task(pubsub_listeners.init())
 
     Context.load_motd()
 

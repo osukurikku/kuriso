@@ -35,5 +35,6 @@ class Config:
             'geoloc_ip': os.environ.get("GEOLOC_IP", "https://country.kurikku.pw/"),
             'pprapi_token': os.environ.get("PPRAPI_TOKEN", ""),
             'crystalbot_api': os.environ.get("CRYSTALBOT_API", ""),
-            'crystalbot_token': os.environ.get("CRYSTALBOT_TOKEN", "")
+            'crystalbot_token': os.environ.get("CRYSTALBOT_TOKEN", ""),
+            'stats_enabled': bool(os.environ.get("STATS_ENABLED", "0"))
         }

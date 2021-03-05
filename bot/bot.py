@@ -10,6 +10,7 @@ from blob import Context
 from lib import logger
 from objects.BanchoObjects import Message
 from objects.BotPlayer import BotPlayer
+from objects.constants import Privileges
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from packets.Builder.index import PacketBuilder
 
@@ -103,11 +104,11 @@ class CrystalBot:
         """
 
         def wrapper(func: Callable):
-            async def wrapper_func(args: List[str], player: 'Player', message: 'Message') -> str:
+            async def wrapper_func(args: List[str], player: 'Player', message: 'Message') -> Union[str, bool]:
                 if (player.privileges & need_perms) == need_perms:
                     return await func(args, player, message)
 
-                return ""
+                return False
 
             return wrapper_func
 
@@ -121,6 +122,14 @@ class CrystalBot:
         sender = Context.players.get_token(uid=message.client_id)
         if not sender:
             return False
+
+        if message.to.startswith("#multi"):
+            # convert it into normal
+            if sender.match:
+                message.to = f"#multi_{sender.match.id}"
+        if message.to.startswith("#spec"):
+            if sender.spectating:
+                message.to = f"#spec_{sender.spectating.id}"
 
         message.body = message.body.strip()
         cmd, func_command = None, None

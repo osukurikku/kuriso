@@ -1,12 +1,15 @@
 import asyncio
 import time
-from typing import Union, Tuple, List
 
 import bcrypt
+from typing import Union, Tuple, List, TYPE_CHECKING
 
+if TYPE_CHECKING:
+    from objects import Player, TourneyPlayer
+from objects.constants import Privileges
 from blob import Context
 from lib import logger
-from objects.constants import Privileges
+
 from functools import lru_cache
 
 
@@ -28,7 +31,7 @@ async def check_login(login: str, password: str, ip: str):
     user_bancho_session_exist = (await Context.redis.exists(f"peppy:sessions:{user['id']}")) or \
                                 (await Context.redis.sismember(f"peppy:sessions:{user['id']}", ip)) if ip else False
     if user_bancho_session_exist:
-        await Context.redis.srem(f"peppy:sessions:{user['id']}", [ip])
+        await Context.redis.srem(f"peppy:sessions:{user['id']}", ip)
 
     if len(password) != 32:
         return False
@@ -106,10 +109,10 @@ async def remove_from_leaderboard(user_id: int) -> bool:
     tasks = []
     for mode in ["std", "taiko", "ctb", "mania"]:
         # я не буду это трогать, тк подозреваю, что оно там всё хранится в стрингАх
-        tasks.append(Context.redis.zrem("ripple:leaderboard:{}".format(mode), [str(user_id)]))
+        tasks.append(Context.redis.zrem("ripple:leaderboard:{}".format(mode), str(user_id)))
         # этож надо было сравнивать длину, когда у нативтайпа всегда будет False, если объект пустой *кхм-кхм*
         if country and country != "xx":
-            tasks.append(Context.redis.zrem("ripple:leaderboard:{}:{}".format(mode, country), [str(user_id)]))
+            tasks.append(Context.redis.zrem("ripple:leaderboard:{}:{}".format(mode, country), str(user_id)))
 
     await asyncio.gather(*tasks)  # запускаем это в асинхрон, потому что меня не ебёт
     return True
@@ -230,12 +233,12 @@ async def setUserLastOsuVer(user_id: int, osu_ver: str) -> bool:
 
 
 async def saveBanchoSession(user_id: int, ip: str) -> bool:
-    await Context.redis.sadd(f"peppy:sessions:{user_id}", [ip])
+    await Context.redis.sadd(f"peppy:sessions:{user_id}", ip)
     return True
 
 
 async def deleteBanchoSession(user_id: int, ip: str) -> bool:
-    await Context.redis.srem(f"peppy:sessions:{user_id}", [ip])
+    await Context.redis.srem(f"peppy:sessions:{user_id}", ip)
     return True
 
 
@@ -273,4 +276,79 @@ async def silence(user_id: int, seconds: int, silence_reason: str, author: int =
     else:
         await log_rap(author, "has removed {}'s silence".format(targetUsername))
 
+    return True
+
+
+class InvalidUsernameError(Exception):
+    pass
+
+
+class UsernameAlreadyInUseError(Exception):
+    pass
+
+
+async def changeUsername(user_id: int = 0, old_username: str = "", new_username: str = "") -> bool:
+    """
+        Change `userID`'s username to `newUsername` in database
+
+        :param user_id: user id. Required only if `oldUsername` is not passed.
+        :param old_username: username. Required only if `userID` is not passed.
+        :param new_username: new username. Can't contain spaces and underscores at the same time.
+        :raise: invalidUsernameError(), usernameAlreadyInUseError()
+        :return: bool
+    """
+    # Make sure new username doesn't have mixed spaces and underscores
+    if " " in new_username and "_" in new_username:
+        raise InvalidUsernameError()
+
+    # Get safe username
+    newUsernameSafe = new_username.lower().strip().replace(" ", "_")
+
+    # Make sure this username is not already in use
+    if await get_start_user(newUsernameSafe):
+        raise UsernameAlreadyInUseError()
+
+    # Get userID or oldUsername
+    if user_id == 0:
+        data = await get_start_user(old_username)
+        if data:
+            user_id = data['id']
+    else:
+        old_username = get_username(user_id)
+
+    # Change username
+    await Context.mysql.execute(
+        "UPDATE users SET username = %s, username_safe = %s WHERE id = %s LIMIT 1",
+        [new_username, newUsernameSafe, user_id]
+    )
+    await Context.mysql.execute(
+        "UPDATE users_stats SET username = %s WHERE id = %s LIMIT 1",
+        [new_username, user_id]
+    )
+
+    # Empty redis username cache
+    await Context.redis.delete(f"ripple:userid_cache:{old_username.lower().strip().replace(' ', '_')}")
+    await Context.redis.delete(f"ripple:change_username_pending:{user_id}")
+    return True
+
+
+async def handle_username_change(user_id: int, new_username: str,
+                                 target_token: Union['Player', 'TourneyPlayer'] = None) -> bool:
+    try:
+        await changeUsername(user_id, new_username=new_username)
+        if target_token:
+            await target_token.kick(f"Your username has been changed to {new_username}. Please log in again.")
+            await append_notes(user_id, [f"Username change: '{target_token.name}' -> '{new_username}'"])
+    except UsernameAlreadyInUseError:
+        await log_rap(999, "Username change: {} is already in use!", through="Kuriso")
+        if target_token:
+            target_token.kick(
+                "There was a critical error while trying to change your username. Please contact a developer.",
+                "username_change_fail")
+    except InvalidUsernameError:
+        await log_rap(999, "Username change: {} is not a valid username!", through="Kuriso")
+        if target_token:
+            target_token.kick(
+                "There was a critical error while trying to change your username. Please contact a developer.",
+                "username_change_fail")
     return True

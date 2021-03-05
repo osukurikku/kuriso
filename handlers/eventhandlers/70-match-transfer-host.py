@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 # client packet: 70, bancho response: 50 for new host
 @OsuEvent.register_handler(OsuPacketID.Client_MatchTransferHost)
 async def transfer_host(packet_data: bytes, token: 'Player'):
-    if not token.match:
+    if not token.match or not (token == token.match.host_tourney or token == token.match.host):
         return False
 
     match = token.match
@@ -21,11 +21,5 @@ async def transfer_host(packet_data: bytes, token: 'Player'):
     if match.in_progress or slotIndex > 16 or slotIndex < 0:
         return False
 
-    newHost = match.slots[slotIndex]
-    if not newHost.token:
-        return False
-
-    match.host = newHost.token
-    match.host.enqueue(await PacketBuilder.MatchHostTransfer())
-    await match.update_match()
+    await match.move_host(slot_ind=slotIndex)
     return True

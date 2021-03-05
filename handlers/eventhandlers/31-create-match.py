@@ -60,7 +60,9 @@ async def create_match(packet_data: bytes, token: 'Player'):
     await match.join_player(token, match_object['password'])  # allow player to join match
 
     info_packet = await PacketBuilder.NewMatch(match)
-    for user in Context.channels["#lobby"].users:
+    for user in Context.players.get_all_tokens(ignore_tournament_clients=True):
+        if not user.is_in_lobby:
+            continue
         if user == token:
             continue  # ignore us, because we will receive it first
         user.enqueue(info_packet)

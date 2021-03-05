@@ -1,8 +1,12 @@
 import queue
-from typing import Union, Optional, Dict, Tuple
+from typing import Union, Optional, Dict, Tuple, TYPE_CHECKING
 
+from blob import Context
 from helpers import userHelper
 from objects.Player import Player
+
+if TYPE_CHECKING:
+    from objects.Multiplayer import Match
 
 
 class TourneyPlayer(Player):
@@ -42,6 +46,10 @@ class TourneyPlayer(Player):
             self.additional_clients.pop(token)
 
         return True
+
+    @property
+    def match(self) -> 'Match':
+        return None if self.id_tourney < 0 else Context.matches.get(self.id_tourney, None)
 
     async def logout(self) -> None:
         if self.ip:

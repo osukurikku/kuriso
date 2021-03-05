@@ -30,7 +30,7 @@ class Channel:
         if self.server_name.startswith("#spec_"):
             return "#spectator"
         if self.server_name.startswith("#multi_"):
-            return "#multiplayer"  # don't remember that this values only OSU CLIENT, for irc we will send server name
+            return "#multiplayer"  # remember that this values only OSU CLIENT, for irc we will send server name
 
         return self.server_name
 
@@ -42,6 +42,7 @@ class Channel:
                     (privs & KurikkuPrivileges.ReplayModerator) == KurikkuPrivileges.ReplayModerator)
 
     async def send_message(self, from_id: int, message: 'Message') -> bool:
+        message.to = self.name
         # handle channel message
         for receiver in self.users:
             if receiver.id == from_id:
@@ -51,7 +52,6 @@ class Channel:
                 await PacketBuilder.BuildMessage(from_id, message)
             )
 
-        message.to = self.server_name
         return True
 
     async def join_channel(self, p: 'Player') -> bool:

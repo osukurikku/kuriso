@@ -48,7 +48,6 @@ async def main_handler(request: Request):
             return BanchoResponse(response)
 
         token_object.last_packet_unix = int(time.time())
-        print("unix stamp updated")
 
         # packets recieve
         raw_bytes = KorchoBuffer(None)
@@ -79,8 +78,7 @@ async def main_handler(request: Request):
             else:
                 logger.wlog(f"[Events] Packet ID: {packet_id} not found in events handlers")
 
-        while not token_object.is_queue_empty:
-            response += token_object.dequeue()
+        response += token_object.dequeue()
 
         response = BanchoResponse(bytes(response), token=token_object.token)
         return response

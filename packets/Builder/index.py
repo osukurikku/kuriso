@@ -374,3 +374,10 @@ class PacketBuilder:
             OsuPacketID.Bancho_Ping.value,
             (0, osuTypes.byte)
         )
+
+    # bancho response: 106
+    @staticmethod
+    async def MatchAborted():
+        return await CreateBanchoPacket(
+            OsuPacketID.Client_MatchAbort.value
+        )

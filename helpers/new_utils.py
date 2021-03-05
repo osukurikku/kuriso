@@ -1,3 +1,5 @@
+import random
+
 from objects.constants.Modificators import Mods
 
 
@@ -36,3 +38,7 @@ def readable_mods(m: Mods) -> str:
 
 def humanize(value: int) -> str:
     return "{:,}".format(round(value)).replace(",", ".")
+
+
+def random_hash() -> str:
+    return '%032x' % random.getrandbits(128)

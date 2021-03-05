@@ -22,7 +22,7 @@ async def test_command(*_):
 
 
 @CrystalBot.register_command("!roll")
-async def roll(args: List[Any], player: 'Player', _):
+async def roll(args: List[str], player: 'Player', _):
     max_points = 100
     if args:
         if args[0].isdigit() and int(args[0]) > 0:
@@ -68,7 +68,7 @@ async def recommend(_, player: 'Player', __):
 
 
 @CrystalBot.register_command("!stats", aliases=['!st'])
-async def user_stats(args: List[Any], player: 'Player', _):
+async def user_stats(args: List[str], player: 'Player', _):
     mode = GameModes(0)
     if len(args) < 1:
         nickname = player.name
@@ -104,7 +104,7 @@ async def user_stats(args: List[Any], player: 'Player', _):
 
 @CrystalBot.register_command("!flag")
 @CrystalBot.check_perms(need_perms=Privileges.USER_DONOR)
-async def flag_change_donor(args: List[Any], player: 'Player', _):
+async def flag_change_donor(args: List[str], player: 'Player', _):
     if not args:
         return 'Enter country in ISO format. Google it, if you dont know what is this'
 
@@ -122,7 +122,7 @@ async def flag_change_donor(args: List[Any], player: 'Player', _):
 
 
 @CrystalBot.register_command("!clantop")
-async def clantop(args: List[Any], player: 'Player', _):
+async def clantop(args: List[str], player: 'Player', _):
     if not args:
         return 'Enter in format: <on/off>'
 

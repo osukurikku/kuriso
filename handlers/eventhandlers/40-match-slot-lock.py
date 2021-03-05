@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 # client packet: 40, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchLock)
 async def slot_lock(packet_data: bytes, token: 'Player'):
-    if not token.match:
+    if not token.match or not (token == token.match.host_tourney or token == token.match.host):
         return False
 
     match = token.match
@@ -23,18 +23,9 @@ async def slot_lock(packet_data: bytes, token: 'Player'):
         return False
 
     slot = match.slots[slotIndex]
-    if slot.token == match.host:
+    if slot.token == match.host or slot.token == match.host_tourney:
         return
 
-    if slot.status == SlotStatus.Locked:
-        slot.status = SlotStatus.Open
-    elif slot.status & SlotStatus.HasPlayer:
-        slot.mods = Mods.NoMod
-        slot.token = None
-        slot.status = SlotStatus.Locked
-        slot.team = SlotTeams.Neutral
-    else:
-        slot.status = SlotStatus.Locked
-
+    slot.toggle_slot()
     await match.update_match()
     return True

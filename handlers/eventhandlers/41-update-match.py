@@ -2,7 +2,6 @@ from handlers.decorators import OsuEvent
 from objects.constants.Modificators import Mods
 from objects.constants.Slots import SlotTeams, SlotStatus
 from objects.constants.multiplayer import MatchTeamTypes, MultiSpecialModes
-from packets.Builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
 from packets.Reader.PacketResolver import PacketResolver
 
@@ -14,7 +13,7 @@ if TYPE_CHECKING:
 # client packet: 41, bancho response: 26
 @OsuEvent.register_handler(OsuPacketID.Client_MatchChangeSettings)
 async def update_match(data: bytes, token: 'Player'):
-    if not token.match:
+    if not token.match or not (token == token.match.host_tourney or token == token.match.host):
         return False
 
     newMatch = await PacketResolver.read_match(data)
@@ -47,22 +46,7 @@ async def update_match(data: bytes, token: 'Player'):
     match.match_playmode = newMatch['play_mode']
     match.seed = newMatch['seed']
 
-    if match.match_team_type == MatchTeamTypes.TagCoop:
-        match.match_freemod &= ~MultiSpecialModes.Freemod
-
-    if match.match_freemod != newMatch['match_freemod']:
-        if newMatch['match_freemod'] == MultiSpecialModes.Freemod:
-            for slot in match.slots:
-                if slot.status & SlotStatus.HasPlayer:
-                    slot.mods = match.mods & ~Mods.SpeedAltering
-
-            match.mods &= Mods.SpeedAltering
-        else:
-            for slot in match.slots:
-                if slot.token and slot.token.id == match.host.id:
-                    match.mods = slot.mods | (match.mods & Mods.SpeedAltering)
-
-    match.match_freemod = newMatch['match_freemod']
+    await match.change_special_mods(newMatch['match_freemod'])
 
     await match.update_match()
     return True

@@ -4,7 +4,7 @@ This file contains context features :sip:
 from typing import Dict
 
 from lib import AsyncSQLPoolWrapper
-import asyncio_redis
+import aioredis
 import time
 import git
 
@@ -27,7 +27,7 @@ class Context:
     motd_html: str = ""
 
     mysql: AsyncSQLPoolWrapper = None
-    redis: asyncio_redis.RedisProtocol = None
+    redis: aioredis.Redis = None
 
     bancho_settings: dict = {}
 

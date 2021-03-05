@@ -78,7 +78,7 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
 
 
 @CrystalBot.register_command("\x01ACTION is listening to", aliases=['\x01ACTION is playing', '\x01ACTION is watching'])
-async def tilleino_like(args: List[Any], token: 'Player', message: 'Message'):
+async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
     if (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
         return False  # don't allow run np commands in public channels!
 
@@ -113,7 +113,7 @@ async def tilleino_like(args: List[Any], token: 'Player', message: 'Message'):
 
 
 @CrystalBot.register_command("!with")
-async def tillerino_mods(args: List[Any], token: 'Player', _):
+async def tillerino_mods(args: List[str], token: 'Player', _):
     if not args:
         return 'Enter mods as first argument'
 
