@@ -1,7 +1,7 @@
 import re
 from typing import List, TYPE_CHECKING, Any, Dict, Union
 
-import aiohttp
+import aiohttp, traceback
 
 from blob import Context
 from bot.bot import CrystalBot
@@ -14,7 +14,7 @@ if TYPE_CHECKING:
     from objects.Player import Player
     from objects.BanchoObjects import Message
 
-NP_REGEX = re.compile(r"^https?://osu\.ppy\.sh/b/(\\d*)")
+NP_REGEX = re.compile("^https?:\\/\\/osu\\.ppy\\.sh\\/b\\/(\\d*)")
 ALLOWED_MODS = ["NO", "NF", "EZ", "HD", "HR", "DT", "HT", "NC", "FL", "SO", "AP", "RX"]
 ALLOWED_MODS_MAPPING = {
     'NO': Mods.NoMod,
@@ -61,13 +61,14 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
     if just_data:
         return data
 
-    msg = f'{data["song_name"]}{"+" if currentMods > 0 else ""}{new_utils.readable_mods(currentMods)}  '
+    msg = f'{data["song_name"]} {"+" if currentMods > 0 else ""}{new_utils.readable_mods(currentMods)} '
+    msg += f'95%: {data["pp"][3]}pp | 98%: {data["pp"][2]}pp | 99% {data["pp"][1]}pp | 100%: {data["pp"][0]}pp'
 
     original_ar = data['ar']
     # calc new AR if HR/EZ is on
-    if currentMods & Mods.EASY:
+    if currentMods & Mods.Easy:
         data["ar"] = max(0, data["ar"] / 2)
-    if currentMods & Mods.HARDROCK:
+    if currentMods & Mods.HardRock:
         data["ar"] = min(10, data["ar"] * 1.4)
 
     ar_to_msg = "({})".format(original_ar) if original_ar != data["ar"] else ""
@@ -85,6 +86,7 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
     play_or_watch = "playing" in message.body or "watching" in message.body
     # Get URL from message
     beatmap_url = args[0][1:]
+    print(beatmap_url)
     modsEnum = Mods(0)
     if play_or_watch:
         mapping = {
@@ -105,6 +107,7 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
     try:
         beatmap_id = NP_REGEX.search(beatmap_url).groups(0)[0]
     except Exception:
+        traceback.print_exc()
         return "Can't find beatmap"
 
     token.tillerino = [int(beatmap_id), modsEnum]

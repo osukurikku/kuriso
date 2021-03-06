@@ -161,6 +161,8 @@ async def init():
         k for (k, _) in MAPPED_FUNCTIONS.items()
     ])
 
+    Context.redis_sub = subscriber
+
     loop = asyncio.get_event_loop()
     [loop.create_task(sub_reader(ch)) for ch in subscribed_channels]
     return True

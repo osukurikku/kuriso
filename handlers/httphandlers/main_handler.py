@@ -74,7 +74,7 @@ async def main_handler(request: Request):
                 # Oh wait let go this thing in async executor.
                 await OsuEvent.handlers[packet_id](data, token_object)
                 logger.klog(
-                    f"[{token_object.token}/{token_object.name}] Has triggered {packet_id} with packet length: {packet_length}")
+                    f"[{token_object.token}/{token_object.name}] Has triggered {OsuPacketID(packet_id)} with packet length: {packet_length}")
             else:
                 logger.wlog(f"[Events] Packet ID: {packet_id} not found in events handlers")
 
@@ -116,7 +116,7 @@ async def main_handler(request: Request):
             # wtf osu
             await Context.players.get_token(uid=user_data['id']).logout()
 
-        if not (user_data["privileges"] & 3) and \
+        if not (user_data["privileges"] & 3 > 0) and \
                 (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
             logger.elog(f"[{loginData}] Banned chmo tried to login")
             response = (await PacketBuilder.UserID(-3) +

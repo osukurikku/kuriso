@@ -142,7 +142,7 @@ class Player:
 
     @property
     def is_restricted(self) -> bool:
-        return bool((self.privileges & Privileges.USER_NORMAL) and not (self.privileges & Privileges.USER_PUBLIC))
+        return (self.privileges & Privileges.USER_NORMAL) and not (self.privileges & Privileges.USER_PUBLIC)
 
     @property
     def bancho_privs(self) -> BanchoRanks:
@@ -420,6 +420,12 @@ class Player:
 
         self.enqueue(await PacketBuilder.SpectatorLeft(old_spec.id))
         logger.slog(f"{old_spec.name} has stopped hidden spectating for {self.name}")
+        return True
+    
+    async def say_bancho_restarting(self, delay: int=20) -> bool:
+        self.enqueue(
+            await PacketBuilder.BanchoRestarting(delay*1000)
+        )
         return True
 
     def enqueue(self, b: bytes) -> None:

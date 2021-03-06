@@ -3,6 +3,7 @@ import logging
 import traceback
 
 import aioredis
+import signal
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
@@ -13,6 +14,7 @@ from starlette.applications import Starlette
 
 import uvicorn
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
+from uvicorn.main import Server
 
 from config import Config
 from blob import Context
@@ -69,13 +71,13 @@ end
 
 return result
 '''
-        await Context.redis.eval(redis_flush_script, args=["peppy:*"])
-        await Context.redis.eval(redis_flush_script, args=["peppy:sessions:*"])
+        # await Context.redis.eval(redis_flush_script, args=["peppy:*"])
+        # await Context.redis.eval(redis_flush_script, args=["peppy:sessions:*"])
     except Exception:
         traceback.print_exc()
         logger.elog("[Redis] initiation data ruined... Check this!")
 
-    await Context.redis.set("peppy:version", Context.version)
+    # await Context.redis.set("peppy:version", Context.version)
 
     logger.wlog("[MySQL] Making connection to MySQL Database...")
     mysql_pool = AsyncSQLPoolWrapper()
@@ -86,6 +88,7 @@ return result
         'port': Config.config['mysql']['port'],
         'db': Config.config['mysql']['database'],
         'loop': asyncio.get_event_loop(),
+        'autocommit': True
     })
     Context.mysql = mysql_pool
     logger.slog("[MySQL] Connection established!")
@@ -113,6 +116,56 @@ return result
 
     Context.load_motd()
     uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'], access_log=False)
+
+
+def shutdown(original_handler):
+    async def _shutdown():
+        logger.elog("[System] Disposing server!")
+        logger.elog("[System] Disposing players!")
+        for player in Context.players.get_all_tokens():
+            await player.say_bancho_restarting()
+
+        logger.elog("[Server] Awaiting when players will get them packets!")
+        attempts = 0
+        while any(len(x.queue) > 0 for x in Context.players.get_all_tokens()):
+            await asyncio.sleep(5)
+            attempts += 1
+            logger.elog(f"[Server] Attempt {attempts}/3")
+            if attempts == 3:
+                break
+        
+        # Stop redis connection
+        logger.elog(f"[Server] Stopping redis pool...")
+        if Context.redis:
+            Context.redis.close()
+            await Context.redis.wait_closed()
+
+        # Stop redis sub connection
+        logger.elog(f"[Server] Stopping redis subscriber pool...")
+        if Context.redis_sub:
+            Context.redis_sub.close()
+            await Context.redis_sub.wait_closed()
+
+        # Stop mysql pool connection
+        logger.elog(f"[Server] Stopping mysql pool...")
+        if Context.mysql:
+            Context.mysql.pool.close()
+            await Context.mysql.pool.wait_closed()
+
+        logger.elog(f"[Server] Disposing uvicorn instance...")
+    
+    def _manager(*args, **kwargs):
+        if Context.is_shutdown:
+            return
+        loop = asyncio.get_event_loop()
+        Context.is_shutdown = True
+        loop.run_until_complete(_shutdown())
+        original_handler(*args, **kwargs)
+
+    return _manager
+    
+orig_handle = Server.handle_exit
+Server.handle_exit = shutdown(orig_handle)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

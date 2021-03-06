@@ -28,6 +28,7 @@ class Context:
 
     mysql: AsyncSQLPoolWrapper = None
     redis: aioredis.Redis = None
+    redis_sub: aioredis.Redis = None
 
     bancho_settings: dict = {}
 
@@ -35,6 +36,7 @@ class Context:
     commit_id: str = ""
 
     start_time: int = int(time.time())
+    is_shutdown: bool = False
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):

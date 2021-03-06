@@ -335,6 +335,14 @@ class PacketBuilder:
             OsuPacketID.Bancho_MatchPlayerFailed.value,
             (slot_ind, osuTypes.int16),
         )
+    
+    # bancho response: 86
+    @staticmethod
+    async def BanchoRestarting(ms: int) -> bytes:
+        return await CreateBanchoPacket(
+            OsuPacketID.Bancho_Restart,
+            (ms, osuTypes.u_int32)
+        )
 
     # bancho response: 94
     @staticmethod
