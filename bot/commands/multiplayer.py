@@ -557,7 +557,7 @@ async def mp_mods(args: List[str], player: 'Player', message: 'Message'):
             freeMod = True
 
     await player.match.change_special_mods(MultiSpecialModes.Freemod if freeMod else MultiSpecialModes.Empty)
-    await player.match.change_mods(new_mods)
+    await player.match.change_mods(new_mods, player)
     await player.match.unready_everyone()
     await player.match.update_match()
     return "Match mods have been updated!"

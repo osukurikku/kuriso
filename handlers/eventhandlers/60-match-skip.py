@@ -15,12 +15,8 @@ async def match_skip(_, token: 'Player'):
         return False
 
     match = token.match
-    currentSlot = None
-    for m_slot in match.slots:
-        if m_slot.token == token:
-            currentSlot = m_slot
-            break
-    currentSlot.skipped = True
+    slot = match.get_slot(token)
+    slot.skipped = True
 
     for slot in match.slots:
         if slot.status == SlotStatus.Playing and not slot.skipped:

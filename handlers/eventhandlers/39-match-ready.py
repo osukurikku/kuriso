@@ -14,12 +14,7 @@ async def match_ready(_, token: 'Player'):
         return False
 
     match = token.match
-    currentSlot = None
-    for m_slot in match.slots:
-        if m_slot.token == token:
-            currentSlot = m_slot
-            break
-
+    currentSlot = match.get_slot(token)
     currentSlot.status = SlotStatus.Ready
 
     await match.update_match()

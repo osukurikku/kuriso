@@ -15,13 +15,9 @@ async def match_change_team(_, token: 'Player'):
         return False
 
     match = token.match
-    currentSlot = None
-    for m_slot in match.slots:
-        if m_slot.token == token:
-            currentSlot = m_slot
-            break
+    slot = match.get_slot(token)
+    slot.status = SlotStatus.Complete
 
-    currentSlot.status = SlotStatus.Complete
     if any([s.status == SlotStatus.Playing for s in match.slots]):
         return
 

@@ -133,27 +133,27 @@ def shutdown(original_handler):
             logger.elog(f"[Server] Attempt {attempts}/3")
             if attempts == 3:
                 break
-        
+
         # Stop redis connection
-        logger.elog(f"[Server] Stopping redis pool...")
+        logger.elog("[Server] Stopping redis pool...")
         if Context.redis:
             Context.redis.close()
             await Context.redis.wait_closed()
 
         # Stop redis sub connection
-        logger.elog(f"[Server] Stopping redis subscriber pool...")
+        logger.elog("[Server] Stopping redis subscriber pool...")
         if Context.redis_sub:
             Context.redis_sub.close()
             await Context.redis_sub.wait_closed()
 
         # Stop mysql pool connection
-        logger.elog(f"[Server] Stopping mysql pool...")
+        logger.elog("[Server] Stopping mysql pool...")
         if Context.mysql:
             Context.mysql.pool.close()
             await Context.mysql.pool.wait_closed()
 
-        logger.elog(f"[Server] Disposing uvicorn instance...")
-    
+        logger.elog("[Server] Disposing uvicorn instance...")
+
     def _manager(*args, **kwargs):
         if Context.is_shutdown:
             return
@@ -163,7 +163,8 @@ def shutdown(original_handler):
         original_handler(*args, **kwargs)
 
     return _manager
-    
+
+
 orig_handle = Server.handle_exit
 Server.handle_exit = shutdown(orig_handle)
 

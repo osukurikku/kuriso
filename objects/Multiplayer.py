@@ -125,6 +125,13 @@ class Match:
 
         return res
 
+    def get_slot(self, token: 'Player') -> Union[Slot, None]:
+        for m_slot in self.slots:
+            if m_slot.token == token:
+                return m_slot
+
+        return None
+
     async def unready_completed(self) -> bool:
         for slot in self.slots:
             if slot.status == SlotStatus.Complete:
@@ -292,11 +299,7 @@ class Match:
         if (slot.status & SlotStatus.HasPlayer) or slot.status == SlotStatus.Locked:
             return False
 
-        currentSlot = None
-        for m_slot in self.slots:
-            if m_slot.token == from_token:
-                currentSlot = m_slot
-                break
+        currentSlot = self.get_slot(from_token)
 
         slot.mods = currentSlot.mods
         slot.token = currentSlot.token
@@ -373,15 +376,16 @@ class Match:
         self.match_freemod = free_mod
         return True
 
-    async def change_mods(self, new_mods: Mods) -> bool:
+    async def change_mods(self, new_mods: Mods, token: 'Player') -> bool:
         if self.is_freemod:
-            self.mods = new_mods & Mods.SpeedAltering
+            if self.host == token or self.host_tourney == token:
+                self.mods = new_mods & Mods.SpeedAltering
 
-            for slot in self.slots:
-                if slot.token and slot.token == self.host or slot.token == self.host_tourney:
-                    slot.mods = new_mods & ~Mods.SpeedAltering
-                    break
+            self.get_slot(token).mods = new_mods & ~Mods.SpeedAltering
         else:
+            if not (self.host == token or self.host_tourney == token):
+                return False
+
             self.mods = new_mods
 
         return True

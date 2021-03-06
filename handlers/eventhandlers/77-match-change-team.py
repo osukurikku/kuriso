@@ -14,13 +14,8 @@ async def match_change_team(_, token: 'Player'):
         return False
 
     match = token.match
-    currentSlot = None
-    for m_slot in match.slots:
-        if m_slot.token == token:
-            currentSlot = m_slot
-            break
-
-    currentSlot.team = SlotTeams.Blue if currentSlot.team == SlotTeams.Red else SlotTeams.Red
+    slot = match.get_slot(token)
+    slot.team = SlotTeams.Blue if slot.team == SlotTeams.Red else SlotTeams.Red
 
     await match.update_match()
     return True

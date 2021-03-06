@@ -14,13 +14,8 @@ async def match_no_beatmap(_, token: 'Player'):
         return False
 
     match = token.match
-    currentSlot = None
-    for m_slot in match.slots:
-        if m_slot.token == token:
-            currentSlot = m_slot
-            break
-
-    currentSlot.status = SlotStatus.NoMap
+    slot = match.get_slot(token)
+    slot.status = SlotStatus.NoMap
 
     await match.update_match()
     return True
