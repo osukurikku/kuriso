@@ -11,15 +11,17 @@ UNDERLINE = '\033[4m'
 
 logging.basicConfig(format=u'[%(asctime)s] %(message)s',
                     filemode='at',
-                    filename='kuriso.log',
+                    filename='kuriso.log')
 
-                    level=logging.INFO)
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
-console = logging.StreamHandler()
-console.setLevel(logging.INFO)
+handler = logging.StreamHandler()
+handler.setLevel(logging.INFO)
 formatter = logging.Formatter(u'[%(asctime)s] %(message)s')
-console.setFormatter(formatter)
-logging.getLogger().addHandler(console)
+handler.setFormatter(formatter)
+
+logger.addHandler(handler)
 
 
 def printColored(string: str, color: str):

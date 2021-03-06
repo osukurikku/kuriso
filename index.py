@@ -30,8 +30,12 @@ async def main():
     # load dotenv file
     load_dotenv(find_dotenv())
 
+    # Load configuration for our project
+    Config.load_config()
+    logger.slog("[Config] Loaded")
+
     # create simple Starlette through uvicorn app
-    app = Starlette(debug=True)
+    app = Starlette(debug=Config.config['debug'])
     app.add_middleware(ProxyHeadersMiddleware)
 
     # load version
@@ -41,10 +45,6 @@ async def main():
 
     # Load all events & handlers
     registrator.load_handlers(app)
-
-    # Load configuration for our project
-    Config.load_config()
-    logger.slog("[Config] Loaded")
 
     # Create Redis connection :sip:
     logger.wlog("[Redis] Trying connection to Redis")
@@ -112,9 +112,7 @@ return result
     event_loop.create_task(pubsub_listeners.init())
 
     Context.load_motd()
-
-    logger.slog(f"[Uvicorn] HTTP server started at {Config.config['host']['address']}:{Config.config['host']['port']}")
-    uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'], log_level=logging.WARNING)
+    uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'], access_log=False)
 
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()

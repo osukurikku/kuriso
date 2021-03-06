@@ -134,7 +134,7 @@ async def clantop(args: List[str], player: 'Player', _):
             'clan_top_enabled': status
         }
     else:
-        user_settings = json.loads(user_settings)
+        user_settings = json.loads(user_settings.decode())
         user_settings['clan_top_enabled'] = status
 
     await Context.redis.set(f'kr:user_settings:{player.id}', json.dumps(user_settings))

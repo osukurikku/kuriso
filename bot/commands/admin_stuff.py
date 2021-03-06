@@ -382,7 +382,7 @@ async def system_status():
     else:
         lets_version = lets_version
     msg = "kuriso server v{}\n".format(Context.version)
-    msg += "LETS scores server v{}\n".format(lets_version)
+    msg += "LETS scores server v{}\n".format(lets_version.decode())
     msg += "made by the Kurikku team\n"
     msg += "\n"
     msg += "=== KURISO STATS ===\n"

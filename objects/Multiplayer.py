@@ -375,6 +375,8 @@ class Match:
 
     async def change_mods(self, new_mods: Mods) -> bool:
         if self.is_freemod:
+            self.mods = new_mods & Mods.SpeedAltering
+
             for slot in self.slots:
                 if slot.token and slot.token == self.host or slot.token == self.host_tourney:
                     slot.mods = new_mods & ~Mods.SpeedAltering
