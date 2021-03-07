@@ -1,7 +1,8 @@
 import re
 from typing import List, TYPE_CHECKING, Any, Dict, Union
 
-import aiohttp, traceback
+import aiohttp
+import traceback
 
 from blob import Context
 from bot.bot import CrystalBot
@@ -86,7 +87,6 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
     play_or_watch = "playing" in message.body or "watching" in message.body
     # Get URL from message
     beatmap_url = args[0][1:]
-    print(beatmap_url)
     modsEnum = Mods(0)
     if play_or_watch:
         mapping = {

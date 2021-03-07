@@ -36,5 +36,9 @@ class Config:
             'pprapi_token': os.environ.get("PPRAPI_TOKEN", ""),
             'crystalbot_api': os.environ.get("CRYSTALBOT_API", ""),
             'crystalbot_token': os.environ.get("CRYSTALBOT_TOKEN", ""),
-            'stats_enabled': bool(os.environ.get("STATS_ENABLED", "0"))
+            'stats_enabled': os.environ.get("STATS_ENABLED", False) in (True, 'True'),
+            'sentry': {
+                'enabled': os.environ.get("SENTRY_ENABLED", False) in (True, 'True'),
+                'url': os.environ.get("SENTRY_URL", "")
+            }
         }

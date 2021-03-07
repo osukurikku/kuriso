@@ -180,7 +180,8 @@ class Player:
 
     async def parse_friends(self) -> bool:
         async for friend in Context.mysql.iterall(
-                'select user2 from users_relationships where user1 = %s',
+                # why in my db, exists user2 with id = -1?
+                'select user2 from users_relationships where user1 = %s and user2 > 0',
                 [self.id]
         ):
             self.friends.append(friend['user2'])

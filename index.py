@@ -1,20 +1,21 @@
 import asyncio
 import logging
 import traceback
-
 import aioredis
-import signal
+
+import sentry_sdk
+from sentry_asgi import SentryMiddleware
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 
 import loops
 import registrator
 import pubsub_listeners
-from starlette.applications import Starlette
 
 import uvicorn
 from uvicorn.middleware.proxy_headers import ProxyHeadersMiddleware
 from uvicorn.main import Server
+from starlette.applications import Starlette
 
 from config import Config
 from blob import Context
@@ -40,6 +41,10 @@ async def main():
     app = Starlette(debug=Config.config['debug'])
     app.add_middleware(ProxyHeadersMiddleware)
 
+    if Config.config['sentry']['enabled']:
+        sentry_sdk.init(dsn=Config.config['sentry']['url'])
+        app.add_middleware(SentryMiddleware)
+
     # load version
     Context.load_version()
     logger.klog(f"Hey! Starting kuriso! v{Context.version} (commit-id: {Context.commit_id})")
@@ -52,8 +57,11 @@ async def main():
     logger.wlog("[Redis] Trying connection to Redis")
     redis_pool = await aioredis.create_redis_pool(
         f"redis://{Config.config['redis']['host']}",
-        password=Config.config['redis']['password'], db=Config.config['redis']['db'],
-        minsize=5, maxsize=10)
+        password=Config.config['redis']['password'],
+        db=Config.config['redis']['db'],
+        minsize=5,
+        maxsize=10
+    )
 
     Context.redis = redis_pool
     logger.slog("[Redis] Connection to Redis established! Well done!")
