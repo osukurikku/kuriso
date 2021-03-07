@@ -1,8 +1,38 @@
-Kuriso W.I.P.
+Kuriso (w.i.p.) - powerful bancho for private osu!servers
+===
+[![Discord](https://discordapp.com/api/guilds/511199892031668245/widget.png?style=shield)](https://discord.gg/5uA3c76)
+[![GitHub issues](https://img.shields.io/github/issues/osukurikku/kuriso.svg)](https://github.com/osukurikku/kuriso/issues)
+[![license](https://img.shields.io/github/license/osukurikku/kuriso.svg?maxAge=2592000)](https://github.com/osukurikku/kuriso/blob/master/LICENSE)
+Future bancho of [kurikku.pw](https://kurikku.pw).\
+Written in Python3.6 by [uvicorn](https://github.com/encode/uvicorn) and [starlette](https://github.com/encode/starlette)
+
+**Fully compatible with ripple-servers**
+
+Installation
 ---
-Future bancho of kurikku.pw
+Recommend version of python is `3.6.5`, `3.6.6`(most stable and tested versions)
+```bash
+$ python -m pip install -r requirements.txt
+$ mv .env.example .env
+$ nano .env
+$ python index.py
+```
+
+Example of [nginx](https://github.com/osukurikku/kuriso/blob/master/ext/nginx_server.conf) usage as proxy
+
+What is this?
+---
+Kuriso - is an improved version of the original Ripple [pep.py](https://github.com/osuripple/pep.py), which was closed in 2019. It inherited the original API, allowing it to be used with LETS and Hanayo. This bancho is much faster due to asynchronous python and can compete with its counterparts in terms of speed
+
+What it handles?
+- Client login
+- General osu!Packets
+- Multiplayer/Spectator
+- Any messages between users
+- osu!Tournament Client (BETA) (**NOT LAZER!**)
 
 TODO:
+---
 - Databases/Caches storage connections
     * [x] Redis
     * [x] MySQL
@@ -13,7 +43,7 @@ TODO:
     * [x] Messages
     * [x] Channels
     * [x] DM
-    * [ ] Bot
+    * [x] Bot
 - Multiplayer
     * [x] Lobby creation
     * [x] Lobby updating
@@ -25,6 +55,7 @@ TODO:
 - IRC
     * [ ] IRC server
     * [ ] Handle connections
-- API v2(why not)
-    * [ ] Chat updates 
-    
+- RipplePeppyAPI v1
+    * [x] Implementation
+- RipplePeppyAPI v2(delta preview)
+    * [ ] Implementation (will not be implemented until first major version will be released)

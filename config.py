@@ -30,6 +30,7 @@ class Config:
             'host': {
                 'address': os.environ.get("WEB_HOST", '127.0.0.1'),
                 'port': int(os.environ.get("WEB_PORT", '13371')),
+                'ci_key': os.environ.get("CI_KEY", "pootareyou"),
                 'irc_port': int(os.environ.get("IRC_PORT", '0'))  # TODO: IRC
             },
             'geoloc_ip': os.environ.get("GEOLOC_IP", "https://country.kurikku.pw/"),

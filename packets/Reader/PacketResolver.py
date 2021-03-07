@@ -8,14 +8,14 @@ from objects.constants.multiplayer import MatchTypes, MatchScoringTypes, MatchTe
 from objects.Multiplayer import Slot
 
 from objects.BanchoObjects import Message
-from packets.Reader.index import KorchoBuffer
+from packets.Reader.index import KurisoBuffer
 
 
 class PacketResolver:
 
     @staticmethod
     async def read_new_presence(data: bytes) -> TypedPresence:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return {
             'action': await buffer.read_byte(),
@@ -28,25 +28,25 @@ class PacketResolver:
 
     @staticmethod
     async def read_request_users_stats(data: bytes) -> List[int]:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_i32_list()
 
     @staticmethod
     async def read_pr_filter(data: bytes) -> int:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32()
 
     @staticmethod
     async def read_slot_index(data: bytes) -> int:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32()
 
     @staticmethod
     async def read_message(data: bytes) -> Message:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return Message(
             sender=await buffer.read_osu_string(),
@@ -57,25 +57,25 @@ class PacketResolver:
 
     @staticmethod
     async def read_channel_name(data: bytes) -> str:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_osu_string()
 
     @staticmethod
     async def read_specatator_id(data: bytes) -> int:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32()
 
     @staticmethod
     async def read_friend_id(data: bytes) -> int:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32()
 
     @staticmethod
     async def read_match(data: bytes) -> TypedReadMatch:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
 
         await buffer.read_int_16()  # skip 3 bytes for id and inProgress because default is False
@@ -136,24 +136,24 @@ class PacketResolver:
 
     @staticmethod
     async def read_mp_join_data(data: bytes) -> Tuple[int, str]:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32(), await buffer.read_osu_string()
 
     @staticmethod
     async def read_mods(data: bytes) -> int:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32()
 
     @staticmethod
     async def read_user_id(data: bytes) -> int:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32()
 
     @staticmethod
     async def read_match_id(data: bytes) -> int:
-        buffer = KorchoBuffer(None)
+        buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return await buffer.read_int_32()

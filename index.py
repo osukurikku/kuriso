@@ -79,13 +79,13 @@ end
 
 return result
 '''
-        # await Context.redis.eval(redis_flush_script, args=["peppy:*"])
-        # await Context.redis.eval(redis_flush_script, args=["peppy:sessions:*"])
+        await Context.redis.eval(redis_flush_script, args=["peppy:*"])
+        await Context.redis.eval(redis_flush_script, args=["peppy:sessions:*"])
     except Exception:
         traceback.print_exc()
         logger.elog("[Redis] initiation data ruined... Check this!")
 
-    # await Context.redis.set("peppy:version", Context.version)
+    await Context.redis.set("peppy:version", Context.version)
 
     logger.wlog("[MySQL] Making connection to MySQL Database...")
     mysql_pool = AsyncSQLPoolWrapper()

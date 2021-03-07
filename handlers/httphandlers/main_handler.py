@@ -16,7 +16,7 @@ from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from objects.Player import Player
 from packets.Builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
-from packets.Reader.index import KorchoBuffer
+from packets.Reader.index import KurisoBuffer
 from helpers import userHelper
 
 ALLOWED_RESTRICT_PACKETS = [
@@ -50,7 +50,7 @@ async def main_handler(request: Request):
         token_object.last_packet_unix = int(time.time())
 
         # packets recieve
-        raw_bytes = KorchoBuffer(None)
+        raw_bytes = KurisoBuffer(None)
         await raw_bytes.write_to_buffer(await request.body())
 
         response = bytearray()

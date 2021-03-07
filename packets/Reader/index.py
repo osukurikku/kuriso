@@ -11,7 +11,7 @@ if TYPE_CHECKING:
     from objects.Multiplayer import Match
 
 
-class KorchoBuffer:
+class KurisoBuffer:
     """
     Very important class ported from JS osu-buffer by @KotRikD
     """
@@ -276,7 +276,7 @@ class KorchoBuffer:
 # 2 - (data, osuType)
 async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[Any, int]]) -> bytes:
     # writing packet
-    dataBuffer = KorchoBuffer(None)
+    dataBuffer = KurisoBuffer(None)
     packet_header = struct.pack("<Hx", pid.value if isinstance(pid, OsuPacketID) else pid)
 
     ptypes = {
