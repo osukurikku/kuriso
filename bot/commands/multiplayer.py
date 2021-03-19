@@ -693,6 +693,17 @@ async def mp_removeRef(args: List[str], player: 'Player', message: 'Message'):
     return "Match referee was deleted!"
 
 
+async def mp_history(_, player: 'Player', __):
+    if not player.match:
+        return 'You are not in any match'
+
+    match = player.match
+    if match.vinse_id:
+        return 'Match history not available, please play at least one map!'
+
+    return f"Match history available [https://kurikku.pw/matches/{match.vinse_id} here]"
+
+
 MP_SUBCOMMANDS = {
     "make": mp_make,
     "close": mp_close,
@@ -718,7 +729,8 @@ MP_SUBCOMMANDS = {
     "addref": mp_addRef,
     "removeref": mp_removeRef,
     "timer": mp_timer,
-    "aborttimer": mp_abort_timer
+    "aborttimer": mp_abort_timer,
+    "history": mp_history
 }
 
 

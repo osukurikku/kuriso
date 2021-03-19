@@ -7,7 +7,6 @@ from blob import Context
 from config import Config
 from helpers import userHelper
 from lib import logger
-from objects.Multiplayer import Match
 from objects.constants import Privileges, Countries
 from objects.constants.BanchoRanks import BanchoRanks
 from objects.constants.GameModes import GameModes
@@ -23,10 +22,11 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from objects.TypedDicts import TypedStats
     from objects.BanchoObjects import Message
-
+    from objects.Multiplayer import Match
 
 # I wan't use construction in python like <class>.__dict__.update
 # but i forgot if class has __slots__ __dict__ is unavailable, sadly ;-;
+
 
 class StatsMode:
     __slots__ = ("game_mode", "total_score", "ranked_score", "pp",
@@ -106,7 +106,7 @@ class Player:
         self.presence_filter: PresenceFilter = PresenceFilter(1)
         self.bot_np: Optional[dict] = None  # TODO: Beatmap
 
-        self._match: Optional[Match] = None
+        self._match: Optional['Match'] = None
         self.friends: Union[List[int]] = []  # bot by default xd
 
         self.queue: bytearray = bytearray()  # main thing
@@ -423,10 +423,10 @@ class Player:
         self.enqueue(await PacketBuilder.SpectatorLeft(old_spec.id))
         logger.slog(f"{old_spec.name} has stopped hidden spectating for {self.name}")
         return True
-    
-    async def say_bancho_restarting(self, delay: int=20) -> bool:
+
+    async def say_bancho_restarting(self, delay: int = 20) -> bool:
         self.enqueue(
-            await PacketBuilder.BanchoRestarting(delay*1000)
+            await PacketBuilder.BanchoRestarting(delay * 1000)
         )
         return True
 

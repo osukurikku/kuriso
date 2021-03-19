@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 # client packet: 56, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchFailed)
-async def match_change_team(_, token: 'Player'):
+async def player_failed(_, token: 'Player'):
     if not token.match:
         return False
 
@@ -22,6 +22,7 @@ async def match_change_team(_, token: 'Player'):
             slotInd = ind
             break
 
+    match.slots[slotInd].passed = False
     player_failed = await PacketBuilder.MatchPlayerFailed(slotInd)
     await match.enqueue_to_specific(player_failed, SlotStatus.Playing)
     return True

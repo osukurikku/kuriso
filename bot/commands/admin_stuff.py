@@ -7,7 +7,7 @@ import registrator
 from blob import Context
 from bot.bot import CrystalBot
 from config import Config
-from helpers import userHelper, legacy_utils
+from helpers import userHelper, legacy_utils, new_utils
 from lib import logger
 from objects.constants import Privileges
 from objects.constants.BanchoRanks import BanchoRanks
@@ -329,23 +329,7 @@ async def unrestrict(args: List[str], player: 'Player', _):
 
 
 async def system_reload():
-    # reload bancho settings
-    await Context.load_bancho_settings()
-
-    # reload default channels
-    await registrator.load_default_channels()
-
-    main_menu_packet = await PacketBuilder.MainMenuIcon(Context.bancho_settings['menu_icon'])
-    channel_info_end = await PacketBuilder.ChannelListeningEnd()
-    tasks = []
-    for _, channel in Context.channels.items():
-        if not channel.temp_channel and channel.can_read:
-            tasks.append(PacketBuilder.ChannelAvailable(channel))
-
-    channel_info_packets = await asyncio.gather(*tasks)
-
-    for token in Context.players.get_all_tokens():
-        token.enqueue(main_menu_packet + channel_info_end + b''.join(channel_info_packets))
+    await new_utils.reload_settings()
 
     return 'Settings reloaded!'
 

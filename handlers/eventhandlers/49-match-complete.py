@@ -21,6 +21,7 @@ async def match_change_team(_, token: 'Player'):
     if any([s.status == SlotStatus.Playing for s in match.slots]):
         return
 
+    await match.match_ended()
     await match.unready_completed()
     match.in_progress = False
 

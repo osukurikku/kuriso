@@ -1,8 +1,11 @@
+import json
 import random
+import time
 from typing import List, Union
 from typing import TYPE_CHECKING
 
 from blob import Context
+from bot.bot import CrystalBot
 from objects.Channel import Channel
 from objects.constants.GameModes import GameModes
 from objects.constants.Modificators import Mods
@@ -15,7 +18,7 @@ if TYPE_CHECKING:
 
 
 class Slot:
-    __slots__ = ('status', 'team', 'mods', 'token', 'skipped', 'loaded')
+    __slots__ = ('status', 'team', 'mods', 'token', 'skipped', 'loaded', 'failed', "passed", 'score')
 
     def __init__(self, status: SlotStatus = SlotStatus.Open, team: SlotTeams = SlotTeams.Neutral,
                  mods: Mods = Mods.NoMod, token: 'Player' = None, skipped: bool = False,
@@ -26,6 +29,9 @@ class Slot:
         self.token = token
         self.loaded = loaded
         self.skipped = skipped
+        self.failed = False
+        self.passed = True
+        self.score = 0
 
     def toggle_ready(self):
         self.status = SlotStatus.Ready
@@ -65,7 +71,7 @@ class Match:
     __slots__ = ('slots', 'id', 'name', 'password', 'beatmap_name', 'beatmap', 'beatmap_md5', 'beatmap_id',
                  'in_progress', 'mods', 'host', 'host_tourney', 'seed', 'need_load', 'channel', 'match_type',
                  'match_playmode', 'match_scoring_type', 'match_team_type', 'match_freemod', 'is_tourney', 'referees',
-                 'is_locked', 'timer_force', 'timer_runned')
+                 'is_locked', 'timer_force', 'timer_runned', 'vinse_id')
 
     def __init__(self, id: int, name: str, password: Union[str, None] = "", host: 'Player' = None,
                  host_tourney: 'Player' = None, is_tourney: bool = False):
@@ -100,6 +106,8 @@ class Match:
 
         self.timer_force: bool = False
         self.timer_runned: bool = False
+
+        self.vinse_id = 0
 
     @property
     def is_freemod(self) -> bool:
@@ -136,6 +144,9 @@ class Match:
         for slot in self.slots:
             if slot.status == SlotStatus.Complete:
                 slot.status = SlotStatus.NotReady
+                slot.score = 0
+                slot.failed = False
+                slot.passed = True
 
         return True
 
@@ -352,9 +363,59 @@ class Match:
 
         for slot in self.slots_with_status(SlotStatus.Playing):
             slot.status = SlotStatus.NotReady
+            slot.failed = True
+            slot.score = 0
 
         await self.update_match()
         await self.enqueue_to_all(await PacketBuilder.MatchAborted())
+        return True
+
+    async def match_ended(self) -> bool:
+        api_message = {
+            "id": self.id,
+            "name": self.name,
+            "beatmap_id": self.beatmap_id,
+            "mods": self.mods.value,
+            "game_mode": self.match_playmode.value,
+            "host_id": self.host.id if not self.is_tourney else self.host_tourney.id,
+            "host_user_name": self.host.name,
+            "game_type": self.match_type.value,
+            "game_score_condition": self.match_scoring_type.value,
+            "game_mod_mode": self.match_freemod.value,
+            "scores": {}
+        }
+
+        # Add score info for each player
+        for slot in self.slots:
+            if slot.token and slot.status == SlotStatus.Complete:
+                api_message["scores"][slot.token.id] = {
+                    "score": slot.score,
+                    "mods": slot.mods.value,
+                    "failed": slot.failed,
+                    "pass": slot.passed,
+                    "team": slot.team.value,
+                    "username": slot.token.name
+                }
+
+        ch_name = "#multi_{}".format(self.id)
+        if not self.vinse_id:
+            self.vinse_id = (int(time.time()) // (60 * 15)) << 32 | self.id
+            await CrystalBot.ez_message(
+                ch_name,
+                f"Match history available [https://kurikku.pw/matches/{self.vinse_id} here]"
+            )
+
+        # If this is a tournament match, then we send a notification in the chat
+        # saying that the match has completed.
+        if self.is_tourney:
+            await CrystalBot.ez_message(
+                ch_name,
+                "Match has just finished."
+            )
+
+        await Context.redis.publish(
+            "api:mp_complete_match", json.dumps(api_message)
+        )
         return True
 
     async def change_special_mods(self, free_mod: MultiSpecialModes) -> bool:

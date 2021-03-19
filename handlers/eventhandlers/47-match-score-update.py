@@ -4,13 +4,16 @@ from packets.Builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
 
 from typing import TYPE_CHECKING
+
+from packets.Reader.index import KurisoBuffer
+
 if TYPE_CHECKING:
     from objects.Player import Player
 
 
 # client packet: 47, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchScoreUpdate)
-async def match_change_team(packet_data: bytes, token: 'Player'):
+async def match_score_update(packet_data: bytes, token: 'Player'):
     if not token.match:
         return False
 
@@ -20,6 +23,18 @@ async def match_change_team(packet_data: bytes, token: 'Player'):
         if slot.token == token:
             slotInd = ind
             break
+    slot = match.slots[slotInd]
+
+    # We need extract score and hp
+    buf = KurisoBuffer('')
+    await buf.write_to_buffer(packet_data)
+    await buf.slice_buffer(17)  # = skip 17 bytes
+    score = await buf.read_int_32()  # = 4 bytes
+    await buf.slice_buffer(5)  # = skip 5 bytes
+    hp_points = await buf.read_byte()
+
+    slot.score = score
+    slot.failed = True if hp_points == 254 else False
 
     packet_data = bytearray(packet_data)
     packet_data[4] = slotInd

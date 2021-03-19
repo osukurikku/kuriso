@@ -10,7 +10,6 @@ from blob import Context
 from lib import logger
 from objects.BanchoObjects import Message
 from objects.BotPlayer import BotPlayer
-from objects.constants import Privileges
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from packets.Builder.index import PacketBuilder
 
@@ -176,7 +175,7 @@ class CrystalBot:
         return True
 
     @classmethod
-    async def ez_message(cls, to: str = None, message: str = None, is_public: bool = True):
+    async def ez_message(cls, to: str = None, message: str = None):
         if not to or not message:
             return False
 

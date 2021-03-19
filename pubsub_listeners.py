@@ -2,15 +2,13 @@
 Hard-coded
 """
 import asyncio
-import json
 import traceback
 
 import aioredis
 
 from blob import Context
-from bot.commands.admin_stuff import system_reload
 from config import Config
-from helpers import userHelper
+from helpers import userHelper, new_utils
 from lib import logger
 from objects.constants.BanchoRanks import BanchoRanks
 from objects.constants.IdleStatuses import Action
@@ -40,7 +38,6 @@ async def notification(ch: aioredis.Channel) -> bool:
             raise ValueError("userID must be integer")
 
         token = Context.players.get_token(uid=data.get('userID'))
-        print(token.name)
         if token:
             token.enqueue(await PacketBuilder.Notification(data.get('message', '')))
     except Exception:
@@ -76,7 +73,7 @@ async def change_username(ch: aioredis.Channel) -> bool:
 
 
 async def reload_settings(ch: aioredis.Channel) -> bool:
-    return await ch.get() == "reload" and await system_reload()
+    return await ch.get() == "reload" and await new_utils.reload_settings()
 
 
 async def update_cached_stats(ch: aioredis.Channel) -> bool:
