@@ -105,7 +105,7 @@ async def main_handler(request: Request):
             return BanchoResponse(await PacketBuilder.UserID(-1))
 
         data = loginData[2].split("|")
-        hashes = data[3].split(":")
+        hashes = data[3].split(":")[:-1]
         time_offset = int(data[1])
         pm_private = data[4] == '1'
 
@@ -218,7 +218,7 @@ async def main_handler(request: Request):
             PacketBuilder.Notification(
                 f'''Welcome to kuriso!\nBuild ver: v{Context.version}\nCommit: {Context.commit_id}'''),
             PacketBuilder.Notification(
-                f'Authorization took: {round(time.time() - start_time, 4)}ms')
+                f'Authorization took: {round((time.time() - start_time) * 1000, 4)}ms')
         ])
         start_bytes = b''.join(start_bytes_async)
 
@@ -256,6 +256,7 @@ async def main_handler(request: Request):
             await userHelper.saveBanchoSession(player.id, request.client.host)
 
             Context.players.add_token(player)
+            await Context.redis.incr("ripple:online_users")
             logger.klog(f"[{player.token}/{player.name}] Joined kuriso!")
 
         # default channels to join is #osu, #announce and #english

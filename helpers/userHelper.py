@@ -176,9 +176,9 @@ async def activate_user(user_id: int, user_name: str, hashes: Union[Tuple[str], 
         # its 100%(prob 80%) windows
         match = await Context.mysql.fetch(
             'select userid from hw_user '
-            'where mac = %(mac)s and unique_id = %(unique_id)s'
-            'and disk_id = %(disk_id)s'
-            'and userid != %(userid)s'
+            'where mac = %(mac)s and unique_id = %(unique_id)s '
+            'and disk_id = %(disk_id)s '
+            'and userid != %(userid)s '
             'and activated = 1 LIMIT 1',
             {
                 "mac": hashes[2],

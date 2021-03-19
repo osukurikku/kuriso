@@ -57,13 +57,3 @@ class TourneyPlayer(Player):
 
         await super().logout()  # super() will ignore ^ delete bancho session
         return
-
-    def dequeue(self) -> Optional[bytes]:
-        try:
-            # to_dequeue: bytes = self.queue.get_nowait()
-            # for (_, sub_p) in self.additional_clients.items():
-            #     sub_p.enqueue(to_dequeue)
-
-            return self.queue.get_nowait()
-        except queue.Empty:
-            pass
