@@ -187,6 +187,11 @@ async def activate_user(user_id: int, user_name: str, hashes: Union[Tuple[str], 
                 "userid": user_id
             }
         )
+
+    await Context.mysql.execute(
+        'update users set privileges = privileges & %s where id = %s limit 1',
+        [~Privileges.USER_PENDING_VERIFICATION, user_id]
+    )
     if match:
         source_user_id = match['userid']
         source_user_name = (await get_username(source_user_id))
@@ -202,8 +207,8 @@ async def activate_user(user_id: int, user_name: str, hashes: Union[Tuple[str], 
         return False
 
     await Context.mysql.execute(
-        'update users set privileges = privileges & %s where id = %s limit 1',
-        [~Privileges.USER_PENDING_VERIFICATION, user_id]
+        "UPDATE users SET privileges = privileges | %s WHERE id = %s LIMIT 1",
+        [(Privileges.USER_PUBLIC | Privileges.USER_NORMAL), user_id]
     )
     return True
 
@@ -340,13 +345,13 @@ async def handle_username_change(user_id: int, new_username: str,
             await target_token.kick(f"Your username has been changed to {new_username}. Please log in again.")
             await append_notes(user_id, [f"Username change: '{target_token.name}' -> '{new_username}'"])
     except UsernameAlreadyInUseError:
-        await log_rap(999, "Username change: {} is already in use!", through="Kuriso")
+        await log_rap(999, f"Username change: {new_username} is already in use!", through="Kuriso")
         if target_token:
             target_token.kick(
                 "There was a critical error while trying to change your username. Please contact a developer.",
                 "username_change_fail")
     except InvalidUsernameError:
-        await log_rap(999, "Username change: {} is not a valid username!", through="Kuriso")
+        await log_rap(999, f"Username change: {new_username} is not a valid username!", through="Kuriso")
         if target_token:
             target_token.kick(
                 "There was a critical error while trying to change your username. Please contact a developer.",

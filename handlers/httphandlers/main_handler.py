@@ -124,6 +124,7 @@ async def main_handler(request: Request):
                             'You are banned. Join our discord for additional information.'))
 
             return BanchoResponse(bytes(response))
+
         if (user_data["privileges"] & Privileges.USER_PUBLIC) and \
                 (user_data["privileges"] & Privileges.USER_NORMAL) == 0 and \
                 (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
@@ -153,6 +154,7 @@ async def main_handler(request: Request):
                 not await userHelper.user_have_hardware(user_data['id']):
             # we need to verify our user
             is_success_verify = await userHelper.activate_user(user_data['id'], user_data['username'], hashes)
+            print(is_success_verify)
             if not is_success_verify:
                 response = (await PacketBuilder.UserID(-1) +
                             await PacketBuilder.Notification(

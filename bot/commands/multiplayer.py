@@ -698,7 +698,7 @@ async def mp_history(_, player: 'Player', __):
         return 'You are not in any match'
 
     match = player.match
-    if match.vinse_id:
+    if not match.vinse_id:
         return 'Match history not available, please play at least one map!'
 
     return f"Match history available [https://kurikku.pw/matches/{match.vinse_id} here]"
