@@ -34,7 +34,7 @@ async def match_score_update(packet_data: bytes, token: 'Player'):
     hp_points = await buf.read_byte()
 
     slot.score = score
-    slot.failed = True if hp_points == 254 else False
+    slot.failed = hp_points == 254
 
     packet_data = bytearray(packet_data)
     packet_data[4] = slotInd

@@ -319,7 +319,7 @@ async def changeUsername(user_id: int = 0, old_username: str = "", new_username:
         if data:
             user_id = data['id']
     else:
-        old_username = get_username(user_id)
+        old_username = await get_username(user_id)
 
     # Change username
     await Context.mysql.execute(
