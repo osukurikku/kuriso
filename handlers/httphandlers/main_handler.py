@@ -224,7 +224,11 @@ async def main_handler(request: Request):
         ])
         start_bytes = b''.join(start_bytes_async)
 
-        if bool(Context.bancho_settings['bancho_maintenance']):
+        if Context.bancho_settings.get('login_notification', None):
+            start_bytes += await PacketBuilder.Notification(
+                Context.bancho_settings.get('login_notification', None))
+
+        if Context.bancho_settings.get('bancho_maintenance', None):
             start_bytes += await PacketBuilder.Notification(
                 'Don\'t forget enable server after maintenance :sip:')
 
