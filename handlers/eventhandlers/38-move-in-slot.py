@@ -17,7 +17,7 @@ async def move_in_slot(packet_data: bytes, token: 'Player'):
 
     match = token.match
     slotIndex = await PacketResolver.read_slot_index(packet_data)
-    if match.in_progress or slotIndex > 16 or slotIndex < 0 or match.is_locked:
+    if match.in_progress or slotIndex > 15 or slotIndex < 0 or match.is_locked:
         return False
 
     await match.change_slot(token, slotIndex)
