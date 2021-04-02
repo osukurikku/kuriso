@@ -19,7 +19,7 @@ async def slot_lock(packet_data: bytes, token: 'Player'):
 
     match = token.match
     slotIndex = await PacketResolver.read_slot_index(packet_data)
-    if match.in_progress or slotIndex > 16 or slotIndex < 0:
+    if match.in_progress or slotIndex > 15 or slotIndex < 0:
         return False
 
     slot = match.slots[slotIndex]

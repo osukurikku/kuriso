@@ -3,6 +3,7 @@ from typing import List, TYPE_CHECKING, Any, Dict, Union
 
 import aiohttp
 import traceback
+from sentry_sdk import capture_exception
 
 from blob import Context
 from bot.bot import CrystalBot
@@ -106,8 +107,9 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
                 modsEnum |= mapping[part]
     try:
         beatmap_id = NP_REGEX.search(beatmap_url).groups(0)[1]
-    except Exception:
+    except Exception as e:
         traceback.print_exc()
+        capture_exception(e)
         return "Can't find beatmap"
 
     token.tillerino = [int(beatmap_id), modsEnum]

@@ -4,6 +4,7 @@ import traceback
 import aioredis
 
 import sentry_sdk
+from sentry_sdk import capture_exception
 from sentry_asgi import SentryMiddleware
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
@@ -81,8 +82,9 @@ return result
 '''
         await Context.redis.eval(redis_flush_script, args=["peppy:*"])
         await Context.redis.eval(redis_flush_script, args=["peppy:sessions:*"])
-    except Exception:
+    except Exception as e:
         traceback.print_exc()
+        capture_exception(e)
         logger.elog("[Redis] initiation data ruined... Check this!")
 
     await Context.redis.set("peppy:version", Context.version)

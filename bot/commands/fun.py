@@ -32,22 +32,30 @@ async def roll(args: List[str], player: 'Player', _):
     return f"{player.name} rolls {points} poins!"
 
 
-@CrystalBot.register_command("!recommend")
-async def recommend(_, player: 'Player', __):
+@CrystalBot.register_command("!recommend", aliases=['!rec'])
+async def recommend(args: List[str], player: 'Player', __):
     stats = player.stats[GameModes.STD]
+
+    mods = -1
+    if args:
+        mods = new_utils.string_to_mods(''.join(args))
 
     params = {
         'pp': stats.pp,
         'token': Config.config['pprapi_token']
     }
+
+    if mods > -1:
+        params['mods'] = mods
+
     data = None
     async with aiohttp.ClientSession() as sess:
         async with sess.get('https://api.kotrik.ru/api/recommendMap', params=params) as resp:
             try:
-                data = await resp.json()
+                data = await resp.json(content_type=None)
             finally:
                 pass
-
+    
     if not data:
         return 'At the moment, I can\'t recommend anything, try later!'
 

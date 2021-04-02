@@ -2,6 +2,7 @@ import asyncio
 import random
 
 import registrator
+import re
 from blob import Context
 from objects.constants.Modificators import Mods
 from packets.Builder.index import PacketBuilder
@@ -38,6 +39,37 @@ def readable_mods(m: Mods) -> str:
     if m & Mods.Relax2:
         r += "AP"
     return r
+
+
+mod_codes = {
+    'NF': 1,
+    'EZ': 2,
+    'TD': 4,
+    'HD': 8,
+    'HR': 16,
+    'SD': 32,
+    'DT': 64,
+    'RX': 128,
+    'HT': 256,
+    'NC': 576,
+    'FL': 1024,
+    'AT': 2048,
+    'SO': 4096,
+    'AP': 8192,
+    'PF': 16416,
+    'V2': 536870912
+}
+def string_to_mods(m: str) -> int:
+    m = m.upper()
+    mod_number = 0
+    mods = re.findall(r".{1,2}", m)
+    if not mods:
+        return 0
+    
+    for mod in mods:
+        mod_number += mod_codes.get(mod, 0)
+
+    return mod_number
 
 
 def humanize(value: int) -> str:

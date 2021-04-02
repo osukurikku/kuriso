@@ -4,6 +4,7 @@ import shlex
 import sys
 import time
 import traceback
+from sentry_sdk import capture_exception
 from typing import Callable, Dict, List, TYPE_CHECKING, Optional, Union
 
 from blob import Context
@@ -157,8 +158,9 @@ class CrystalBot:
         result = None
         try:
             result = await func_command(args, sender, message)
-        except Exception:
+        except Exception as e:
             logger.elog(f"[Bot] {sender.name} with {comand} crashed {args}")
+            capture_exception(e)
             traceback.print_exc()
             return await cls.token.send_message(Message(
                 sender=cls.token.name,

@@ -3,6 +3,7 @@ Hard-coded
 """
 import asyncio
 import traceback
+from sentry_sdk import capture_exception
 
 import aioredis
 
@@ -24,7 +25,8 @@ async def disconnect_handler(ch: aioredis.Channel) -> bool:
         token = Context.players.get_token(uid=data.get('userID'))
         if token:
             await token.kick(reason=data.get('reason', ''))
-    except Exception:
+    except Exception as e:
+        capture_exception(e)
         traceback.print_exc()
         return False
 
@@ -40,7 +42,8 @@ async def notification(ch: aioredis.Channel) -> bool:
         token = Context.players.get_token(uid=data.get('userID'))
         if token:
             token.enqueue(await PacketBuilder.Notification(data.get('message', '')))
-    except Exception:
+    except Exception as e:
+        capture_exception(e)
         traceback.print_exc()
         return False
 
@@ -65,7 +68,8 @@ async def change_username(ch: aioredis.Channel) -> bool:
             await Context.redis.set(
                 f"ripple:change_username_pending:{data.get('userID')}", data.get('newUsername')
             )
-    except Exception:
+    except Exception as e:
+        capture_exception(e)
         traceback.print_exc()
         return False
 
@@ -73,7 +77,7 @@ async def change_username(ch: aioredis.Channel) -> bool:
 
 
 async def reload_settings(ch: aioredis.Channel) -> bool:
-    return await ch.get() == "reload" and await new_utils.reload_settings()
+    return await ch.get() == b"reload" and await new_utils.reload_settings()
 
 
 async def update_cached_stats(ch: aioredis.Channel) -> bool:
@@ -110,7 +114,7 @@ async def ban(ch: aioredis.Channel) -> bool:
     token = Context.players.get_token(uid=userID)
     if token:
         await userHelper.ban(token.id)
-        token.enqueue(await PacketBuilder.UserID(-1))
+        await token.kick("You are banned. Join our discord for additional information.")
 
     return True
 
