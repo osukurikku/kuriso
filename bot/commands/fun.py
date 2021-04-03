@@ -60,7 +60,7 @@ async def recommend(args: List[str], player: 'Player', __):
         return 'At the moment, I can\'t recommend anything, try later!'
 
     readable_mods = new_utils.readable_mods(data['m'])
-    format_result = "[http://osu.ppy.sh/b/{bid} {art} - {name} [{diff}]] Stars: {stars} | BPM: {bpm} | Length: {length} | PP: {pps} {mods}".format(
+    format_result = "[http://osu.kurikku.pw/b/{bid} {art} - {name} [{diff}]] Stars: {stars} | BPM: {bpm} | Length: {length} | PP: {pps} {mods}".format(
         bid=data['b'],
         art=data['art'],
         name=data['t'],

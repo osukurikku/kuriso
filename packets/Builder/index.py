@@ -87,8 +87,8 @@ class PacketBuilder:
             (player.timezone, osuTypes.u_int8),
             (player.country[0], osuTypes.u_int8),
             (player.bancho_privs.value, osuTypes.u_int8),
-            (player.location[0], osuTypes.float64),
             (player.location[1], osuTypes.float64),
+            (player.location[0], osuTypes.float64),
             (player.current_stats.leaderboard_rank, osuTypes.int32)
         )
 

@@ -601,7 +601,7 @@ UPDATE scores s JOIN (
 
     if Config.config['crystalbot_api']:
         params = {
-            'token': Config.config['CRYSTALBOT_TOKEN'],
+            'token': Config.config['crystalbot_token'],
             'poster': token.name,
             'type': rank_typed_str
         }
