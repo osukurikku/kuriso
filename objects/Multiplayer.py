@@ -225,6 +225,11 @@ class Match:
 
         await self.channel.leave_channel(player)  # try to part user
 
+        if self.in_progress and self.need_load > 0:  # probably that user not loaded at all
+            self.need_load -= 1
+            if self.need_load == 0:
+                await self.all_players_loaded()
+
         if len(self.channel.users) == 0:
             # опа ча, игроки поливали, дизбендим матч
             Context.matches.pop(self.id)  # bye match
