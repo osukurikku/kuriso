@@ -614,7 +614,11 @@ async def mp_settings(_, player: 'Player', message: 'Message'):
     if not can_take_match(player, player.match):
         return 'You cant do anything with that match'
 
-    msg = "PLAYERS IN THIS MATCH:\n"
+    link = "no match history"
+    if player.match.vinse_id:
+        link = f"[https://kurikku.pw/matches/{player.match.vinse_id} match history]"
+
+    msg = f"{link}\nPLAYERS IN THIS MATCH:\n"
     empty = True
     for slot in player.match.slots:
         if not slot.token:

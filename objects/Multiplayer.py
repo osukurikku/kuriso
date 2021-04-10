@@ -395,7 +395,7 @@ class Match:
             if slot.token and slot.status == SlotStatus.Complete:
                 api_message["scores"][slot.token.id] = {
                     "score": slot.score,
-                    "mods": slot.mods.value,
+                    "mods": slot.mods.value if self.is_freemod else self.mods,
                     "failed": slot.failed,
                     "pass": slot.passed,
                     "team": slot.team.value,
