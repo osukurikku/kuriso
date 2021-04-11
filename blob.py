@@ -49,6 +49,12 @@ class Context:
         repo = git.Repo(search_parent_directories=True)
         cls.commit_id = repo.head.object.hexsha[0:7]
         ver = open("version", encoding="utf-8", mode="r").read()
+
+        '''
+            МАЖОРНУЮ версию, когда сделаны обратно несовместимые изменения API.
+            МИНОРНУЮ версию, когда вы добавляете новую функциональность, не нарушая обратной совместимости.
+            ПАТЧ-версию, когда вы делаете обратно совместимые исправления.
+        '''
         cls.version = ver
 
     @classmethod

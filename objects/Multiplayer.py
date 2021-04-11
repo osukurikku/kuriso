@@ -125,6 +125,13 @@ class Match:
 
         return None
 
+    def get_slot(self, token: 'Player') -> Union[Slot, None]:
+        for m_slot in self.slots:
+            if m_slot.token == token:
+                return m_slot
+
+        return None
+
     def slots_with_status(self, status: SlotStatus) -> List[Slot]:
         res = []
         for slot in self.slots:
@@ -132,13 +139,6 @@ class Match:
                 res.append(slot)
 
         return res
-
-    def get_slot(self, token: 'Player') -> Union[Slot, None]:
-        for m_slot in self.slots:
-            if m_slot.token == token:
-                return m_slot
-
-        return None
 
     async def unready_completed(self) -> bool:
         for slot in self.slots:
@@ -210,10 +210,7 @@ class Match:
         return True
 
     async def leave_player(self, player: 'Player') -> bool:
-        pl_slot = None
-        for slot in self.slots:
-            if slot.token == player:
-                pl_slot = slot
+        pl_slot = self.get_slot(player)
 
         is_was_host = False
         if pl_slot:
@@ -285,13 +282,9 @@ class Match:
 
     async def move_host(self, new_host: 'Player' = None, slot_ind: int = 0) -> bool:
         to_host = None
-        if new_host and not slot_ind:
-            for m_slot in self.slots:
-                if m_slot.token == new_host:
-                    to_host = m_slot
-                    break
-
-        if not new_host and slot_ind:
+        if new_host:
+            to_host = self.get_slot(new_host)
+        else:
             to_host = self.slots[slot_ind]
 
         if not to_host:
