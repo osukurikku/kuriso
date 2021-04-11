@@ -369,10 +369,6 @@ class Match:
         return True
 
     async def match_ended(self) -> bool:
-        print(self.host_tourney)
-        print(self.host)
-        print(self.is_tourney)
-
         api_message = {
             "id": self.id,
             "name": self.name,
