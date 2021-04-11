@@ -389,14 +389,6 @@ class Player:
         logger.slog(f"{new_spec.name} started to spectating {self.name}!")
         return True
 
-    async def add_hidden_spectator(self, new_spec: 'Player') -> bool:
-        self.spectators.append(new_spec)
-        new_spec.spectating = self
-
-        self.enqueue(await PacketBuilder.SpectatorJoined(new_spec.id))
-        logger.slog(f"{new_spec.name} started to spectating {self.name}!")
-        return True
-
     async def remove_spectator(self, old_spec: 'Player') -> bool:
         spec_chan_name = f"#spec_{self.id}"
         self.spectators.remove(old_spec)  # attempt to remove old player from array
@@ -413,7 +405,7 @@ class Player:
                 spectator.enqueue(fellow_packet)
 
         self.enqueue(await PacketBuilder.SpectatorLeft(old_spec.id))
-        logger.slog(f"{old_spec.name} has stopped hidden spectating for {self.name}")
+        logger.slog(f"{old_spec.name} has stopped spectating for {self.name}")
         return True
 
     async def remove_hidden_spectator(self, old_spec: 'Player') -> bool:

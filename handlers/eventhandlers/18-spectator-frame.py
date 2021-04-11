@@ -18,6 +18,7 @@ async def send_spec_frame(packet_data: bytes, token: 'Player'):
     """
     spectator_frame = await PacketBuilder.QuickSpectatorFrame(packet_data)
     for recv in token.spectators:
+        print(recv.id)
         recv.enqueue(spectator_frame)
 
     return True

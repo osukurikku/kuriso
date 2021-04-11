@@ -369,13 +369,17 @@ class Match:
         return True
 
     async def match_ended(self) -> bool:
+        print(self.host_tourney)
+        print(self.host)
+        print(self.is_tourney)
+
         api_message = {
             "id": self.id,
             "name": self.name,
             "beatmap_id": self.beatmap_id,
             "mods": self.mods.value,
             "game_mode": self.match_playmode.value,
-            "host_id": self.host.id if not self.is_tourney else self.host_tourney.id,
+            "host_id": self.host.id,
             "host_user_name": self.host.name,
             "game_type": self.match_type.value,
             "game_score_condition": self.match_scoring_type.value,
@@ -432,6 +436,10 @@ class Match:
                     if slot.token and slot.token == self.host or slot.token == self.host_tourney:
                         self.mods = slot.mods | (self.mods & Mods.SpeedAltering)
 
+                for slot in self.slots:
+                    if slot.status & SlotStatus.HasPlayer:
+                        slot.mods = self.mods
+
         self.match_freemod = free_mod
         return True
 
@@ -440,11 +448,19 @@ class Match:
             if self.host == token or self.host_tourney == token:
                 self.mods = new_mods & Mods.SpeedAltering
 
+            pl_slot = self.get_slot(token)
+            if not pl_slot:
+                # Player can be bot or tourneyPlayer which not have slot!
+                return True
+
             self.get_slot(token).mods = new_mods & ~Mods.SpeedAltering
         else:
             if not (self.host == token or self.host_tourney == token):
                 return False
 
             self.mods = new_mods
+            for slot in self.slots:
+                if slot.status & SlotStatus.HasPlayer:
+                    slot.mods = new_mods
 
         return True

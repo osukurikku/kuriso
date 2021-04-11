@@ -14,6 +14,9 @@ async def lobby_join(_, token: 'Player'):
     token.is_in_lobby = True
 
     for _, match in Context.matches.items():
+        if match.is_tourney:
+            continue
+
         token.enqueue(await PacketBuilder.NewMatch(match))
 
     return True

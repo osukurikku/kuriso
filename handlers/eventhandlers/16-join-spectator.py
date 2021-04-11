@@ -23,9 +23,6 @@ async def join_spectator(packet_data: bytes, token: 'Player'):
         # remove old spectating, because we found new victim
         await token.spectating.remove_spectator(token)
 
-    if token.is_tourneymode:
-        await player_spec.add_hidden_spectator(token)
-    else:
-        await player_spec.add_spectator(token)
+    await player_spec.add_spectator(token)
     return True
 

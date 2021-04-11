@@ -1,3 +1,4 @@
+from bot.bot import CrystalBot
 from handlers.decorators import OsuEvent
 from objects.constants.Slots import SlotStatus
 from packets.OsuPacketID import OsuPacketID
@@ -16,6 +17,12 @@ async def match_ready(_, token: 'Player'):
     match = token.match
     currentSlot = match.get_slot(token)
     currentSlot.status = SlotStatus.Ready
+
+    if match.is_tourney and all([slot.status == SlotStatus.Ready for slot in match.slots_with_status(SlotStatus.HasPlayer)]):
+        await CrystalBot.ez_message(
+            f"#multi_{match.id}",
+            "All players are ready!"
+        )
 
     await match.update_match()
     return True
