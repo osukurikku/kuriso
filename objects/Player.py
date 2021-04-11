@@ -237,7 +237,7 @@ class Player:
 
     async def logout(self) -> None:
         if not self.is_tourneymode:
-            await Context.redis.decr("ripple:online_users")
+            await Context.redis.set("ripple:online_users", len(Context.players.get_all_tokens(True)))
             if self.ip:
                 await userHelper.deleteBanchoSession(self.id, self.ip)
         # logic

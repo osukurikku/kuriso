@@ -261,7 +261,7 @@ async def main_handler(request: Request):
             await userHelper.saveBanchoSession(player.id, request.client.host)
 
             Context.players.add_token(player)
-            await Context.redis.incr("ripple:online_users")
+            await Context.redis.set("ripple:online_users", len(Context.players.get_all_tokens(True)))
             logger.klog(f"[{player.token}/{player.name}] Joined kuriso!")
 
         # default channels to join is #osu, #announce and #english
