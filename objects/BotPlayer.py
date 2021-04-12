@@ -24,7 +24,7 @@ class BotPlayer(Player):
 
         bot_pr = Status()
         bot_pr.update(
-            action=Action.Idle.value,
+            action=Action.Testing.value,
             action_text=random.choice(["\n-- Sotarks is gone! --",
                                        "\n-- ck was here --",
                                        "\n-- Welcome to Kurikku --",

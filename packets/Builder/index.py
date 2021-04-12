@@ -95,7 +95,7 @@ class PacketBuilder:
     # client packet: 3, bancho response: 11
     @staticmethod
     async def UserStats(player: 'Player') -> bytes:
-        if player.is_bot or player.is_tourneymode:
+        if player.is_tourneymode:
             return b''  # return empty data to hide stats
 
         return await CreateBanchoPacket(
