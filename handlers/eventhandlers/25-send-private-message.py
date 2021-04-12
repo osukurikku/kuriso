@@ -19,14 +19,15 @@ async def send_private_message(packet_data: bytes, token: 'Player'):
 
     message = await PacketResolver.read_message(packet_data)
     message.client_id = token.id
-    message.sender = token.name
+    message.sender = token.safe_name
     if message.to == CrystalBot.bot_name:
         crystal_answer = await CrystalBot.proceed_command(message)
         if not crystal_answer:
             return True  # just ignore it
 
+    print(message.to)
     await token.send_message(Message(
-        sender=token.name,
+        sender=token.safe_name,
         body=message.body,
         to=message.to,
         client_id=token.id

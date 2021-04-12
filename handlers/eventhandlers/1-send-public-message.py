@@ -20,7 +20,7 @@ async def send_private_message(packet_data: bytes, token: 'Player'):
     message = await PacketResolver.read_message(packet_data)
     message.client_id = token.id
     await token.send_message(Message(
-        sender=token.name,
+        sender=token.safe_name,
         body=message.body,
         to=message.to,
         client_id=token.id

@@ -327,8 +327,8 @@ async def mp_invite(args: List[str], player: 'Player', message: 'Message'):
         return 'Sorry, you cant invite bots('
 
     msg = Message(
-        sender=player.name,
-        to=to_token.name,
+        sender=player.safe_name,
+        to=to_token.safe_name,
         body=f"Come join to my game: [osump://{player.match.id}/{player.match.password if player.match.password else ''} {player.match.name}]",
         client_id=player.id
     )

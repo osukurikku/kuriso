@@ -20,8 +20,8 @@ async def match_change_team(packet_data: bytes, token: 'Player'):
     user_id = await PacketResolver.read_user_id(packet_data)
     to = Context.players.get_token(uid=user_id)
     msg = Message(
-        sender=token.name,
-        to=to.name,
+        sender=token.safe_name,
+        to=to.safe_name,
         body=f"Come join to my game: [osump://{token.match.id}/{token.match.password if token.match.password else ''} {token.match.name}]",
         client_id=token.id
     )

@@ -182,8 +182,8 @@ class CrystalBot:
             return False
 
         return await cls.token.send_message(Message(
-            sender=cls.token.name,
+            sender=cls.token.safe_name,
             body=message,
-            to=to,
+            to=to.replace(" ", "_"),
             client_id=cls.token.id
         ))
