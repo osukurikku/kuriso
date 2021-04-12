@@ -1,5 +1,6 @@
 from blob import Context
 from lib import logger
+from packets.Builder.index import PacketBuilder
 from packets.Reader.PacketResolver import PacketResolver
 from handlers.decorators import OsuEvent
 from packets.OsuPacketID import OsuPacketID
@@ -18,6 +19,10 @@ async def join_spectator(packet_data: bytes, token: 'Player'):
     if not player_spec:
         logger.elog(f"{token.name} failed to spectate non-exist user with id {to_spectate_id}")
         return False
+
+    if player_spec:
+        token.enqueue(await PacketBuilder.UserStats(player_spec) +
+                      await PacketBuilder.UserPresence(player_spec))
 
     if token.spectating:
         # remove old spectating, because we found new victim
