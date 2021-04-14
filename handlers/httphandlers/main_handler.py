@@ -284,4 +284,6 @@ async def main_handler(request: Request):
                 "Your account is currently in restricted mode. Please visit kurikku's website for more information."
             )
 
+        Context.stats['osu_versions'].labels(osu_version=osu_version).inc()
+        Context.stats['devclient_usage'].labels(host=request.url.netloc).inc()
         return BanchoResponse(start_bytes, player.token)

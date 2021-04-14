@@ -47,6 +47,16 @@ class Context:
         'multiplayer_matches': prometheus_client.Gauge(
             "kuriso_multiplayer_matches",
             "Count of multiplayer matches on kuriso"
+        ),
+        'osu_versions': prometheus_client.Counter(
+            "kuriso_most_osu_versions",
+            "Most popular osu versions right now!",
+            ("osu_version",)
+        ),
+        'devclient_usage': prometheus_client.Counter(
+            "kuriso_devclient_usage",
+            "Usage of devserver right now",
+            ("host",)
         )
     }
 
