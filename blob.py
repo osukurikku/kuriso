@@ -7,6 +7,7 @@ from lib import AsyncSQLPoolWrapper
 import aioredis
 import time
 import git
+import prometheus_client
 
 from objects.TokenStorage import TokenStorage
 
@@ -37,6 +38,17 @@ class Context:
 
     start_time: int = int(time.time())
     is_shutdown: bool = False
+
+    stats: Dict[str, prometheus_client.Gauge] = {
+        'online_users': prometheus_client.Gauge(
+            "kuriso_online_users",
+            "Counter of online users on kuriso"
+        ),
+        'multiplayer_matches': prometheus_client.Gauge(
+            "kuriso_multiplayer_matches",
+            "Count of multiplayer matches on kuriso"
+        )
+    }
 
     def __new__(cls):
         if not hasattr(cls, 'instance'):

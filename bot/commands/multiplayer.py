@@ -327,8 +327,8 @@ async def mp_invite(args: List[str], player: 'Player', message: 'Message'):
         return 'Sorry, you cant invite bots('
 
     msg = Message(
-        sender=player.safe_name,
-        to=to_token.safe_name,
+        sender=player.name,
+        to=to_token.name,
         body=f"Come join to my game: [osump://{player.match.id}/{player.match.password if player.match.password else ''} {player.match.name}]",
         client_id=player.id
     )
@@ -708,6 +708,19 @@ async def mp_history(_, player: 'Player', __):
     return f"Match history available [https://kurikku.pw/matches/{match.vinse_id} here]"
 
 
+async def mp_juststart(_, player: 'Player', __):
+    if not player.match:
+        return 'You are not in any match'
+
+    if not can_take_match(player, player.match):
+        return 'You cant do anything with that match'
+
+    match = player.match
+    match.need_load = 0
+    await match.all_players_loaded()
+    return 'DORIME START!'
+
+
 MP_SUBCOMMANDS = {
     "make": mp_make,
     "close": mp_close,
@@ -734,7 +747,8 @@ MP_SUBCOMMANDS = {
     "removeref": mp_removeRef,
     "timer": mp_timer,
     "aborttimer": mp_abort_timer,
-    "history": mp_history
+    "history": mp_history,
+    "juststart": mp_juststart
 }
 
 

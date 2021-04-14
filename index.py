@@ -3,6 +3,7 @@ import logging
 import traceback
 import aioredis
 
+import prometheus_client
 import sentry_sdk
 from sentry_sdk import capture_exception
 from sentry_asgi import SentryMiddleware
@@ -103,6 +104,14 @@ return result
     Context.mysql = mysql_pool
     logger.slog("[MySQL] Connection established!")
 
+    if Config.config['prometheus']['enabled']:
+        logger.wlog("[Prometheus stats] Loading...")
+        prometheus_client.start_http_server(
+            Config.config['prometheus']['port'], 
+            addr=Config.config['prometheus']['host']
+        )
+        logger.slog("[Prometheus stats] Metrics started...")
+
     # now load bancho settings
     await Context.load_bancho_settings()
     await registrator.load_default_channels()
@@ -118,6 +127,8 @@ return result
     scheduler = AsyncIOScheduler()
     scheduler.start()
     scheduler.add_job(loops.clean_timeouts, "interval", seconds=60)
+    if Config.config['prometheus']['enabled']:
+        scheduler.add_job(loops.add_prometheus_stats, "interval", seconds=15)
     scheduler.add_job(loops.add_stats, "interval", seconds=120)
 
     # Setup pub/sub listeners for LETS/old admin panel events

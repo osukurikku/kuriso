@@ -15,7 +15,7 @@ async def match_no_beatmap(_, token: 'Player'):
 
     match = token.match
     match.need_load -= 1
-    if match.need_load == 0:
+    if match.need_load <= 0:
         '''
             Start game
         '''

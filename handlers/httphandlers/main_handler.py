@@ -280,7 +280,7 @@ async def main_handler(request: Request):
         if player.is_restricted:
             start_bytes += await PacketBuilder.UserRestricted()
             await CrystalBot.ez_message(
-                player.safe_name,
+                player.name,
                 "Your account is currently in restricted mode. Please visit kurikku's website for more information."
             )
 

@@ -363,12 +363,14 @@ class Match:
             slot.status = SlotStatus.NotReady
             slot.failed = True
             slot.score = 0
-
+        
+        self.need_load = 0
         await self.update_match()
         await self.enqueue_to_all(await PacketBuilder.MatchAborted())
         return True
 
     async def match_ended(self) -> bool:
+        self.need_load = 0
         api_message = {
             "id": self.id,
             "name": self.name,

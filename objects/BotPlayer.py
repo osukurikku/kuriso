@@ -105,7 +105,7 @@ class BotPlayer(Player):
             return True
 
         # DM
-        receiver = Context.players.get_token(name=message.to.lower())
+        receiver = Context.players.get_token(name=message.to.lower().strip().replace(" ", "_"))
         if not receiver:
             logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
             return False

@@ -44,3 +44,13 @@ async def add_stats():
             "INSERT INTO bancho_stats (users_osu, multiplayer_games) VALUES (%s, %s)",
             [online_users, multiplayers_matches]
         )
+
+
+async def add_prometheus_stats():
+    '''
+        That code calls every 15s!
+    '''
+    online_users = len(Context.players.get_all_tokens(ignore_tournament_clients=True))
+    multiplayers_matches = len(Context.matches.items())
+    Context.stats['online_users'].set(online_users)
+    Context.stats['multiplayer_matches'].set(multiplayers_matches)

@@ -41,5 +41,10 @@ class Config:
             'sentry': {
                 'enabled': os.environ.get("SENTRY_ENABLED", False) in (True, 'True'),
                 'url': os.environ.get("SENTRY_URL", "")
+            },
+            'prometheus': {
+                'enabled': os.environ.get("PROMETHEUS_ENABLED", False) in (True, 'True'),
+                'port': int(os.environ.get("PROMETHEUS_PORT", "13372")),
+                'host': os.environ.get("PROMETHEUS_HOST", "127.0.0.1")
             }
         }

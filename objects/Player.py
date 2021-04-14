@@ -141,6 +141,10 @@ class Player:
         return self.name.lower().strip().replace(" ", "_")
 
     @property
+    def irc_name(self) -> str:
+        return self.name.replace(" ", "_")
+
+    @property
     def is_restricted(self) -> bool:
         return (self.privileges & Privileges.USER_NORMAL) and not (self.privileges & Privileges.USER_PUBLIC)
 
@@ -328,7 +332,7 @@ class Player:
             return True
 
         # DM
-        receiver = Context.players.get_token(name=message.to.lower())
+        receiver = Context.players.get_token(name=message.to.lower().strip().replace(" ", "_"))
         if not receiver:
             logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
             return False
