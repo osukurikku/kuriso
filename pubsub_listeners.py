@@ -155,13 +155,11 @@ async def sub_reader(ch: aioredis.Channel):
 
 async def init():
     redis_values = dict(
-        db=Config.config['redis']['db'],
-        minsize=5,
-        maxsize=10
+        db=Config.config['redis']['db']
     )
     if Config.config['redis']['password']:
         redis_values['password'] = Config.config['redis']['password']
-    
+
     subscriber = await aioredis.create_redis(
         f"redis://{Config.config['redis']['host']}",
         **redis_values
