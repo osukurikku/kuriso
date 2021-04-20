@@ -57,12 +57,18 @@ async def main():
 
     # Create Redis connection :sip:
     logger.wlog("[Redis] Trying connection to Redis")
-    redis_pool = await aioredis.create_redis_pool(
-        f"redis://{Config.config['redis']['host']}",
-        password=Config.config['redis']['password'],
+
+    redis_values = dict(
         db=Config.config['redis']['db'],
         minsize=5,
         maxsize=10
+    )
+    if Config.config['redis']['password']:
+        redis_values['password'] = Config.config['redis']['password']
+    
+    redis_pool = await aioredis.create_redis_pool(
+        f"redis://{Config.config['redis']['host']}",
+        **redis_values
     )
 
     Context.redis = redis_pool
