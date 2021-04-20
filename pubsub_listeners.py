@@ -154,14 +154,18 @@ async def sub_reader(ch: aioredis.Channel):
 
 
 async def init():
-    if Config.config['redis']['password'] != "":
-        subscriber = await aioredis.create_redis(
+    redis_values = dict(
+        db=Config.config['redis']['db'],
+        minsize=5,
+        maxsize=10
+    )
+    if Config.config['redis']['password']:
+        redis_values['password'] = Config.config['redis']['password']
+    
+    subscriber = await aioredis.create_redis(
         f"redis://{Config.config['redis']['host']}",
-        password=Config.config['redis']['password'], db=Config.config['redis']['db'])
-    else:
-        subscriber = await aioredis.create_redis(
-        f"redis://{Config.config['redis']['host']}",
-        db=Config.config['redis']['db'])
+        **redis_values
+    )
 
     subscribed_channels = await subscriber.subscribe(*[
         k for (k, _) in MAPPED_FUNCTIONS.items()
