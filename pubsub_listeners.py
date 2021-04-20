@@ -154,7 +154,12 @@ async def sub_reader(ch: aioredis.Channel):
 
 
 async def init():
-    subscriber = await aioredis.create_redis(
+    if Config.config['redis']['password'] != "":
+        subscriber = await aioredis.create_redis(
+        f"redis://{Config.config['redis']['host']}",
+        password=Config.config['redis']['password'], db=Config.config['redis']['db'])
+    else:
+        subscriber = await aioredis.create_redis(
         f"redis://{Config.config['redis']['host']}",
         password=Config.config['redis']['password'], db=Config.config['redis']['db'])
 
