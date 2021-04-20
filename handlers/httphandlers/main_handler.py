@@ -208,6 +208,10 @@ async def main_handler(request: Request):
                 player.parse_country(request.client.host)
             ])
 
+        user_country = await userHelper.get_country(user_data['id'])
+        if user_country == "XX":
+            await userHelper.set_country(user_data['id'], player.country[1])
+
         start_bytes_async = await asyncio.gather(*[
             PacketBuilder.UserID(player.id),
             PacketBuilder.ProtocolVersion(19),

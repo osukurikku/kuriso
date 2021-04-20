@@ -90,6 +90,13 @@ async def get_country(user_id: int) -> str:
     return r["country"]
 
 
+async def set_country(user_id: int, country: str) -> bool:
+    return await Context.mysql.execute(
+        "UPDATE users_stats SET country = %s WHERE id = %s",
+        [country, user_id]
+    )
+
+
 async def append_notes(user_id: int, notes: Union[Tuple[str], List[str]], add_date: bool = True):
     to_apply = ""
     if add_date:
