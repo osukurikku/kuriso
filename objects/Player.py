@@ -201,6 +201,14 @@ class Player:
             ))['country'].upper()
             self.country = (Countries.get_country_id(donor_location), donor_location)
         else:
+            if Context.geoip_db:
+                # You have local geoip2 database, nice!
+                data = Context.geoip_db.city(ip)
+
+                self.country = (Countries.get_country_id(data.country.iso_code), data.country.iso_code)
+                self.location = (data.location.latitude, data.location.longitude)
+                return True
+
             data = None
             async with aiohttp.ClientSession() as sess:
                 async with sess.get(Config.config['geoloc_ip'] + ip) as resp:

@@ -65,7 +65,7 @@ async def main():
     )
     if Config.config['redis']['password']:
         redis_values['password'] = Config.config['redis']['password']
-    
+
     redis_pool = await aioredis.create_redis_pool(
         f"redis://{Config.config['redis']['host']}",
         **redis_values
@@ -113,10 +113,16 @@ return result
     if Config.config['prometheus']['enabled']:
         logger.wlog("[Prometheus stats] Loading...")
         prometheus_client.start_http_server(
-            Config.config['prometheus']['port'], 
+            Config.config['prometheus']['port'],
             addr=Config.config['prometheus']['host']
         )
         logger.slog("[Prometheus stats] Metrics started...")
+
+    logger.wlog("[Local GeoIP2] Trying to load local geoip database")
+    if not Context.try_to_load_geoip2():
+        logger.elog("[Local GeoIP2] Can't locate local file. Using environment variable...")
+    else:
+        logger.slog("[Local GeoIP2] Loaded successfully")
 
     # now load bancho settings
     await Context.load_bancho_settings()

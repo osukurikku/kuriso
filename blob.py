@@ -1,7 +1,10 @@
 """
 This file contains context features :sip:
 """
+import os
 from typing import Dict
+
+import geoip2.database
 
 from lib import AsyncSQLPoolWrapper
 import aioredis
@@ -38,6 +41,8 @@ class Context:
 
     start_time: int = int(time.time())
     is_shutdown: bool = False
+
+    geoip_db: geoip2.database.Reader = None
 
     stats: Dict[str, prometheus_client.Gauge] = {
         'online_users': prometheus_client.Gauge(
@@ -100,3 +105,12 @@ class Context:
         motd_file = open("kuriso.HTTP", "r", encoding="utf-8")
         cls.motd_html = motd_file.read()
         motd_file.close()
+
+    @classmethod
+    def try_to_load_geoip2(cls) -> bool:
+        PATH = './ext/GeoLite2-City.mmdb'
+        if not os.path.exists(PATH):
+            return False
+
+        cls.geoip_db = geoip2.database.Reader(PATH)
+        return True

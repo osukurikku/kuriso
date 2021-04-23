@@ -7,3 +7,5 @@ __pycache__/
 .env.debug
 .env.production
 .env
+
+ext/GeoLite2-City.mmdb
