@@ -1,6 +1,5 @@
 from handlers.decorators import OsuEvent
 from packets.OsuPacketID import OsuPacketID
-from packets.Builder.index import PacketBuilder
 from blob import Context
 
 from typing import TYPE_CHECKING

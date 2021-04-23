@@ -24,9 +24,6 @@ async def update_action(packet_data: bytes, p: 'Player'):
     p.pr_status.update(**resolved_data)
 
     data = await PacketBuilder.UserStats(p) + await PacketBuilder.UserPresence(p)
-    for user in Context.players.get_all_tokens():
-        if user.is_restricted:
-            continue
-        user.enqueue(data)
+    p.enqueue(data)
 
     return True
