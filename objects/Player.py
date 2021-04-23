@@ -203,7 +203,11 @@ class Player:
         else:
             if Context.geoip_db:
                 # You have local geoip2 database, nice!
-                data = Context.geoip_db.city(ip)
+                try:
+                    data = Context.geoip_db.city(ip)
+                except:
+                    logger.elog(f"[Player/{self.name}] Can't parse location for {ip}")
+                    return False
 
                 self.country = (Countries.get_country_id(data.country.iso_code), data.country.iso_code)
                 self.location = (data.location.latitude, data.location.longitude)
