@@ -25,5 +25,7 @@ async def update_action(packet_data: bytes, p: 'Player'):
 
     data = await PacketBuilder.UserStats(p) + await PacketBuilder.UserPresence(p)
     p.enqueue(data)
+    for spec in p.spectators:
+        spec.enqueue(data)
 
     return True

@@ -434,7 +434,6 @@ class Match:
                     if slot.token and slot.token == self.host or slot.token == self.host_tourney:
                         self.mods = slot.mods | (self.mods & Mods.SpeedAltering)
 
-                for slot in self.slots:
                     if slot.status & SlotStatus.HasPlayer:
                         slot.mods = self.mods
 

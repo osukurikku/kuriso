@@ -556,7 +556,7 @@ async def mp_mods(args: List[str], player: 'Player', message: 'Message'):
         if _mod.lower().strip() == "freemod":
             freeMod = True
 
-    await player.match.change_special_mods(MultiSpecialModes.Freemod if freeMod else MultiSpecialModes.Empty)
+    await player.match.change_special_mods(MultiSpecialModes(int(freeMod)))
     await player.match.change_mods(new_mods, player)
     await player.match.unready_everyone()
     await player.match.update_match()
