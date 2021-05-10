@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from objects.Player import Player
     from objects.BanchoObjects import Message
 
-NP_REGEX = re.compile(r"^https?:\/\/osu\.ppy\.sh\/b\/(\d*)|^https?:\/\/osu\.kurikku\.pw\/b\/(\d*)")
+NP_REGEX = re.compile(r"(^https?:\/\/.*(\/b\/|\/beatmapsets\/\d\#))(\d*)")
 ALLOWED_MODS = ["NO", "NF", "EZ", "HD", "HR", "DT", "HT", "NC", "FL", "SO", "AP", "RX"]
 ALLOWED_MODS_MAPPING = {
     'NO': Mods.NoMod,
@@ -106,7 +106,7 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
             if part in mapping.keys():
                 modsEnum |= mapping[part]
     try:
-        beatmap_id = NP_REGEX.search(beatmap_url).groups(0)[1]
+        beatmap_id = NP_REGEX.search(beatmap_url).groups(3)
     except Exception as e:
         traceback.print_exc()
         capture_exception(e)

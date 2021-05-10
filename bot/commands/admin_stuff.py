@@ -510,7 +510,7 @@ async def map_rank(args: List[str], token: 'Player', _):
         if len(args) < 2 or args[1] not in ['set', 'map']:
             return 'set or map?'
         if len(args) < 3 or not args[2].isdigit():
-            return 'Maybe you can present me ID of map/set?'
+            return 'Maybe you can present me ID of map(bid)'
     else:
         return 'rank/unrank/love ?'
 
@@ -541,6 +541,8 @@ async def map_rank(args: List[str], token: 'Player', _):
         "SELECT * FROM beatmaps WHERE beatmap_id = %s LIMIT 1",
         [map_id]
     )
+    if not beatmap_data:
+        return 'Are you sure that you present bid(not set id)?'
 
     if map_type == 'set':
         await Context.mysql.execute(

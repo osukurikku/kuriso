@@ -50,7 +50,7 @@ async def recommend(args: List[str], player: 'Player', __):
 
     data = None
     async with aiohttp.ClientSession() as sess:
-        async with sess.get('https://api.kotrik.ru/api/recommendMap', params=params) as resp:
+        async with sess.get('https://api.kotrik.ru/api/recommendMap', params=params, timeout=5) as resp:
             try:
                 data = await resp.json(content_type=None)
             finally:
