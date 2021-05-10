@@ -106,7 +106,7 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
             if part in mapping.keys():
                 modsEnum |= mapping[part]
     try:
-        beatmap_id = NP_REGEX.search(beatmap_url).groups(3)
+        beatmap_id = NP_REGEX.search(beatmap_url).groups(3)[2]
     except Exception as e:
         traceback.print_exc()
         capture_exception(e)
