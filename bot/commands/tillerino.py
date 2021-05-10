@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from objects.Player import Player
     from objects.BanchoObjects import Message
 
-NP_REGEX = re.compile(r"(^https?:\/\/.*(\/b\/|\/beatmapsets\/\d\#))(\d*)")
+NP_REGEX = re.compile(r"(^https?:\/\/.*(\/b\/|\/beatmapsets\/\d*\#))(\d*)")
 ALLOWED_MODS = ["NO", "NF", "EZ", "HD", "HR", "DT", "HT", "NC", "FL", "SO", "AP", "RX"]
 ALLOWED_MODS_MAPPING = {
     'NO': Mods.NoMod,
