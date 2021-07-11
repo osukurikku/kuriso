@@ -119,7 +119,7 @@ async def main_handler(request: Request):
         if not (user_data["privileges"] & 3 > 0) and \
                 (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
             logger.elog(f"[{loginData}] Banned chmo tried to login")
-            response = (await PacketBuilder.UserID(-3) +
+            response = (await PacketBuilder.UserID(-1) +
                         await PacketBuilder.Notification(
                             'You are banned. Join our discord for additional information.'))
 
@@ -290,4 +290,10 @@ async def main_handler(request: Request):
 
         Context.stats['osu_versions'].labels(osu_version=osu_version).inc()
         Context.stats['devclient_usage'].labels(host=request.url.netloc).inc()
+
+        if "ppy.sh" in request.url.netloc:
+            await CrystalBot.ez_message(
+                player.name,
+                "I see you are using an old connection. It's not recommended now, and will be disabled in near future. If you do not know what -devserver is, I advise you to read the instructions and use the (new connection)[https://kurikku.pw/doc/connection_through_shortcut]."
+            )
         return BanchoResponse(start_bytes, player.token)

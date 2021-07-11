@@ -56,7 +56,7 @@ async def recommend(args: List[str], player: 'Player', __):
             finally:
                 pass
     
-    if not data:
+    if not data or not data['code'] != 200:
         return 'At the moment, I can\'t recommend anything, try later!'
 
     readable_mods = new_utils.readable_mods(data['m'])

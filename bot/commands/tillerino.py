@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from objects.Player import Player
     from objects.BanchoObjects import Message
 
-NP_REGEX = re.compile(r"(^https?:\/\/.*(\/b\/|\/beatmapsets\/\d*\#(?:.+?\/)?))(\d*)")
+NP_REGEX = re.compile(r"(^https?:\/\/.*(\/b\/|\/beatmapsets\/\d*\#(?:.+?\/)?))(?:\/?)(\d*)")
 ALLOWED_MODS = ["NO", "NF", "EZ", "HD", "HR", "DT", "HT", "NC", "FL", "SO", "AP", "RX"]
 ALLOWED_MODS_MAPPING = {
     'NO': Mods.NoMod,
@@ -132,7 +132,7 @@ async def tillerino_mods(args: List[str], token: 'Player', _):
     mods_enum = Mods(0)
     for mod in mods_list:
         if mod not in ALLOWED_MODS:
-            return f"Invalid mods. Allowed mods: {', '.join(ALLOWED_MODS)} do not use spaces for multiple mods."
+            return f"Invalid mods. Allowed mods: {', '.join(ALLOWED_MODS)}. Make sure that you separate them."
 
         mods_enum |= ALLOWED_MODS_MAPPING.get(mod, 0)
 
