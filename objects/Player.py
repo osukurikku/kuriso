@@ -146,7 +146,8 @@ class Player:
 
     @property
     def is_restricted(self) -> bool:
-        return (self.privileges & Privileges.USER_NORMAL) and not (self.privileges & Privileges.USER_PUBLIC)
+        # return (self.privileges & Privileges.USER_NORMAL) and not (self.privileges & Privileges.USER_PUBLIC)
+        return (self.privileges & KurikkuPrivileges.Normal) != KurikkuPrivileges.Normal
 
     @property
     def bancho_privs(self) -> BanchoRanks:

@@ -353,12 +353,14 @@ async def handle_username_change(user_id: int, new_username: str,
             await append_notes(user_id, [f"Username change: '{target_token.name}' -> '{new_username}'"])
     except UsernameAlreadyInUseError:
         await log_rap(999, f"Username change: {new_username} is already in use!", through="Kuriso")
+        await Context.redis.delete(f"ripple:change_username_pending:{user_id}")
         if target_token:
             target_token.kick(
                 "There was a critical error while trying to change your username. Please contact a developer.",
                 "username_change_fail")
     except InvalidUsernameError:
         await log_rap(999, f"Username change: {new_username} is not a valid username!", through="Kuriso")
+        await Context.redis.delete(f"ripple:change_username_pending:{user_id}")
         if target_token:
             target_token.kick(
                 "There was a critical error while trying to change your username. Please contact a developer.",
