@@ -118,7 +118,7 @@ class Player:
         self.is_in_lobby: bool = False
 
         self.is_bot: bool = is_bot
-        self.tillerino: List[Union[int, Mods]] = [0, Mods(0)]  # 1 - map id, 2 - current_mods <- legacy code
+        self.tillerino: List[Union[int, Mods]] = [0, Mods(0), -1.0]  # 1 - map id, 2 - current_mods, 3 - acc <- legacy code
         self.user_chat_log: List['Message'] = []
 
     @property

@@ -37,10 +37,12 @@ ALLOWED_MODS_MAPPING = {
 async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str, Dict[Any, Any]]:
     currentMap = token.tillerino[0]
     currentMods = token.tillerino[1]
+    currentAcc = token.tillerino[2]
 
     params = {
         'b': currentMap,
-        'm': currentMods.value
+        'm': currentMods.value,
+        'a': currentAcc
     }
 
     data = None
@@ -64,7 +66,10 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
         return data
 
     msg = f'{data["song_name"]} {"+" if currentMods > 0 else ""}{new_utils.readable_mods(currentMods)} '
-    msg += f'95%: {data["pp"][3]}pp | 98%: {data["pp"][2]}pp | 99% {data["pp"][1]}pp | 100%: {data["pp"][0]}pp'
+    if currentAcc > -1.0:
+        msg += f"{int(currentAcc)}%: {data['pp'][0]}"
+    else:
+        msg += f'95%: {data["pp"][3]}pp | 98%: {data["pp"][2]}pp | 99% {data["pp"][1]}pp | 100%: {data["pp"][0]}pp'
 
     original_ar = data['ar']
     # calc new AR if HR/EZ is on
@@ -82,7 +87,7 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
 
 @CrystalBot.register_command("\x01ACTION is listening to", aliases=['\x01ACTION is playing', '\x01ACTION is watching'])
 async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
-    if (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
+    if message.to.startswith("#") and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
         return False  # don't allow run np commands in public channels!
 
     play_or_watch = "playing" in message.body or "watching" in message.body
@@ -112,17 +117,17 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
         capture_exception(e)
         return "Can't find beatmap"
 
-    token.tillerino = [int(beatmap_id), modsEnum]
+    token.tillerino = [int(beatmap_id), modsEnum, -1.0]
 
     return await get_pp_message(token)
 
 
 @CrystalBot.register_command("!with")
-async def tillerino_mods(args: List[str], token: 'Player', _):
+async def tillerino_mods(args: List[str], token: 'Player', message: 'Message'):
     if not args:
         return 'Enter mods as first argument'
 
-    if (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
+    if message.to.startswith("#") and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
         return False  # don't allow run np commands in public channels!
 
     if token.tillerino[0] == 0:
@@ -140,10 +145,28 @@ async def tillerino_mods(args: List[str], token: 'Player', _):
 
     return await get_pp_message(token)
 
+@CrystalBot.register_command("!acc")
+async def tillerino_acc(args: List[str], token: 'Player', message: 'Message'):
+    if not args:
+        return 'Enter mods as first argument'
+
+    if message.to.startswith("#") and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
+        return False  # don't allow run np commands in public channels!
+
+    if token.tillerino[0] == 0:
+        return 'Please give me beatmap first with /np command'
+
+    try:
+        acc = float(args[0])
+    except:
+        return 'Please enter proper accuracy'
+    
+    token.tillerino[2] = acc
+    return get_pp_message(token)
 
 @CrystalBot.register_command("!last")
 async def tillerino_last(_, token: 'Player', message: 'Message'):
-    if (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
+    if message.to.startswith("#") and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
         return False  # don't allow run np commands in public channels!
 
     data = await Context.mysql.fetch("""SELECT beatmaps.song_name as sn, scores.*,
@@ -189,9 +212,9 @@ async def tillerino_last(_, token: 'Player', message: 'Message'):
     if data["mods"]:
         token.tillerino[0] = data["bid"]
         token.tillerino[1] = Mods(data["mods"])
-        oppai_data = await get_pp_message(token, just_data=True)
-        if "stars" in oppai_data:
-            stars = oppai_data['stars']
+        peace_data = await get_pp_message(token, just_data=True)
+        if "stars" in peace_data:
+            stars = peace_data['stars']
 
     msg += " | {0:.2f} stars".format(stars)
     return msg
