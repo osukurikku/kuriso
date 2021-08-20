@@ -42,7 +42,7 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
     params = {
         'b': currentMap,
         'm': currentMods.value,
-        'a': currentAcc
+        'a': str(currentAcc)
     }
 
     data = None
@@ -53,7 +53,9 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
                     data = await resp.json()
                 finally:
                     pass
-    except Exception:
+    except Exception as e:
+        capture_exception(e)
+        traceback.print_exc()
         return 'LETS api is down. Try later!'
 
     if "status" not in data:
@@ -162,7 +164,7 @@ async def tillerino_acc(args: List[str], token: 'Player', message: 'Message'):
         return 'Please enter proper accuracy'
     
     token.tillerino[2] = acc
-    return get_pp_message(token)
+    return await get_pp_message(token)
 
 @CrystalBot.register_command("!last")
 async def tillerino_last(_, token: 'Player', message: 'Message'):
