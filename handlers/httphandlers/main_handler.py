@@ -116,7 +116,23 @@ async def main_handler(request: Request):
             # wtf osu
             await Context.players.get_token(uid=user_data['id']).logout()
 
-        if not (user_data["privileges"] & 3 > 0) and \
+        if (user_data['privileges'] & Privileges.USER_PENDING_VERIFICATION) or \
+                not await userHelper.user_have_hardware(user_data['id']):
+            # we need to verify our user
+            is_success_verify = await userHelper.activate_user(user_data['id'], user_data['username'], hashes)
+            if not is_success_verify:
+                response = (await PacketBuilder.UserID(-1) +
+                            await PacketBuilder.Notification(
+                                'Your HWID is not clear. Contact Staff to create account!'))
+                return BanchoResponse(bytes(response))
+            else:
+                user_data['privileges'] = KurikkuPrivileges.Normal.value
+                await Context.mysql.execute(
+                    "UPDATE hw_user SET activated = 1 WHERE userid = %s AND mac = %s AND unique_id = %s AND disk_id = %s",
+                    [user_data['id'], hashes[2], hashes[3], hashes[4]]
+                )
+
+        if (user_data["privileges"] & KurikkuPrivileges.Normal) != KurikkuPrivileges.Normal and \
                 (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
             logger.elog(f"[{loginData}] Banned chmo tried to login")
             response = (await PacketBuilder.UserID(-1) +
@@ -125,9 +141,8 @@ async def main_handler(request: Request):
 
             return BanchoResponse(bytes(response))
 
-        if (user_data["privileges"] & Privileges.USER_PUBLIC) and \
-                (user_data["privileges"] & Privileges.USER_NORMAL) == 0 and \
-                (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
+        if ((user_data["privileges"] & Privileges.USER_PUBLIC > 0) and (user_data["privileges"] & Privileges.USER_NORMAL == 0)) \
+            and (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
             logger.elog(f"[{loginData}] Locked dude tried to login")
             response = (await PacketBuilder.UserID(-1) +
                         await PacketBuilder.Notification(
@@ -149,21 +164,6 @@ async def main_handler(request: Request):
             ON DUPLICATE KEY UPDATE occurencies = occurencies + 1''',
                                     [user_data['id'], hashes[2], hashes[3], hashes[4]]
                                     )  # log hardware и не ебёт что
-
-        if (user_data['privileges'] & Privileges.USER_PENDING_VERIFICATION) or \
-                not await userHelper.user_have_hardware(user_data['id']):
-            # we need to verify our user
-            is_success_verify = await userHelper.activate_user(user_data['id'], user_data['username'], hashes)
-            if not is_success_verify:
-                response = (await PacketBuilder.UserID(-1) +
-                            await PacketBuilder.Notification(
-                                'Your HWID is not clear. Contact Staff to create account!'))
-                return BanchoResponse(bytes(response))
-            else:
-                await Context.mysql.execute(
-                    "UPDATE hw_user SET activated = 1 WHERE userid = %s AND mac = %s AND unique_id = %s AND disk_id = %s",
-                    [user_data['id'], hashes[2], hashes[3], hashes[4]]
-                )
 
         osu_version = data[0]
         await userHelper.setUserLastOsuVer(user_data['id'], osu_version)
@@ -207,6 +207,13 @@ async def main_handler(request: Request):
                 player.update_stats(),
                 player.parse_country(request.client.host)
             ])
+
+        if "ppy.sh" in request.url.netloc and not (player.is_admin or (player.privileges & KurikkuPrivileges.TournamentStaff == KurikkuPrivileges.TournamentStaff)):
+            return BanchoResponse(bytes(
+                await PacketBuilder.UserID(-5) +
+                await PacketBuilder.Notification(
+                    'Sorry, you use outdated connection to server. Please use devserver flag')
+            ))
 
         user_country = await userHelper.get_country(user_data['id'])
         if user_country == "XX":
@@ -290,10 +297,4 @@ async def main_handler(request: Request):
 
         Context.stats['osu_versions'].labels(osu_version=osu_version).inc()
         Context.stats['devclient_usage'].labels(host=request.url.netloc).inc()
-
-        if "ppy.sh" in request.url.netloc:
-            await CrystalBot.ez_message(
-                player.name,
-                "I see you are using an old connection. It's not recommended now, and will be disabled in near future. If you do not know what -devserver is, I advise you to read the instructions and use the (new connection)[https://kurikku.pw/doc/connection_through_shortcut]."
-            )
         return BanchoResponse(start_bytes, player.token)
