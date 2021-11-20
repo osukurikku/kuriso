@@ -1,6 +1,7 @@
 from typing import List
 
 from lib import logger
+from objects.TypedDicts import DeltaChannel
 
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from packets.Builder.index import PacketBuilder
@@ -104,3 +105,15 @@ class Channel:
             Context.channels.pop(self.server_name)
 
         return True
+
+    def to_delta(self) -> DeltaChannel:
+        return DeltaChannel(
+            connected_clients=len(self.users),
+            description=self.description,
+            display_name=self.name,
+            moderated=False,
+            name=self.server_name,
+            public_read=self.can_read,
+            public_write=self.can_write,
+            temporary=self.temp_channel
+        )

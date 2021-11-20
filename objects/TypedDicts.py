@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union
 
 from typing_extensions import TypedDict
 
@@ -52,3 +52,45 @@ class TypedReadMatch(TypedDict):
     team_type: MatchTeamTypes
     match_freemod: MultiSpecialModes
     seed: int
+
+
+class DeltaChannel(TypedDict):
+    connected_clients: int
+    description: str
+    display_name: str
+    moderated: bool
+    name: str
+    public_read: bool
+    public_write: bool
+    temporary: bool
+
+
+class DeltaUserBeatmap(TypedDict):
+    id: int
+    md5: str
+
+
+class DeltaUserAction(TypedDict):
+    beatmap: DeltaUserBeatmap
+    game_mode: GameModes
+    id: Action
+    mods: Mods
+    text: str
+
+
+class DeltaUserLocation(TypedDict):
+    country_code: int
+    latitude: float
+    longitude: float
+
+
+class DeltaUser(TypedDict):
+    action: DeltaUserAction
+    api_identifier: str
+    bancho_privilegs: int
+    location: DeltaUserLocation
+    privileges: int
+    silence_end_time: Union[int, None]
+    type: None  # currently not supported!
+    user_id: int
+    username: str

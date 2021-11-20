@@ -20,7 +20,7 @@ from objects.Channel import Channel
 
 from typing import TYPE_CHECKING
 if TYPE_CHECKING:
-    from objects.TypedDicts import TypedStats
+    from objects.TypedDicts import TypedStats, DeltaUser, DeltaUserAction, DeltaUserBeatmap, DeltaUserLocation
     from objects.BanchoObjects import Message
     from objects.Multiplayer import Match
 
@@ -72,7 +72,6 @@ class Status:
         self.mode = GameModes(kwargs.get('mode', 0))
         self.mods = Mods(kwargs.get('mods', 0))
         self.map_id = kwargs.get('map_id', 0)
-
 
 class Player:
 
@@ -449,3 +448,29 @@ class Player:
             return data
 
         return b''
+
+    def to_delta(self) -> DeltaUser:
+        return DeltaUser(
+            action=DeltaUserAction(
+                beatmap=DeltaUserBeatmap(
+                    id=self.pr_status.map_id,
+                    md5=self.pr_status.map_md5
+                ),
+                game_mode=self.pr_status.mode,
+                id=self.pr_status.action,
+                mods=self.pr_status.mods,
+                text=self.pr_status.action_text
+            ),
+            api_identifier=self.safe_name,
+            bancho_privilegs=self.bancho_privs,
+            location=DeltaUserLocation(
+                country_code=self.country[0],
+                latitude=self.location[1],
+                longitude=self.location[0]
+            ),
+            privileges=self.privileges,
+            silence_end_time=self.silence_end,
+            type=None,
+            user_id=self.id,
+            username=self.name
+        )
