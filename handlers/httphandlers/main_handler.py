@@ -144,9 +144,7 @@ async def main_handler(request: Request):
             [user_data["id"], hashes[2], hashes[3], hashes[4]],
         )
 
-    if (
-        user_data["privileges"] & KurikkuPrivileges.Normal
-    ) != KurikkuPrivileges.Normal and (
+    if (user_data["privileges"] & KurikkuPrivileges.Normal) != KurikkuPrivileges.Normal and (
         user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION
     ) == 0:
         logger.elog(f"[{loginData}] Banned chmo tried to login")
@@ -190,11 +188,7 @@ async def main_handler(request: Request):
     )
     deltanow = now - vernow
 
-    if (
-        not osuVersionInt[0].isdigit()
-        or deltanow.days > 360
-        or int(osuVersionInt) < 20200811
-    ):
+    if not osuVersionInt[0].isdigit() or deltanow.days > 360 or int(osuVersionInt) < 20200811:
         response = await PacketBuilder.UserID(-2) + await PacketBuilder.Notification(
             "Sorry, you use outdated/bad osu!version. Please update your game to join server"
         )
@@ -298,9 +292,7 @@ async def main_handler(request: Request):
         )
 
     if Context.bancho_settings["menu_icon"]:
-        start_bytes += await PacketBuilder.MainMenuIcon(
-            Context.bancho_settings["menu_icon"]
-        )
+        start_bytes += await PacketBuilder.MainMenuIcon(Context.bancho_settings["menu_icon"])
 
     if isTourney and Context.players.get_token(uid=user_data["id"]):
         logger.klog(

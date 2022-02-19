@@ -58,9 +58,7 @@ async def change_username(ch: aioredis.Channel) -> bool:
 
         token = Context.players.get_token(uid=data.get("userID"))
         if token:
-            if (
-                token.pr_status.action not in (Action.Playing, Action.Multiplayer_play)
-            ):
+            if token.pr_status.action not in (Action.Playing, Action.Multiplayer_play):
                 await userHelper.handle_username_change(
                     data.get("userID"), data.get("newUsername"), token
                 )
