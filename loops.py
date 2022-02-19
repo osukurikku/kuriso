@@ -5,7 +5,7 @@ from blob import Context
 from config import Config
 from lib import logger
 
-LAST_PACKET_TIMEOUT = 60
+LAST_PACKET_TIMEOUT = 240
 
 
 async def clean_timeouts():

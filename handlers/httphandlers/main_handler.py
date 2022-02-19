@@ -126,6 +126,11 @@ async def main_handler(request: Request):
                                 'Your HWID is not clear. Contact Staff to create account!'))
                 return BanchoResponse(bytes(response))
             else:
+                await Context.mysql.execute('''
+                    INSERT INTO hw_user (userid, mac, unique_id, disk_id, occurencies) VALUES (%s, %s, %s, %s, 1)
+                    ON DUPLICATE KEY UPDATE occurencies = occurencies + 1''',
+                                            [user_data['id'], hashes[2], hashes[3], hashes[4]]
+                                            )
                 user_data['privileges'] = KurikkuPrivileges.Normal.value
                 await Context.mysql.execute(
                     "UPDATE hw_user SET activated = 1 WHERE userid = %s AND mac = %s AND unique_id = %s AND disk_id = %s",
@@ -158,12 +163,6 @@ async def main_handler(request: Request):
                                 'Kuriso! is in maintenance mode. Please try to login again later.'))
 
                 return BanchoResponse(bytes(response))
-
-        await Context.mysql.execute('''
-            INSERT INTO hw_user (userid, mac, unique_id, disk_id, occurencies) VALUES (%s, %s, %s, %s, 1)
-            ON DUPLICATE KEY UPDATE occurencies = occurencies + 1''',
-                                    [user_data['id'], hashes[2], hashes[3], hashes[4]]
-                                    )  # log hardware и не ебёт что
 
         osu_version = data[0]
         await userHelper.setUserLastOsuVer(user_data['id'], osu_version)
