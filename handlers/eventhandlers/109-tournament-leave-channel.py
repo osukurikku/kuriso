@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 # client packet: 109, bancho response: leave channel
 @OsuEvent.register_handler(OsuPacketID.Client_SpecialLeaveMatchChannel)
-async def leave_tourney_channel(packet_data: bytes, token: 'Player'):
+async def leave_tourney_channel(packet_data: bytes, token: "Player"):
     if not token.is_tourneymode:
         return False  # not allow use that packet for non-tourney player
 

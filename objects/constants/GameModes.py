@@ -9,11 +9,6 @@ class GameModes(IntEnum):
     MANIA = 3
 
     @staticmethod
-    def resolve_to_str(m: 'GameModes') -> str:
-        mods = {
-            m.STD: "std",
-            m.TAIKO: "taiko",
-            m.CTB: "ctb",
-            m.MANIA: "mania"
-        }
+    def resolve_to_str(m: "GameModes") -> str:
+        mods = {m.STD: "std", m.TAIKO: "taiko", m.CTB: "ctb", m.MANIA: "mania"}
         return mods.get(m.value, None)

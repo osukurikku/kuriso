@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 # client packet: 108, bancho response: join channel
 @OsuEvent.register_handler(OsuPacketID.Client_SpecialJoinMatchChannel)
-async def join_tourney_channel(packet_data: bytes, token: 'Player'):
+async def join_tourney_channel(packet_data: bytes, token: "Player"):
     if not token.is_tourneymode:
         return False  # not allow use that packet for non-tourney player
 

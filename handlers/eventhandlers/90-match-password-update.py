@@ -11,16 +11,16 @@ if TYPE_CHECKING:
 
 # client packet: 90, bancho response:
 @OsuEvent.register_handler(OsuPacketID.Client_MatchChangePassword)
-async def update_password(packet_data: bytes, token: 'Player'):
-    if not token.match or not (token == token.match.host_tourney or token == token.match.host):
+async def update_password(packet_data: bytes, token: "Player"):
+    if not token.match or token not in (token.match.host_tourney, token.match.host):
         return False
 
     match = token.match
     newMatch = await PacketResolver.read_match(packet_data)
-    if not newMatch['password']:
+    if not newMatch["password"]:
         match.password = None
     else:
-        match.password = newMatch['password']
+        match.password = newMatch["password"]
 
     await match.update_match()
     return True

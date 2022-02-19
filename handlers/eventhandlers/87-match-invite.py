@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 # client packet: 87, bancho response: message
 @OsuEvent.register_handler(OsuPacketID.Client_Invite)
-async def match_change_team(packet_data: bytes, token: 'Player'):
+async def match_change_team(packet_data: bytes, token: "Player"):
     if not token.match:
         return False
 
@@ -23,7 +23,7 @@ async def match_change_team(packet_data: bytes, token: 'Player'):
         sender=token.name,
         to=to.name,
         body=f"Come join to my game: [osump://{token.match.id}/{token.match.password if token.match.password else ''} {token.match.name}]",
-        client_id=token.id
+        client_id=token.id,
     )
     await token.send_message(msg)
     return True

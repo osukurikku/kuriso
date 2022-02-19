@@ -6,7 +6,12 @@ from objects.Multiplayer import Slot
 from objects.constants.GameModes import GameModes
 from objects.constants.IdleStatuses import Action
 from objects.constants.Modificators import Mods
-from objects.constants.multiplayer import MatchTypes, MatchScoringTypes, MatchTeamTypes, MultiSpecialModes
+from objects.constants.multiplayer import (
+    MatchTypes,
+    MatchScoringTypes,
+    MatchTeamTypes,
+    MultiSpecialModes,
+)
 
 
 class TypedStatus(TypedDict):

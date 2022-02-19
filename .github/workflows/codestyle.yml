@@ -1,0 +1,36 @@
+name: Lint repo to all files contains codestyle
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.6.9"]
+    steps:
+    - uses: actions/checkout@v2
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install pylint
+        pip install black
+    - name: Install project dependencies
+      run: |
+        pip install -r requirements.txt
+    - name: Analysing the code with pylint
+      run: |
+        pylint $(git ls-files '*.py') --disable=missing-docstring,invalid-name,fixme,line-too-long,too-few-public-methods,no-member,wrong-import-order,too-many-statements,too-many-branches,too-many-locals,broad-except,ungrouped-imports,too-many-instance-attributes,too-many-arguments,too-many-public-methods,duplicate-code,too-many-return-statements
+    - uses: psf/black@stable
+      with:
+        options: "--check --verbose"

@@ -7,6 +7,7 @@ from packets.OsuPacketID import OsuPacketID
 from packets.Reader.OsuTypes import osuTypes as OsuTypes
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from objects.Multiplayer import Match
 
@@ -15,6 +16,7 @@ class KurisoBuffer:
     """
     Very important class ported from JS osu-buffer by @KotRikD
     """
+
     __slots__ = ("buffer", "position")
 
     def __init__(self, input_str: Optional[str]):
@@ -46,26 +48,38 @@ class KurisoBuffer:
 
     async def read_int(self, byte_length: int) -> int:
         self.position += byte_length
-        return int.from_bytes(bytes(self.buffer.getbuffer()[slice(self.position - byte_length, self.position)]),
-                              byteorder='little',
-                              signed=True)
+        return int.from_bytes(
+            bytes(self.buffer.getbuffer()[slice(self.position - byte_length, self.position)]),
+            byteorder="little",
+            signed=True,
+        )
 
     async def read_u_int(self, byte_length: int) -> int:
         self.position += byte_length
-        return int.from_bytes(bytes(self.buffer.getbuffer()[slice(self.position - byte_length, self.position)]),
-                              byteorder='little',
-                              signed=False)
+        return int.from_bytes(
+            bytes(self.buffer.getbuffer()[slice(self.position - byte_length, self.position)]),
+            byteorder="little",
+            signed=False,
+        )
 
     async def read_float(self) -> float:
         self.position += 4  # float size = 4
-        return struct.unpack("<f", bytes(self.buffer.getbuffer()[slice(self.position - 4, self.position)]))[0]
+        return struct.unpack(
+            "<f",
+            bytes(self.buffer.getbuffer()[slice(self.position - 4, self.position)]),
+        )[0]
 
     async def read_double(self) -> float:
         self.position += 8  # double size = 8
-        return struct.unpack("<d", bytes(self.buffer.getbuffer()[slice(self.position - 8, self.position)]))[0]
+        return struct.unpack(
+            "<d",
+            bytes(self.buffer.getbuffer()[slice(self.position - 8, self.position)]),
+        )[0]
 
     async def read_string(self, length) -> str:
-        return (await self.slice_buffer(length)).decode("latin_1", errors="ignore")  # ignore, because meh
+        return (await self.slice_buffer(length)).decode(
+            "latin_1", errors="ignore"
+        )  # ignore, because meh
 
     async def read_int_8(self) -> int:
         return await self.read_int(1)
@@ -91,18 +105,20 @@ class KurisoBuffer:
     async def read_u_int_64(self) -> int:
         return (await self.read_u_int(4) << 8) + await self.read_u_int(4)
 
-    async def read_variant(self) -> int:  # big function af, which i doesn't know how to work
+    async def read_variant(
+        self,
+    ) -> int:  # big function af, which i doesn't know how to work
         total = 0
         shift = 0
         byte = await self.read_u_int_8()
         if (byte & 0x80) == 0:
-            total |= ((byte & 0x7F) << shift)
+            total |= (byte & 0x7F) << shift
         else:
             end = False
             while not end:
                 if shift:
                     byte = await self.read_u_int_8()
-                total |= ((byte & 0x7F) << shift)
+                total |= (byte & 0x7F) << shift
                 if (byte & 0x80) == 0:
                     end = True
                 shift += 7
@@ -124,7 +140,7 @@ class KurisoBuffer:
             length = await self.read_variant()
             return await self.read_string(length)
 
-        return ''
+        return ""
 
     async def read_i32_list(self) -> List[int]:
         length = await self.read_u_int_16()
@@ -139,11 +155,11 @@ class KurisoBuffer:
         return True
 
     async def write_u_int(self, value: int, byte_length: int) -> bool:
-        self.buffer.write(value.to_bytes(byte_length, byteorder='little', signed=False))
+        self.buffer.write(value.to_bytes(byte_length, byteorder="little", signed=False))
         return True
 
     async def write_int(self, value: int, byte_length: int) -> bool:
-        self.buffer.write(value.to_bytes(byte_length, byteorder='little', signed=True))
+        self.buffer.write(value.to_bytes(byte_length, byteorder="little", signed=True))
         return True
 
     async def write_byte(self, value: int) -> bool:
@@ -221,8 +237,8 @@ class KurisoBuffer:
 
         return True
 
-    async def write_mp_match(self, arguments: List[Union['Match', bool]]) -> bool:
-        match: 'Match' = arguments[0]
+    async def write_mp_match(self, arguments: List[Union["Match", bool]]) -> bool:
+        match: "Match" = arguments[0]
         send_pw: bool = arguments[1]
 
         await self.write_int_16(match.id)
@@ -248,7 +264,9 @@ class KurisoBuffer:
             await self.write_byte(slot.team.value)
 
         for slot in match.slots:
-            if slot.status.value & SlotStatus.HasPlayer:  # if player exists in that slot, add it
+            if (
+                slot.status.value & SlotStatus.HasPlayer
+            ):  # if player exists in that slot, add it
                 await self.write_int_32(slot.token.id)
 
         if match.is_tourney:
@@ -274,7 +292,9 @@ class KurisoBuffer:
 
 # 1 - packet id
 # 2 - (data, osuType)
-async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[Any, int]]) -> bytes:
+async def CreateBanchoPacket(
+    pid: Union[int, OsuPacketID], *args: Union[Tuple[Any, int]]
+) -> bytes:
     # writing packet
     dataBuffer = KurisoBuffer(None)
     packet_header = struct.pack("<Hx", pid.value if isinstance(pid, OsuPacketID) else pid)
@@ -285,7 +305,6 @@ async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[An
         OsuTypes.raw: dataBuffer.write_to_buffer,
         OsuTypes.match: dataBuffer.write_mp_match,
         # TODO: add another custom bancho types
-
         OsuTypes.byte: dataBuffer.write_byte,
         OsuTypes.bool: dataBuffer.write_bool,
         OsuTypes.int8: dataBuffer.write_int_8,
@@ -298,7 +317,7 @@ async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[An
         OsuTypes.float32: dataBuffer.write_float,
         OsuTypes.float64: dataBuffer.write_float,
         OsuTypes.int64: dataBuffer.write_int_64,
-        OsuTypes.u_int64: dataBuffer.write_u_int_64
+        OsuTypes.u_int64: dataBuffer.write_u_int_64,
     }
 
     for packet, packet_type in args:
@@ -308,5 +327,9 @@ async def CreateBanchoPacket(pid: Union[int, OsuPacketID], *args: Union[Tuple[An
 
         await writer(packet)
 
-    packetArray = packet_header + dataBuffer.length.to_bytes(4, signed=True, byteorder="little") + dataBuffer.get_string()
+    packetArray = (
+        packet_header
+        + dataBuffer.length.to_bytes(4, signed=True, byteorder="little")
+        + dataBuffer.get_string()
+    )
     return packetArray

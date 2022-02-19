@@ -40,17 +40,18 @@ async def main():
     logger.slog("[Config] Loaded")
 
     # create simple Starlette through uvicorn app
-    app = Starlette(debug=Config.config['debug'])
+    app = Starlette(debug=Config.config["debug"])
     app.add_middleware(ProxyHeadersMiddleware)
 
-    if Config.config['sentry']['enabled']:
-        sentry_sdk.init(dsn=Config.config['sentry']['url'])
+    if Config.config["sentry"]["enabled"]:
+        sentry_sdk.init(dsn=Config.config["sentry"]["url"])
         app.add_middleware(SentryMiddleware)
 
     # load version
     Context.load_version()
     logger.klog(f"Hey! Starting kuriso! v{Context.version} (commit-id: {Context.commit_id})")
-    logger.printColored(open("kuriso.MOTD", mode="r", encoding="utf-8").read(), logger.YELLOW)
+    with open("kuriso.MOTD", mode="r", encoding="utf-8") as kuriso_hello:
+        logger.printColored(kuriso_hello.read(), logger.YELLOW)
 
     # Load all events & handlers
     registrator.load_handlers(app)
@@ -58,17 +59,12 @@ async def main():
     # Create Redis connection :sip:
     logger.wlog("[Redis] Trying connection to Redis")
 
-    redis_values = dict(
-        db=Config.config['redis']['db'],
-        minsize=5,
-        maxsize=10
-    )
-    if Config.config['redis']['password']:
-        redis_values['password'] = Config.config['redis']['password']
+    redis_values = dict(db=Config.config["redis"]["db"], minsize=5, maxsize=10)
+    if Config.config["redis"]["password"]:
+        redis_values["password"] = Config.config["redis"]["password"]
 
     redis_pool = await aioredis.create_redis_pool(
-        f"redis://{Config.config['redis']['host']}",
-        **redis_values
+        f"redis://{Config.config['redis']['host']}", **redis_values
     )
 
     Context.redis = redis_pool
@@ -77,7 +73,7 @@ async def main():
     logger.slog("[Redis] Removing old information about redis...")
     try:
         await Context.redis.set("ripple:online_users", "0")
-        redis_flush_script = '''
+        redis_flush_script = """
 local matches = redis.call('KEYS', ARGV[1])
 
 local result = 0
@@ -86,7 +82,7 @@ for _,key in ipairs(matches) do
 end
 
 return result
-'''
+"""
         await Context.redis.eval(redis_flush_script, args=["peppy:*"])
         await Context.redis.eval(redis_flush_script, args=["peppy:sessions:*"])
     except Exception as e:
@@ -98,23 +94,25 @@ return result
 
     logger.wlog("[MySQL] Making connection to MySQL Database...")
     mysql_pool = AsyncSQLPoolWrapper()
-    await mysql_pool.connect(**{
-        'host': Config.config['mysql']['host'],
-        'user': Config.config['mysql']['user'],
-        'password': Config.config['mysql']['password'],
-        'port': Config.config['mysql']['port'],
-        'db': Config.config['mysql']['database'],
-        'loop': asyncio.get_event_loop(),
-        'autocommit': True
-    })
+    await mysql_pool.connect(
+        **{
+            "host": Config.config["mysql"]["host"],
+            "user": Config.config["mysql"]["user"],
+            "password": Config.config["mysql"]["password"],
+            "port": Config.config["mysql"]["port"],
+            "db": Config.config["mysql"]["database"],
+            "loop": asyncio.get_event_loop(),
+            "autocommit": True,
+        }
+    )
     Context.mysql = mysql_pool
     logger.slog("[MySQL] Connection established!")
 
-    if Config.config['prometheus']['enabled']:
+    if Config.config["prometheus"]["enabled"]:
         logger.wlog("[Prometheus stats] Loading...")
         prometheus_client.start_http_server(
-            Config.config['prometheus']['port'],
-            addr=Config.config['prometheus']['host']
+            Config.config["prometheus"]["port"],
+            addr=Config.config["prometheus"]["host"],
         )
         logger.slog("[Prometheus stats] Metrics started...")
 
@@ -128,18 +126,20 @@ return result
     await Context.load_bancho_settings()
     await registrator.load_default_channels()
 
+    # pylint: disable=import-outside-toplevel
     from bot.bot import CrystalBot
+
     # now load bot
     await CrystalBot.connect()
     # and register bot commands
     CrystalBot.load_commands()
 
-    logging.getLogger('apscheduler.executors.default').setLevel(logging.WARNING)
+    logging.getLogger("apscheduler.executors.default").setLevel(logging.WARNING)
 
     scheduler = AsyncIOScheduler()
     scheduler.start()
     scheduler.add_job(loops.clean_timeouts, "interval", seconds=60)
-    if Config.config['prometheus']['enabled']:
+    if Config.config["prometheus"]["enabled"]:
         scheduler.add_job(loops.add_prometheus_stats, "interval", seconds=15)
     scheduler.add_job(loops.add_stats, "interval", seconds=120)
 
@@ -148,7 +148,12 @@ return result
     event_loop.create_task(pubsub_listeners.init())
 
     Context.load_motd()
-    uvicorn.run(app, host=Config.config['host']['address'], port=Config.config['host']['port'], access_log=False)
+    uvicorn.run(
+        app,
+        host=Config.config["host"]["address"],
+        port=Config.config["host"]["port"],
+        access_log=False,
+    )
 
 
 def shutdown(original_handler):
@@ -190,9 +195,9 @@ def shutdown(original_handler):
     def _manager(*args, **kwargs):
         if Context.is_shutdown:
             return
-        loop = asyncio.get_event_loop()
+        event_loop = asyncio.get_event_loop()
         Context.is_shutdown = True
-        loop.run_until_complete(_shutdown())
+        event_loop.run_until_complete(_shutdown())
         original_handler(*args, **kwargs)
 
     return _manager
@@ -201,7 +206,7 @@ def shutdown(original_handler):
 orig_handle = Server.handle_exit
 Server.handle_exit = shutdown(orig_handle)
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     loop = asyncio.get_event_loop()
     loop.run_until_complete(main())
     loop.close()

@@ -16,7 +16,7 @@ def getSystemInfo():
     data = {
         "unix": os.name == "posix",
         "connectedUsers": len(Context.players.get_all_tokens(ignore_tournament_clients=True)),
-        "matches": len(Context.matches.items())
+        "matches": len(Context.matches.items()),
     }
 
     # General stats
@@ -32,14 +32,16 @@ def getSystemInfo():
 
     seconds = math.floor(delta)
 
-    data["uptime"] = "{}d {}h {}m {}s".format(days, hours, minutes, seconds)
+    data["uptime"] = f"{days}d {hours}h {minutes}m {seconds}s"
     data["cpuUsage"] = psutil.cpu_percent()
     memory = psutil.virtual_memory()
 
     # Unix only stats
     if data["unix"]:
         data["loadAverage"] = os.getloadavg()
+        # pylint: disable=consider-using-f-string
         data["totalMemory"] = "{0:.2f}".format(memory.total / 1074000000)
+        # pylint: disable=consider-using-f-string
         data["usedMemory"] = "{0:.2f}".format(memory.active / 1074000000)
     else:
         data["loadAverage"] = (0, 0, 0)
@@ -49,13 +51,15 @@ def getSystemInfo():
     return data
 
 
-def getRank(game_mode: GameModes = None,
-            mods: Mods = None,
-            acc: float = None,
-            c300: int = None,
-            c100: int = None,
-            c50: int = None,
-            cmiss: int = None):
+def getRank(
+    game_mode: GameModes = None,
+    mods: Mods = None,
+    acc: float = None,
+    c300: int = None,
+    c100: int = None,
+    c50: int = None,
+    cmiss: int = None,
+):
     """
     Return a string with rank/grade for a given score.
     Used mainly for tillerino
@@ -69,47 +73,49 @@ def getRank(game_mode: GameModes = None,
     def s():
         return "SH" if hdfl else "S"
 
+    rank = "A"
     if game_mode == GameModes.STD:
         # osu!std
         if acc == 100:
-            return ss()
+            rank = ss()
         if c300 / total > 0.90 and c50 / total < 0.1 and cmiss == 0:
-            return s()
+            rank = s()
         if (c300 / total > 0.80 and cmiss == 0) or (c300 / total > 0.90):
-            return "A"
+            rank = "A"
         if (c300 / total > 0.70 and cmiss == 0) or (c300 / total > 0.80):
-            return "B"
+            rank = "B"
         if c300 / total > 0.60:
-            return "C"
-        return "D"
+            rank = "C"
+        rank = "D"
     elif game_mode == GameModes.TAIKO:
         # TODO: taiko rank
-        return "A"
+        # TODO: TF?
+        rank = "A"
     elif game_mode == GameModes.CTB:
         # CtB
         if acc == 100:
-            return ss()
+            rank = ss()
         if 98.01 <= acc <= 99.99:
-            return s()
+            rank = s()
         if 94.01 <= acc <= 98.00:
-            return "A"
+            rank = "A"
         if 90.01 <= acc <= 94.00:
-            return "B"
+            rank = "B"
         if 98.01 <= acc <= 90.00:
-            return "C"
-        return "D"
+            rank = "C"
+        rank = "D"
     elif game_mode == GameModes.MANIA:
         # osu!mania
         if acc == 100:
-            return ss()
+            rank = ss()
         if acc > 95:
-            return s()
+            rank = s()
         if acc > 90:
-            return "A"
+            rank = "A"
         if acc > 80:
-            return "B"
+            rank = "B"
         if acc > 70:
-            return "C"
-        return "D"
+            rank = "C"
+        rank = "D"
 
-    return "A"
+    return rank

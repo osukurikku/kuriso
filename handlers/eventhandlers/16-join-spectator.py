@@ -6,13 +6,14 @@ from handlers.decorators import OsuEvent
 from packets.OsuPacketID import OsuPacketID
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from objects.Player import Player
 
 
 # client packet: 16, bancho response: 42
 @OsuEvent.register_handler(OsuPacketID.Client_StartSpectating)
-async def join_spectator(packet_data: bytes, token: 'Player'):
+async def join_spectator(packet_data: bytes, token: "Player"):
     to_spectate_id = await PacketResolver.read_specatator_id(packet_data)
 
     player_spec = Context.players.get_token(uid=to_spectate_id)
@@ -21,8 +22,10 @@ async def join_spectator(packet_data: bytes, token: 'Player'):
         return False
 
     if player_spec:
-        token.enqueue(await PacketBuilder.UserStats(player_spec) +
-                      await PacketBuilder.UserPresence(player_spec))
+        token.enqueue(
+            await PacketBuilder.UserStats(player_spec)
+            + await PacketBuilder.UserPresence(player_spec)
+        )
 
     if token.spectating:
         # remove old spectating, because we found new victim
@@ -30,4 +33,3 @@ async def join_spectator(packet_data: bytes, token: 'Player'):
 
     await player_spec.add_spectator(token)
     return True
-

@@ -1,24 +1,22 @@
 import logging
 
-PINK = '\033[95m'
-BLUE = '\033[94m'
-GREEN = '\033[92m'
-YELLOW = '\033[93m'
-RED = '\033[91m'
-ENDC = '\033[0m'
-BOLD = '\033[1m'
-UNDERLINE = '\033[4m'
+PINK = "\033[95m"
+BLUE = "\033[94m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+RED = "\033[91m"
+ENDC = "\033[0m"
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
 
-logging.basicConfig(format=u'[%(asctime)s] %(message)s',
-                    filemode='at',
-                    filename='kuriso.log')
+logging.basicConfig(format="[%(asctime)s] %(message)s", filemode="at", filename="kuriso.log")
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)
-formatter = logging.Formatter(u'[%(asctime)s] %(message)s')
+formatter = logging.Formatter("[%(asctime)s] %(message)s")
 handler.setFormatter(formatter)
 
 logger.addHandler(handler)

@@ -5,13 +5,14 @@ from packets.OsuPacketID import OsuPacketID
 from packets.Reader.PacketResolver import PacketResolver
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from objects.Player import Player
 
 
 # client packet: 32, bancho response: 36/37 (JoinFailed, JoinSuccess)
 @OsuEvent.register_handler(OsuPacketID.Client_MatchJoin)
-async def leave_match(data: bytes, token: 'Player'):
+async def leave_match(data: bytes, token: "Player"):
     matchId, password = await PacketResolver.read_mp_join_data(data)
     match = Context.matches.get(matchId, None)
 

@@ -4,13 +4,14 @@ from packets.Builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from objects.Player import Player
 
 
 # client packet: 49, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchComplete)
-async def match_change_team(_, token: 'Player'):
+async def match_change_team(_, token: "Player"):
     if not token.match:
         return False
 
@@ -18,7 +19,7 @@ async def match_change_team(_, token: 'Player'):
     slot = match.get_slot(token)
     slot.status = SlotStatus.Complete
 
-    if any([s.status == SlotStatus.Playing for s in match.slots]):
+    if any(s.status == SlotStatus.Playing for s in match.slots):
         return
 
     await match.match_ended()

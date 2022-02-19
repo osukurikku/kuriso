@@ -40,12 +40,49 @@ class Mods(IntFlag):
     Mirror = 1 << 30
     KeyMod = Key1 | Key2 | Key3 | Key4 | Key5 | Key6 | Key7 | Key8 | Key9 | KeyCoop
 
-    FreeModAllowed = Hidden | HardRock | DoubleTime | Flashlight | FadeIn | Easy | Relax | Relax2 | SpunOut | NoFail | Easy | HalfTime | Autoplay | KeyMod | Mirror
-    ScoreIncreaseMods = Hidden | HardRock | DoubleTime | Flashlight | FadeIn | Easy | Relax | Relax2 | SpunOut | NoFail | Easy | HalfTime | Autoplay | SuddenDeath | Perfect | KeyMod | Target | Random | Nightcore | LastMod
+    FreeModAllowed = (
+        Hidden
+        | HardRock
+        | DoubleTime
+        | Flashlight
+        | FadeIn
+        | Easy
+        | Relax
+        | Relax2
+        | SpunOut
+        | NoFail
+        | Easy
+        | HalfTime
+        | Autoplay
+        | KeyMod
+        | Mirror
+    )
+    ScoreIncreaseMods = (
+        Hidden
+        | HardRock
+        | DoubleTime
+        | Flashlight
+        | FadeIn
+        | Easy
+        | Relax
+        | Relax2
+        | SpunOut
+        | NoFail
+        | Easy
+        | HalfTime
+        | Autoplay
+        | SuddenDeath
+        | Perfect
+        | KeyMod
+        | Target
+        | Random
+        | Nightcore
+        | LastMod
+    )
     SpeedAltering = DoubleTime | Nightcore | HalfTime
 
     @staticmethod
-    def filter_invalid_combos(m: 'Mods') -> 'Mods':
+    def filter_invalid_combos(m: "Mods") -> "Mods":
         """Remove any invalid mod combinations from and return `m`."""
         if m & (Mods.DoubleTime | Mods.Nightcore) and m & Mods.HalfTime:
             m &= ~Mods.HalfTime

@@ -1,7 +1,7 @@
 import json
 import math
 import random
-from typing import List, TYPE_CHECKING, Any
+from typing import List, TYPE_CHECKING
 
 import aiohttp
 
@@ -16,13 +16,13 @@ if TYPE_CHECKING:
     from objects.Player import Player
 
 
-@CrystalBot.register_command("!help", aliases=['!h'])
+@CrystalBot.register_command("!help", aliases=["!h"])
 async def test_command(*_):
     return "Click (here)[https://kurikku.pw/index.php?p=16&id=4] for the full command list"
 
 
 @CrystalBot.register_command("!roll")
-async def roll(args: List[str], player: 'Player', _):
+async def roll(args: List[str], player: "Player", _):
     max_points = 100
     if args:
         if args[0].isdigit() and int(args[0]) > 0:
@@ -32,51 +32,51 @@ async def roll(args: List[str], player: 'Player', _):
     return f"{player.name} rolls {points} poins!"
 
 
-@CrystalBot.register_command("!recommend", aliases=['!rec'])
-async def recommend(args: List[str], player: 'Player', __):
+@CrystalBot.register_command("!recommend", aliases=["!rec"])
+async def recommend(args: List[str], player: "Player", __):
     stats = player.stats[GameModes.STD]
 
     mods = -1
     if args:
-        mods = new_utils.string_to_mods(''.join(args))
+        mods = new_utils.string_to_mods("".join(args))
 
-    params = {
-        'pp': stats.pp,
-        'token': Config.config['pprapi_token']
-    }
+    params = {"pp": stats.pp, "token": Config.config["pprapi_token"]}
 
     if mods > -1:
-        params['mods'] = mods
+        params["mods"] = mods
 
     data = None
     async with aiohttp.ClientSession() as sess:
-        async with sess.get('https://api.kotrik.ru/api/recommendMap', params=params, timeout=5) as resp:
+        async with sess.get(
+            "https://api.kotrik.ru/api/recommendMap", params=params, timeout=5
+        ) as resp:
             try:
                 data = await resp.json(content_type=None)
             finally:
                 pass
-    
-    if not data or not data['code'] != 200:
-        return 'At the moment, I can\'t recommend anything, try later!'
 
-    readable_mods = new_utils.readable_mods(data['m'])
+    if not data or not data["code"] != 200:
+        return "At the moment, I can't recommend anything, try later!"
+
+    readable_mods = new_utils.readable_mods(data["m"])
+    # pylint: disable=consider-using-f-string
     format_result = "[http://osu.kurikku.pw/b/{bid} {art} - {name} [{diff}]] Stars: {stars} | BPM: {bpm} | Length: {length} | PP: {pps} {mods}".format(
-        bid=data['b'],
-        art=data['art'],
-        name=data['t'],
-        diff=data['v'],
-        stars=data['d'],
-        bpm=data['bpm'],
+        bid=data["b"],
+        art=data["art"],
+        name=data["t"],
+        diff=data["v"],
+        stars=data["d"],
+        bpm=data["bpm"],
         length=f"{math.floor(data['l'] / 60)}:{str(data['l'] % 60)}",
-        pps=data['pp99'],
-        mods=f"+{readable_mods}"
+        pps=data["pp99"],
+        mods=f"+{readable_mods}",
     )
 
     return format_result
 
 
-@CrystalBot.register_command("!stats", aliases=['!st'])
-async def user_stats(args: List[str], player: 'Player', _):
+@CrystalBot.register_command("!stats", aliases=["!st"])
+async def user_stats(args: List[str], player: "Player", _):
     mode = GameModes(0)
     if len(args) < 1:
         nickname = player.name
@@ -91,11 +91,12 @@ async def user_stats(args: List[str], player: 'Player', _):
 
     token = Context.players.get_token(name=nickname.lower())
     if not token:
-        return 'Player not online'
+        return "Player not online"
 
     mode_str = GameModes.resolve_to_str(mode)
     stats = token.stats[mode]
 
+    # pylint: disable=consider-using-f-string
     acc = "{0:.2f}%".format(stats.accuracy)
     return (
         f"User: {nickname}\n"
@@ -112,9 +113,9 @@ async def user_stats(args: List[str], player: 'Player', _):
 
 @CrystalBot.register_command("!flag")
 @CrystalBot.check_perms(need_perms=Privileges.USER_DONOR)
-async def flag_change_donor(args: List[str], player: 'Player', _):
+async def flag_change_donor(args: List[str], player: "Player", _):
     if not args:
-        return 'Enter country in ISO format. Google it, if you dont know what is this'
+        return "Enter country in ISO format. Google it, if you dont know what is this"
 
     flag = Countries.get_country_id(args[0].upper())
     if not flag:
@@ -122,7 +123,7 @@ async def flag_change_donor(args: List[str], player: 'Player', _):
 
     await Context.mysql.execute(
         "UPDATE users_stats SET country = %s WHERE id = %s",
-        [args[0].upper(), player.id]
+        [args[0].upper(), player.id],
     )
 
     await player.parse_country(player.ip)
@@ -130,20 +131,18 @@ async def flag_change_donor(args: List[str], player: 'Player', _):
 
 
 @CrystalBot.register_command("!clantop")
-async def clantop(args: List[str], player: 'Player', _):
+async def clantop(args: List[str], player: "Player", _):
     if not args:
-        return 'Enter in format: <on/off>'
+        return "Enter in format: <on/off>"
 
     status = args[0].lower() == "on"
 
     user_settings = await Context.redis.get(f"kr:user_settings:{player.id}")
     if not user_settings:
-        user_settings = {
-            'clan_top_enabled': status
-        }
+        user_settings = {"clan_top_enabled": status}
     else:
         user_settings = json.loads(user_settings.decode())
-        user_settings['clan_top_enabled'] = status
+        user_settings["clan_top_enabled"] = status
 
-    await Context.redis.set(f'kr:user_settings:{player.id}', json.dumps(user_settings))
+    await Context.redis.set(f"kr:user_settings:{player.id}", json.dumps(user_settings))
     return f"Okay, you switch this feature to: {status}. This feature replace Top Country to Top Clans"

@@ -10,7 +10,12 @@ from objects.Channel import Channel
 from objects.constants.GameModes import GameModes
 from objects.constants.Modificators import Mods
 from objects.constants.Slots import SlotStatus, SlotTeams
-from objects.constants.multiplayer import MatchScoringTypes, MatchTeamTypes, MatchTypes, MultiSpecialModes
+from objects.constants.multiplayer import (
+    MatchScoringTypes,
+    MatchTeamTypes,
+    MatchTypes,
+    MultiSpecialModes,
+)
 from packets.Builder.index import PacketBuilder
 
 if TYPE_CHECKING:
@@ -18,11 +23,27 @@ if TYPE_CHECKING:
 
 
 class Slot:
-    __slots__ = ('status', 'team', 'mods', 'token', 'skipped', 'loaded', 'failed', "passed", 'score')
+    __slots__ = (
+        "status",
+        "team",
+        "mods",
+        "token",
+        "skipped",
+        "loaded",
+        "failed",
+        "passed",
+        "score",
+    )
 
-    def __init__(self, status: SlotStatus = SlotStatus.Open, team: SlotTeams = SlotTeams.Neutral,
-                 mods: Mods = Mods.NoMod, token: 'Player' = None, skipped: bool = False,
-                 loaded: bool = False):
+    def __init__(
+        self,
+        status: SlotStatus = SlotStatus.Open,
+        team: SlotTeams = SlotTeams.Neutral,
+        mods: Mods = Mods.NoMod,
+        token: "Player" = None,
+        skipped: bool = False,
+        loaded: bool = False,
+    ):
         self.status = status
         self.team = team
         self.mods = mods
@@ -68,20 +89,51 @@ class Slot:
 
 
 class Match:
-    __slots__ = ('slots', 'id', 'name', 'password', 'beatmap_name', 'beatmap', 'beatmap_md5', 'beatmap_id',
-                 'in_progress', 'mods', 'host', 'host_tourney', 'seed', 'need_load', 'channel', 'match_type',
-                 'match_playmode', 'match_scoring_type', 'match_team_type', 'match_freemod', 'is_tourney', 'referees',
-                 'is_locked', 'timer_force', 'timer_runned', 'vinse_id')
+    __slots__ = (
+        "slots",
+        "id",
+        "name",
+        "password",
+        "beatmap_name",
+        "beatmap",
+        "beatmap_md5",
+        "beatmap_id",
+        "in_progress",
+        "mods",
+        "host",
+        "host_tourney",
+        "seed",
+        "need_load",
+        "channel",
+        "match_type",
+        "match_playmode",
+        "match_scoring_type",
+        "match_team_type",
+        "match_freemod",
+        "is_tourney",
+        "referees",
+        "is_locked",
+        "timer_force",
+        "timer_runned",
+        "vinse_id",
+    )
 
-    def __init__(self, id: int, name: str, password: Union[str, None] = "", host: 'Player' = None,
-                 host_tourney: 'Player' = None, is_tourney: bool = False):
+    def __init__(
+        self,
+        match_id: int,
+        name: str,
+        password: Union[str, None] = "",
+        host: "Player" = None,
+        host_tourney: "Player" = None,
+        is_tourney: bool = False,
+    ):
         self.slots: List[Slot] = [Slot() for _ in range(0, 16)]
-        self.id: int = id
+        self.id: int = match_id
         self.name: str = name
         self.password: str = password
 
-        self.host: 'Player' = host
-        self.host_tourney: 'Player' = host_tourney
+        self.host: "Player" = host
+        self.host_tourney: "Player" = host_tourney
 
         self.beatmap_name: str = ""
         self.beatmap_md5: str = ""
@@ -125,7 +177,7 @@ class Match:
 
         return None
 
-    def get_slot(self, token: 'Player') -> Union[Slot, None]:
+    def get_slot(self, token: "Player") -> Union[Slot, None]:
         for m_slot in self.slots:
             if m_slot.token == token:
                 return m_slot
@@ -188,9 +240,8 @@ class Match:
 
         return True
 
-    async def join_player(self, player: 'Player', entered_password: str = None) -> bool:
-        if player.match or \
-                (self.is_password_required and self.password != entered_password):
+    async def join_player(self, player: "Player", entered_password: str = None) -> bool:
+        if player.match or (self.is_password_required and self.password != entered_password):
             player.enqueue(await PacketBuilder.MatchJoinFailed())
             return False
 
@@ -202,6 +253,7 @@ class Match:
         slot.status = SlotStatus.NotReady
         slot.token = player
 
+        # pylint: disable=protected-access
         player._match = self
         player.enqueue(await PacketBuilder.MatchJoinSuccess(self))
 
@@ -209,12 +261,16 @@ class Match:
         await self.channel.join_channel(player)
         return True
 
-    async def leave_player(self, player: 'Player') -> bool:
+    async def leave_player(self, player: "Player") -> bool:
         pl_slot = self.get_slot(player)
 
         is_was_host = False
         if pl_slot:
-            is_was_host = pl_slot.token == self.host if not self.is_tourney else pl_slot.token == self.host_tourney
+            is_was_host = (
+                pl_slot.token == self.host
+                if not self.is_tourney
+                else pl_slot.token == self.host_tourney
+            )
             pl_slot.status = SlotStatus.Open
             pl_slot.token = None
             pl_slot.mods = Mods.NoMod
@@ -247,7 +303,9 @@ class Match:
 
                 if not self.is_tourney:
                     self.host = slot.token
-                    self.host.enqueue(await PacketBuilder.MatchHostTransfer())  # notify new host, that he become host
+                    self.host.enqueue(
+                        await PacketBuilder.MatchHostTransfer()
+                    )  # notify new host, that he become host
                 else:
                     self.host_tourney = slot.token
                     self.host_tourney.enqueue(await PacketBuilder.MatchHostTransfer())
@@ -256,6 +314,8 @@ class Match:
 
         if player.is_tourneymode:
             player.id_tourney = -1
+
+        # pylint: disable=protected-access
         player._match = None
         return True
 
@@ -280,7 +340,7 @@ class Match:
 
         return True
 
-    async def move_host(self, new_host: 'Player' = None, slot_ind: int = 0) -> bool:
+    async def move_host(self, new_host: "Player" = None, slot_ind: int = 0) -> bool:
         to_host = None
         if new_host:
             to_host = self.get_slot(new_host)
@@ -303,7 +363,7 @@ class Match:
         await self.update_match()
         return True
 
-    async def change_slot(self, from_token: 'Player', new_slot: int) -> bool:
+    async def change_slot(self, from_token: "Player", new_slot: int) -> bool:
         slot = self.slots[new_slot]
         if (slot.status & SlotStatus.HasPlayer) or slot.status == SlotStatus.Locked:
             return False
@@ -326,7 +386,7 @@ class Match:
         # Do not notice please variables names
         # it was 01:30 AM
         # TODO: refactor names
-        dudes_who_ready_to_play: List['Player'] = []
+        dudes_who_ready_to_play: List["Player"] = []
 
         for slot in self.slots:
             if (slot.status & SlotStatus.HasPlayer) and slot.status != SlotStatus.NoMap:
@@ -363,7 +423,7 @@ class Match:
             slot.status = SlotStatus.NotReady
             slot.failed = True
             slot.score = 0
-        
+
         self.need_load = 0
         await self.update_match()
         await self.enqueue_to_all(await PacketBuilder.MatchAborted())
@@ -382,7 +442,7 @@ class Match:
             "game_type": self.match_type.value,
             "game_score_condition": self.match_scoring_type.value,
             "game_mod_mode": self.match_freemod.value,
-            "scores": {}
+            "scores": {},
         }
 
         # Add score info for each player
@@ -394,28 +454,23 @@ class Match:
                     "failed": slot.failed,
                     "pass": slot.passed,
                     "team": slot.team.value,
-                    "username": slot.token.name
+                    "username": slot.token.name,
                 }
 
-        ch_name = "#multi_{}".format(self.id)
+        ch_name = f"#multi_{self.id}"
         if not self.vinse_id:
             self.vinse_id = (int(time.time()) // (60 * 15)) << 32 | self.id
             await CrystalBot.ez_message(
                 ch_name,
-                f"Match history available [https://kurikku.pw/matches/{self.vinse_id} here]"
+                f"Match history available [https://kurikku.pw/matches/{self.vinse_id} here]",
             )
 
         # If this is a tournament match, then we send a notification in the chat
         # saying that the match has completed.
         if self.is_tourney:
-            await CrystalBot.ez_message(
-                ch_name,
-                "Match has just finished."
-            )
+            await CrystalBot.ez_message(ch_name, "Match has just finished.")
 
-        await Context.redis.publish(
-            "api:mp_complete_match", json.dumps(api_message)
-        )
+        await Context.redis.publish("api:mp_complete_match", json.dumps(api_message))
         return True
 
     async def change_special_mods(self, free_mod: MultiSpecialModes) -> bool:
@@ -431,7 +486,11 @@ class Match:
                 self.mods &= Mods.SpeedAltering
             else:
                 for slot in self.slots:
-                    if slot.token and slot.token == self.host or slot.token == self.host_tourney:
+                    if (
+                        slot.token
+                        and slot.token == self.host
+                        or slot.token == self.host_tourney
+                    ):
                         self.mods = slot.mods | (self.mods & Mods.SpeedAltering)
 
                     if slot.status & SlotStatus.HasPlayer:
@@ -440,9 +499,9 @@ class Match:
         self.match_freemod = free_mod
         return True
 
-    async def change_mods(self, new_mods: Mods, token: 'Player') -> bool:
+    async def change_mods(self, new_mods: Mods, token: "Player") -> bool:
         if self.is_freemod:
-            if self.host == token or self.host_tourney == token:
+            if token in (self.host, self.host_tourney):
                 self.mods = new_mods & Mods.SpeedAltering
 
             pl_slot = self.get_slot(token)
@@ -452,7 +511,7 @@ class Match:
 
             self.get_slot(token).mods = new_mods & ~Mods.SpeedAltering
         else:
-            if not (self.host == token or self.host_tourney == token):
+            if token not in (self.host, self.host_tourney):
                 return False
 
             self.mods = new_mods

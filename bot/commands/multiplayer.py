@@ -10,7 +10,11 @@ from objects.constants import Privileges
 from objects.constants.GameModes import GameModes
 from objects.constants.Modificators import Mods
 from objects.constants.Slots import SlotStatus, SlotTeams
-from objects.constants.multiplayer import MultiSpecialModes, MatchScoringTypes, MatchTeamTypes
+from objects.constants.multiplayer import (
+    MultiSpecialModes,
+    MatchScoringTypes,
+    MatchTeamTypes,
+)
 from packets.Builder.index import PacketBuilder
 from objects.BanchoObjects import Message
 
@@ -18,8 +22,8 @@ if TYPE_CHECKING:
     from objects.Player import Player
 
 
-def user_in_channel(player: 'Player', msg: 'Message'):
-    if not msg.to.startswith('#'):
+def user_in_channel(player: "Player", msg: "Message") -> bool:
+    if not msg.to.startswith("#"):
         return False
 
     channel = Context.channels.get(msg.to)
@@ -29,9 +33,18 @@ def user_in_channel(player: 'Player', msg: 'Message'):
     if player in channel.users:
         return True
 
+    return False
 
-def can_take_match(player: 'Player', match: Match, check_tourney_host: bool = False, check_referee: bool = True):
-    if (player.privileges & Privileges.USER_TOURNAMENT_STAFF) == Privileges.USER_TOURNAMENT_STAFF:
+
+def can_take_match(
+    player: "Player",
+    match: Match,
+    check_tourney_host: bool = False,
+    check_referee: bool = True,
+):
+    if (
+        player.privileges & Privileges.USER_TOURNAMENT_STAFF
+    ) == Privileges.USER_TOURNAMENT_STAFF:
         return True  # check if user has tournament staff privileges
 
     if check_tourney_host:
@@ -49,21 +62,21 @@ def can_take_match(player: 'Player', match: Match, check_tourney_host: bool = Fa
     return False
 
 
-async def mp_make(args: List[str], player: 'Player', _):
+async def mp_make(args: List[str], player: "Player", _):
     if len(args) < 2:
-        return 'Enter in format: !mp make <name>'
+        return "Enter in format: !mp make <name>"
 
-    match_name = ' '.join(args[1:]).strip()
+    match_name = " ".join(args[1:]).strip()
     if player.match:
-        return 'First of all, you need to close the previous match'
+        return "First of all, you need to close the previous match"
 
     match = Match(
-        id=Context.matches_id,
+        match_id=Context.matches_id,
         name=match_name,
         password=new_utils.random_hash(),
         is_tourney=True,
         host=player,
-        host_tourney=player
+        host_tourney=player,
     )
     Context.matches_id += 1  # increment match id
     match.beatmap_id = 0
@@ -74,7 +87,7 @@ async def mp_make(args: List[str], player: 'Player', _):
         description=f"Channel for #multi_{match.id}",
         public_read=True,
         public_write=True,
-        temp_channel=True
+        temp_channel=True,
     )
 
     # Register that channel and match
@@ -100,70 +113,70 @@ async def mp_make(args: List[str], player: 'Player', _):
     return f"Tourney match #{match.id} created!"
 
 
-async def mp_join(args: List[str], player: 'Player', _):
+async def mp_join(args: List[str], player: "Player", _):
     if len(args) < 2 or not args[1].isdigit():
-        return 'Enter in format: !mp join <id>'
+        return "Enter in format: !mp join <id>"
 
     match_id = int(args[1])
     if match_id not in Context.matches:
-        return 'Match not found'
+        return "Match not found"
 
     match = Context.matches[match_id]
     if not can_take_match(player, match, True):
-        return 'You cant join this match!'
+        return "You cant join this match!"
 
     if not player.is_tourneymode:
         await match.join_player(player, match.password)  # allow player to join match
-        return f'Attempting to join match #{match.id}'
+        return f"Attempting to join match #{match.id}"
 
     # join only in channel
     await match.channel.join_channel(player)
     player.id_tourney = match.id
-    return f'Attempting to join match #{match.id} with tournament client!'
+    return f"Attempting to join match #{match.id} with tournament client!"
 
 
-async def mp_close(args: List[str], player: 'Player', message: 'Message'):
+async def mp_close(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     await player.match.disband_match()
     if player.is_tourneymode:
         player.id_tourney = -1
 
-    return 'Match successfully disbanded'
+    return "Match successfully disbanded"
 
 
-async def mp_lock(args: List[str], player: 'Player', message: 'Message'):
+async def mp_lock(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     player.match.is_locked = True
     return "This match has been locked"
 
 
-async def mp_unlock(args: List[str], player: 'Player', message: 'Message'):
+async def mp_unlock(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     player.match.is_locked = False
     return "This match has been unlocked"
 
 
-async def mp_size(args: List[str], player: 'Player', message: 'Message'):
+async def mp_size(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2 or not args[1].isdigit() or int(args[1]) < 2 or int(args[1]) > 16:
         return "Wrong syntax: !mp size <slots(2-16)>"
@@ -174,12 +187,12 @@ async def mp_size(args: List[str], player: 'Player', message: 'Message'):
     return f"Match size changed to {match_size}"
 
 
-async def mp_move(args: List[str], player: 'Player', message: 'Message'):
+async def mp_move(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 3 or not args[2].isdigit() or int(args[2]) < 0 or int(args[2]) > 16:
         return "Wrong syntax: !mp move <username> <slot>"
@@ -189,22 +202,24 @@ async def mp_move(args: List[str], player: 'Player', message: 'Message'):
 
     from_token = Context.players.get_token(name=username.lower())
     if not from_token:
-        return 'Player not found'
+        return "Player not found"
 
     res = await player.match.change_slot(from_token, new_slot_id)
     if res:
         result = f"Player {username} moved to slot {new_slot_id}"
     else:
-        result = "You can't use that slot: it's either already occupied by someone else or locked"
+        result = (
+            "You can't use that slot: it's either already occupied by someone else or locked"
+        )
     return result
 
 
-async def mp_host(args: List[str], player: 'Player', message: 'Message'):
+async def mp_host(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2:
         return "Wrong syntax: !mp host <username>"
@@ -218,26 +233,26 @@ async def mp_host(args: List[str], player: 'Player', message: 'Message'):
     return f"{username} is now the host" if res else f"Couldn't give host to {username}"
 
 
-async def mp_clear_host(_, player: 'Player', message: 'Message'):
+async def mp_clear_host(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if not player.match.is_tourney:
-        return 'You cant remove host in not tourney game'
+        return "You cant remove host in not tourney game"
 
     await player.match.removeTourneyHost()
     return "Host has been removed from this match"
 
 
-async def mp_start(args: List[str], player: 'Player', message: 'Message'):
+async def mp_start(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     async def _start():
         success = await player.match.start()
@@ -245,25 +260,22 @@ async def mp_start(args: List[str], player: 'Player', message: 'Message'):
             await CrystalBot.ez_message(
                 player.match.channel.server_name,
                 "Couldn't start match. Make sure there are enough players and "
-                "teams are valid. The match has been unlocked."
+                "teams are valid. The match has been unlocked.",
             )
         else:
-            await CrystalBot.ez_message(
-                player.match.channel.server_name,
-                "Have fun!"
-            )
+            await CrystalBot.ez_message(player.match.channel.server_name, "Have fun!")
 
     async def _decreaseTimer(t: int):
         while t > 0:
             if t % 10 == 0 or t <= 5:
                 await CrystalBot.ez_message(
                     player.match.channel.server_name,
-                    f"Match starts in {t} seconds."
+                    f"Match starts in {t} seconds.",
                 )
             t -= 1
             await asyncio.sleep(1)
-        else:
-            await _start()
+
+        await _start()
 
     startTime = 0
     if len(args) > 1 and args[1].isdigit():
@@ -280,37 +292,41 @@ async def mp_start(args: List[str], player: 'Player', message: 'Message'):
                 slot.toggle_ready()
 
     if someoneNotReady and not force:
-        return "Some users aren't ready yet. Use '!mp start force' if you want to start the match, " \
-               "even with non-ready players."
+        return (
+            "Some users aren't ready yet. Use '!mp start force' if you want to start the match, "
+            "even with non-ready players."
+        )
 
     if startTime == 0:
         await _start()
         return "Starting match"
-    else:
-        player.match.is_locked = True
-        asyncio.ensure_future(_decreaseTimer(startTime))
-        return f"Match starts in {startTime} seconds. The match has been locked. " \
-               "Please don't leave the match during the countdown " \
-               "or you might receive a penalty."
+
+    player.match.is_locked = True
+    asyncio.ensure_future(_decreaseTimer(startTime))
+    return (
+        f"Match starts in {startTime} seconds. The match has been locked. "
+        "Please don't leave the match during the countdown "
+        "or you might receive a penalty."
+    )
 
 
-async def mp_abort(args: List[str], player: 'Player', message: 'Message'):
+async def mp_abort(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     await player.match.abort()
     return "Match aborted!"
 
 
-async def mp_invite(args: List[str], player: 'Player', message: 'Message'):
+async def mp_invite(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match, check_tourney_host=True):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2:
         return "Wrong syntax: !mp invite <username>"
@@ -321,27 +337,27 @@ async def mp_invite(args: List[str], player: 'Player', message: 'Message'):
 
     to_token = Context.players.get_token(name=args[1].strip().lower())
     if not to_token:
-        return 'Player not found/not online'
+        return "Player not found/not online"
 
     if to_token.is_bot:
-        return 'Sorry, you cant invite bots('
+        return "Sorry, you cant invite bots("
 
     msg = Message(
         sender=player.name,
         to=to_token.name,
         body=f"Come join to my game: [osump://{player.match.id}/{player.match.password if player.match.password else ''} {player.match.name}]",
-        client_id=player.id
+        client_id=player.id,
     )
     await player.send_message(msg)
     return f"An invite to this match has been sent to {to_token.name}"
 
 
-async def mp_map(args: List[str], player: 'Player', message: 'Message'):
+async def mp_map(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match, check_tourney_host=True):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if (len(args) < 2 or not args[1].isdigit()) or (len(args) == 3 and not args[2].isdigit()):
         return "Wrong syntax: !mp map <beatmapid> [<gamemode>]"
@@ -352,13 +368,14 @@ async def mp_map(args: List[str], player: 'Player', message: 'Message'):
         return "Gamemode must be 0, 1, 2 or 3"
 
     beatmapData = await Context.mysql.fetch(
-        "SELECT * FROM beatmaps WHERE beatmap_id = %s LIMIT 1",
-        [beatmapID]
+        "SELECT * FROM beatmaps WHERE beatmap_id = %s LIMIT 1", [beatmapID]
     )
     if not beatmapData:
-        return ("The beatmap you've selected couldn't be found in the database."
-                "If the beatmap id is valid, please load the scoreboard first in "
-                "order to cache it, then try again.")
+        return (
+            "The beatmap you've selected couldn't be found in the database."
+            "If the beatmap id is valid, please load the scoreboard first in "
+            "order to cache it, then try again."
+        )
 
     player.match.beatmap_id = beatmapID
     player.match.beatmap_name = beatmapData["song_name"]
@@ -369,16 +386,20 @@ async def mp_map(args: List[str], player: 'Player', message: 'Message'):
     return "Match map has been updated"
 
 
-async def mp_set(args: List[str], player: 'Player', message: 'Message'):
+async def mp_set(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
-    if len(args) < 2 or not args[1].isdigit() or \
-            (len(args) >= 3 and not args[2].isdigit()) or \
-            (len(args) >= 4 and not args[3].isdigit()):
+    # pylint: disable=too-many-boolean-expressions
+    if (
+        len(args) < 2
+        or not args[1].isdigit()
+        or (len(args) >= 3 and not args[2].isdigit())
+        or (len(args) >= 4 and not args[3].isdigit())
+    ):
         return "Wrong syntax: !mp set <teammode> [<scoremode>] [<size>]"
 
     match_team_type = MatchTeamTypes(int(args[1]))
@@ -392,7 +413,10 @@ async def mp_set(args: List[str], player: 'Player', message: 'Message'):
         return "Match scoring type must be between 0 and 3"
 
     if player.match.match_team_type != MatchTeamTypes(match_team_type):
-        if MatchTeamTypes(match_team_type) == MatchTeamTypes.TagTeamVs or match_team_type == MatchTeamTypes.TeamVs:
+        if (
+            MatchTeamTypes(match_team_type) == MatchTeamTypes.TagTeamVs
+            or match_team_type == MatchTeamTypes.TeamVs
+        ):
             for (i, slot) in enumerate(player.match.slots):
                 if slot.team == SlotTeams.Neutral:
                     slot.team = SlotTeams.Red if i % 2 == 1 else SlotTeams.Blue
@@ -410,12 +434,12 @@ async def mp_set(args: List[str], player: 'Player', message: 'Message'):
     return "Match settings have been updated!"
 
 
-async def mp_timer(args: List[str], player: 'Player', message: 'Message'):
+async def mp_timer(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2 or not args[1].isdigit() or int(args[1]) < 1:
         return "Wrong argument"
@@ -426,7 +450,7 @@ async def mp_timer(args: List[str], player: 'Player', message: 'Message'):
         await CrystalBot.ez_message(
             player.match.channel.server_name,
             "You can't run another timer, if you had another runned timer.\n"
-            "Enter !mp aborttimer to stop."
+            "Enter !mp aborttimer to stop.",
         )
         return False
 
@@ -435,30 +459,27 @@ async def mp_timer(args: List[str], player: 'Player', message: 'Message'):
             if t % 10 == 0 or t <= 5:
                 await CrystalBot.ez_message(
                     player.match.channel.server_name,
-                    f"Timer ends in {t} seconds."
+                    f"Timer ends in {t} seconds.",
                 )
             t -= 1
 
             await asyncio.sleep(1)
-        else:
-            await CrystalBot.ez_message(
-                player.match.channel.server_name,
-                "Time is up!"
-            )
-            player.match.timer_force = False
-            player.match.timer_runned = False
+
+        await CrystalBot.ez_message(player.match.channel.server_name, "Time is up!")
+        player.match.timer_force = False
+        player.match.timer_runned = False
 
     player.match.timer_runned = True
     asyncio.ensure_future(_decreaseTimer(secondsWatch - 1))
     return "Timer started!"
 
 
-async def mp_abort_timer(args: List[str], player: 'Player', message: 'Message'):
+async def mp_abort_timer(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if not player.match.timer_runned:
         return "Timer is not runned!"
@@ -470,22 +491,22 @@ async def mp_abort_timer(args: List[str], player: 'Player', message: 'Message'):
     return False
 
 
-async def mp_kick(args: List[str], player: 'Player', message: 'Message'):
+async def mp_kick(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2:
         return "Wrong syntax: !mp kick <username>"
 
     to_token = Context.players.get_token(name=args[1].strip().lower())
     if not to_token:
-        return 'Player not found/not online'
+        return "Player not found/not online"
 
     if to_token not in player.match.channel.users:
-        return 'User not in lobby'
+        return "User not in lobby"
 
     for slot in player.match.slots:
         if slot.token == to_token:
@@ -494,15 +515,15 @@ async def mp_kick(args: List[str], player: 'Player', message: 'Message'):
             break
 
     await player.match.update_match()
-    return f'{to_token.name} has been kicked from the match'
+    return f"{to_token.name} has been kicked from the match"
 
 
-async def mp_password(args: List[str], player: 'Player', message: 'Message'):
+async def mp_password(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     password = "" if len(args) < 2 or not args[1].strip() else args[1]
     player.match.password = password
@@ -510,12 +531,12 @@ async def mp_password(args: List[str], player: 'Player', message: 'Message'):
     return "Match password has been changed!"
 
 
-async def mp_random_password(args: List[str], player: 'Player', message: 'Message'):
+async def mp_random_password(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     password = new_utils.random_hash()
     player.match.password = password
@@ -523,12 +544,12 @@ async def mp_random_password(args: List[str], player: 'Player', message: 'Messag
     return "Match password has been changed to a random one"
 
 
-async def mp_mods(args: List[str], player: 'Player', message: 'Message'):
+async def mp_mods(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match, check_tourney_host=True):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2:
         return "Wrong syntax: !mp mods <mod1> [<mod2>] ..."
@@ -563,22 +584,22 @@ async def mp_mods(args: List[str], player: 'Player', message: 'Message'):
     return "Match mods have been updated!"
 
 
-async def mp_team(args: List[str], player: 'Player', message: 'Message'):
+async def mp_team(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 3:
         return "Wrong syntax: !mp team <username> <color(red/blue)>"
 
     to_token = Context.players.get_token(name=args[1].strip().lower())
     if not to_token:
-        return 'Player not found/not online'
+        return "Player not found/not online"
 
     if to_token not in player.match.channel.users:
-        return 'User not in lobby'
+        return "User not in lobby"
 
     color = args[2].lower().strip()
     if color not in ["red", "blue"]:
@@ -592,27 +613,29 @@ async def mp_team(args: List[str], player: 'Player', message: 'Message'):
     return f"{to_token.name} is now in {color} team"
 
 
-async def mpScoreV(args: List[str], player: 'Player', message: 'Message'):
+async def mpScoreV(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2 or args[1] not in ("1", "2"):
         return "Wrong syntax: !mp scorev <1|2>"
 
-    player.match.match_scoring_type = MatchScoringTypes.ScoreV2 if args[1] == "2" else MatchScoringTypes.Score
+    player.match.match_scoring_type = (
+        MatchScoringTypes.ScoreV2 if args[1] == "2" else MatchScoringTypes.Score
+    )
     await player.match.update_match()
     return f"Match scoring type set to score v{args[1]}"
 
 
-async def mp_settings(_, player: 'Player', message: 'Message'):
+async def mp_settings(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     link = "no match history"
     if player.match.vinse_id:
@@ -636,11 +659,16 @@ async def mp_settings(_, player: 'Player', message: 'Message'):
         else:
             readable_status = readable_statuses[slot.status]
         empty = False
+        # pylint: disable=consider-using-f-string
         msg += "* [{team}] <{status}> ~ {username}{mods}\n".format(
-            team="red" if slot.team == SlotTeams.Red else "blue" if slot.team == SlotTeams.Blue else "!! no team !!",
+            team="red"
+            if slot.team == SlotTeams.Red
+            else "blue"
+            if slot.team == SlotTeams.Blue
+            else "!! no team !!",
             status=readable_status,
             username=slot.token.name,
-            mods=" (+ {})".format(new_utils.readable_mods(slot.mods)) if slot.mods > 0 else ""
+            mods=" (+ {})".format(new_utils.readable_mods(slot.mods)) if slot.mods > 0 else "",
         )
 
     if empty:
@@ -648,46 +676,48 @@ async def mp_settings(_, player: 'Player', message: 'Message'):
     return msg
 
 
-async def mp_addRef(args: List[str], player: 'Player', message: 'Message'):
+async def mp_addRef(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match, check_tourney_host=False, check_referee=False):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2:
         return "Wrong syntax: !mp addref <ref username>"
 
     to_token = Context.players.get_token(name=args[1].strip().lower())
     if not to_token:
-        return 'Player not found/not online'
+        return "Player not found/not online"
 
     if to_token not in player.match.channel.users:
-        return 'User not in lobby'
+        return "User not in lobby"
 
     if to_token.id in player.match.referees:
-        return f"This referee added already :) He can join with command !mp join {player.match.id}"
+        return (
+            f"This referee added already :) He can join with command !mp join {player.match.id}"
+        )
 
     player.match.referees.append(to_token.id)
     return f"Added {to_token.id} to match referee. He can join with command !mp join {player.match.id}"
 
 
-async def mp_removeRef(args: List[str], player: 'Player', message: 'Message'):
+async def mp_removeRef(args: List[str], player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match, check_tourney_host=False, check_referee=False):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     if len(args) < 2:
         return "Wrong syntax: !mp removeref <ref username>"
 
     to_token = Context.players.get_token(name=args[1].strip().lower())
     if not to_token:
-        return 'Player not found/not online'
+        return "Player not found/not online"
 
     if to_token not in player.match.channel.users:
-        return 'User not in lobby'
+        return "User not in lobby"
 
     if to_token.id not in player.match.referees:
         return "This user is not referre."
@@ -697,28 +727,28 @@ async def mp_removeRef(args: List[str], player: 'Player', message: 'Message'):
     return "Match referee was deleted!"
 
 
-async def mp_history(_, player: 'Player', __):
+async def mp_history(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     match = player.match
     if not match.vinse_id:
-        return 'Match history not available, please play at least one map!'
+        return "Match history not available, please play at least one map!"
 
     return f"Match history available [https://kurikku.pw/matches/{match.vinse_id} here]"
 
 
-async def mp_juststart(_, player: 'Player', __):
+async def mp_juststart(_, player: "Player", __):
     if not player.match:
-        return 'You are not in any match'
+        return "You are not in any match"
 
     if not can_take_match(player, player.match):
-        return 'You cant do anything with that match'
+        return "You cant do anything with that match"
 
     match = player.match
     match.need_load = 0
     await match.all_players_loaded()
-    return 'DORIME START!'
+    return "DORIME START!"
 
 
 MP_SUBCOMMANDS = {
@@ -748,18 +778,18 @@ MP_SUBCOMMANDS = {
     "timer": mp_timer,
     "aborttimer": mp_abort_timer,
     "history": mp_history,
-    "juststart": mp_juststart
+    "juststart": mp_juststart,
 }
 
 
 @CrystalBot.register_command("!mp")
-async def roll(args: List[str], player: 'Player', message: 'Message'):
+async def roll(args: List[str], player: "Player", message: "Message"):
     if not args:
-        return 'Enter subcommand'
+        return "Enter subcommand"
 
     subcommand = args[0].lower().strip()
     command = MP_SUBCOMMANDS.get(subcommand, None)
     if not command:
-        return 'Invalid subcommand'
+        return "Invalid subcommand"
 
     return await command(args, player, message)

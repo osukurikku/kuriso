@@ -3,13 +3,14 @@ from handlers.decorators import OsuEvent
 from packets.OsuPacketID import OsuPacketID
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from objects.Player import Player
 
 
 # client packet: 17, bancho response: 43
 @OsuEvent.register_handler(OsuPacketID.Client_StopSpectating)
-async def leave_spectator(_, token: 'Player'):
+async def leave_spectator(_, token: "Player"):
     old_victim = token.spectating
 
     if not old_victim:
