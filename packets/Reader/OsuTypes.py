@@ -1,6 +1,5 @@
 from enum import IntEnum, unique
 
-__all__ = 'osuTypes'
 __author__ = "cmyui"
 
 

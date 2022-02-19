@@ -19,7 +19,7 @@ if TYPE_CHECKING:
 
 
 class CrystalBot:
-    token: Optional['Player'] = None
+    token: Optional["Player"] = None
     is_connected: bool = False
     connected_time: int = -1
     commands: Dict[str, Callable] = {}
@@ -29,7 +29,7 @@ class CrystalBot:
     cool_down: int = 2  # 2 secs before executing next command
 
     def __new__(cls):
-        if not hasattr(cls, 'instance'):
+        if not hasattr(cls, "instance"):
             cls.instance = super(CrystalBot, cls).__new__(cls)
 
         return cls.instance
@@ -40,22 +40,23 @@ class CrystalBot:
             return False
 
         bot_name = await Context.mysql.fetch(
-            "select username from users where id = %s",
-            [cls.bot_id]
+            "select username from users where id = %s", [cls.bot_id]
         )
         if not bot_name:
             return False
-        bot_name = bot_name['username']
+        bot_name = bot_name["username"]
 
         cls.bot_name = bot_name
         token = BotPlayer(cls.bot_id, cls.bot_name, KurikkuPrivileges.CM.value, is_bot=True)
         Context.players.add_token(token)
 
-        await asyncio.gather(*[
-            token.parse_friends(),
-            token.update_stats(),
-            token.parse_country()  # we don't needed ip, we are bots
-        ])
+        await asyncio.gather(
+            *[
+                token.parse_friends(),
+                token.update_stats(),
+                token.parse_country(),  # we don't needed ip, we are bots
+            ]
+        )
 
         uPanel = await PacketBuilder.UserPresence(token)
         uStats = await PacketBuilder.UserStats(token)
@@ -68,21 +69,21 @@ class CrystalBot:
 
     @classmethod
     def load_commands(cls) -> bool:
-        sys.path.insert(0, 'bot')
-        sys.path.insert(0, 'bot/commands')
+        sys.path.insert(0, "bot")
+        sys.path.insert(0, "bot/commands")
         folder_files = os.listdir("bot/commands")
 
         for file in folder_files:
             if file.endswith(".py"):
                 sys.path.insert(0, f"bot/commands/{file}")
-                __import__(os.path.splitext(file)[0], None, None, [''])
+                __import__(os.path.splitext(file)[0], None, None, [""])
 
         return True
 
     @classmethod
     def register_command(cls, command: str, aliases: Optional[List[str]] = None) -> Callable:
         """
-            Decorator for registering command
+        Decorator for registering command
         """
 
         if aliases is None:
@@ -100,11 +101,13 @@ class CrystalBot:
     @classmethod
     def check_perms(cls, need_perms: KurikkuPrivileges = KurikkuPrivileges.Normal) -> Callable:
         """
-            Additional decorator to check permissions
+        Additional decorator to check permissions
         """
 
         def wrapper(func: Callable):
-            async def wrapper_func(args: List[str], player: 'Player', message: 'Message') -> Union[str, bool]:
+            async def wrapper_func(
+                args: List[str], player: "Player", message: "Message"
+            ) -> Union[str, bool]:
                 if (player.privileges & need_perms) == need_perms:
                     return await func(args, player, message)
 
@@ -115,7 +118,7 @@ class CrystalBot:
         return wrapper
 
     @classmethod
-    async def proceed_command(cls, message: 'Message') -> Union[bool]:
+    async def proceed_command(cls, message: "Message") -> Union[bool]:
         if message.sender == cls.bot_name:
             return False
 
@@ -142,7 +145,10 @@ class CrystalBot:
             return False
 
         comand = cmd
-        args = shlex.split(message.body[len(cmd):].replace("'", "\\'").replace('"', '\\"'), posix=True)
+        args = shlex.split(
+            message.body[len(cmd) :].replace("'", "\\'").replace('"', '\\"'),
+            posix=True,
+        )
 
         cdUser = cls.cd.get(sender.id, None)
         nowTime = int(time.time())
@@ -162,18 +168,24 @@ class CrystalBot:
             logger.elog(f"[Bot] {sender.name} with {comand} crashed {args}")
             capture_exception(e)
             traceback.print_exc()
-            return await cls.token.send_message(Message(
-                sender=cls.token.name,
-                body='Command crashed, write to KotRik!!!',
-                to=message.sender,
-                client_id=cls.token.id
-            ))
+            return await cls.token.send_message(
+                Message(
+                    sender=cls.token.name,
+                    body="Command crashed, write to KotRik!!!",
+                    to=message.sender,
+                    client_id=cls.token.id,
+                )
+            )
 
         if result:
-            await cls.token.send_message(Message(sender=cls.token.name,
-                                                 body=result,
-                                                 to=message.to if message.to.startswith("#") else message.sender,
-                                                 client_id=cls.token.id))
+            await cls.token.send_message(
+                Message(
+                    sender=cls.token.name,
+                    body=result,
+                    to=message.to if message.to.startswith("#") else message.sender,
+                    client_id=cls.token.id,
+                )
+            )
         return True
 
     @classmethod
@@ -181,9 +193,11 @@ class CrystalBot:
         if not to or not message:
             return False
 
-        return await cls.token.send_message(Message(
-            sender=cls.token.name,
-            body=message,
-            to=to,
-            client_id=cls.token.id
-        ))
+        return await cls.token.send_message(
+            Message(
+                sender=cls.token.name,
+                body=message,
+                to=to,
+                client_id=cls.token.id,
+            )
+        )

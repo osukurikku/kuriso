@@ -4,7 +4,7 @@ import aiomysql
 
 
 class AsyncSQLPoolWrapper:
-    __slots__ = ('pool',)
+    __slots__ = ("pool",)
 
     def __init__(self):
         self.pool: Optional[aiomysql.Pool] = None
@@ -24,9 +24,9 @@ class AsyncSQLPoolWrapper:
 
         return last_row_id
 
-    async def fetch(self, query: str, params=None,
-                    _all: bool = False, _dict: bool = True
-                    ) -> Optional[Dict[str, Any]]:
+    async def fetch(
+        self, query: str, params=None, _all: bool = False, _dict: bool = True
+    ) -> Optional[Dict[str, Any]]:
         if params is None:
             params = []
         cursor_type = aiomysql.DictCursor if _dict else aiomysql.Cursor
@@ -42,14 +42,16 @@ class AsyncSQLPoolWrapper:
 
         return res
 
-    async def fetchall(self, query: str, params=None,
-                       _dict: bool = True) -> Optional[Dict[str, Any]]:
+    async def fetchall(
+        self, query: str, params=None, _dict: bool = True
+    ) -> Optional[Dict[str, Any]]:
         if params is None:
             params = []
         return await self.fetch(query, params, _all=True, _dict=_dict)
 
-    async def iterall(self, query: str, params=None,
-                      _dict: bool = True) -> AsyncGenerator[Optional[Dict[str, Any]], None]:
+    async def iterall(
+        self, query: str, params=None, _dict: bool = True
+    ) -> AsyncGenerator[Optional[Dict[str, Any]], None]:
         if params is None:
             params = []
         cursor_type = aiomysql.DictCursor if _dict else aiomysql.Cursor

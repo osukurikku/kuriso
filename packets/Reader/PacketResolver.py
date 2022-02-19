@@ -4,7 +4,12 @@ from objects.TypedDicts import TypedPresence, TypedReadMatch
 from objects.constants.GameModes import GameModes
 from objects.constants.Modificators import Mods
 from objects.constants.Slots import SlotStatus, SlotTeams
-from objects.constants.multiplayer import MatchTypes, MatchScoringTypes, MatchTeamTypes, MultiSpecialModes
+from objects.constants.multiplayer import (
+    MatchTypes,
+    MatchScoringTypes,
+    MatchTeamTypes,
+    MultiSpecialModes,
+)
 from objects.Multiplayer import Slot
 
 from objects.BanchoObjects import Message
@@ -12,18 +17,17 @@ from packets.Reader.index import KurisoBuffer
 
 
 class PacketResolver:
-
     @staticmethod
     async def read_new_presence(data: bytes) -> TypedPresence:
         buffer = KurisoBuffer(None)
         await buffer.write_to_buffer(data)
         return {
-            'action': await buffer.read_byte(),
-            'action_text': await buffer.read_osu_string(),
-            'map_md5': await buffer.read_osu_string(),
-            'mods': await buffer.read_u_int_32(),
-            'mode': await buffer.read_byte(),
-            'map_id': await buffer.read_int_32()
+            "action": await buffer.read_byte(),
+            "action_text": await buffer.read_osu_string(),
+            "map_md5": await buffer.read_osu_string(),
+            "mods": await buffer.read_u_int_32(),
+            "mode": await buffer.read_byte(),
+            "map_id": await buffer.read_int_32(),
         }
 
     @staticmethod
@@ -52,7 +56,7 @@ class PacketResolver:
             sender=await buffer.read_osu_string(),
             body=await buffer.read_osu_string(),
             to=await buffer.read_osu_string(),
-            client_id=await buffer.read_int_32()
+            client_id=await buffer.read_int_32(),
         )
 
     @staticmethod
@@ -116,20 +120,20 @@ class PacketResolver:
         seed = await buffer.read_int_32()
 
         t_dict = {
-            'match_type': match_type,
-            'mods': mods,
-            'name': name,
-            'password': password,
-            'beatmap_name': beatmap_name,
-            'beatmap_id': beatmap_id,
-            'beatmap_md5': beatmap_md5,
-            'slots': slots,
-            'host_id': host_id,
-            'play_mode': play_mode,
-            'scoring_type': scoring_type,
-            'team_type': team_type,
-            'match_freemod': match_freemod,
-            'seed': seed
+            "match_type": match_type,
+            "mods": mods,
+            "name": name,
+            "password": password,
+            "beatmap_name": beatmap_name,
+            "beatmap_id": beatmap_id,
+            "beatmap_md5": beatmap_md5,
+            "slots": slots,
+            "host_id": host_id,
+            "play_mode": play_mode,
+            "scoring_type": scoring_type,
+            "team_type": team_type,
+            "match_freemod": match_freemod,
+            "seed": seed,
         }
 
         return t_dict

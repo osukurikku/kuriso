@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 
 # client packet: 47, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchScoreUpdate)
-async def match_score_update(packet_data: bytes, token: 'Player'):
+async def match_score_update(packet_data: bytes, token: "Player"):
     if not token.match:
         return False
 
@@ -26,7 +26,7 @@ async def match_score_update(packet_data: bytes, token: 'Player'):
     slot = match.slots[slotInd]
 
     # We need extract score and hp
-    buf = KurisoBuffer('')
+    buf = KurisoBuffer("")
     await buf.write_to_buffer(packet_data)
     await buf.slice_buffer(17)  # = skip 17 bytes
     score = await buf.read_int_32()  # = 4 bytes

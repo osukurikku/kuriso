@@ -17,38 +17,51 @@ if TYPE_CHECKING:
     from objects.BanchoObjects import Message
 
 NP_REGEX = re.compile(r"(^https?:\/\/.*(\/b\/|\/beatmapsets\/\d*\#(?:.+?\/)?))(?:\/?)(\d*)")
-ALLOWED_MODS = ["NO", "NF", "EZ", "HD", "HR", "DT", "HT", "NC", "FL", "SO", "AP", "RX"]
+ALLOWED_MODS = [
+    "NO",
+    "NF",
+    "EZ",
+    "HD",
+    "HR",
+    "DT",
+    "HT",
+    "NC",
+    "FL",
+    "SO",
+    "AP",
+    "RX",
+]
 ALLOWED_MODS_MAPPING = {
-    'NO': Mods.NoMod,
-    'NF': Mods.NoFail,
-    'EZ': Mods.Easy,
-    'HD': Mods.Hidden,
-    'HR': Mods.HardRock,
-    'DT': Mods.DoubleTime,
-    'HT': Mods.HalfTime,
-    'NC': Mods.Nightcore,
-    'FL': Mods.Flashlight,
-    'SO': Mods.SpunOut,
-    'AP': Mods.Relax2,
-    'RX': Mods.Relax
+    "NO": Mods.NoMod,
+    "NF": Mods.NoFail,
+    "EZ": Mods.Easy,
+    "HD": Mods.Hidden,
+    "HR": Mods.HardRock,
+    "DT": Mods.DoubleTime,
+    "HT": Mods.HalfTime,
+    "NC": Mods.Nightcore,
+    "FL": Mods.Flashlight,
+    "SO": Mods.SpunOut,
+    "AP": Mods.Relax2,
+    "RX": Mods.Relax,
 }
 
-
-async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str, Dict[Any, Any]]:
+# pylint: disable=consider-using-f-string
+async def get_pp_message(
+    token: "Player", just_data: bool = False
+) -> Union[str, Dict[Any, Any]]:
     currentMap = token.tillerino[0]
     currentMods = token.tillerino[1]
     currentAcc = token.tillerino[2]
 
-    params = {
-        'b': currentMap,
-        'm': currentMods.value,
-        'a': str(currentAcc)
-    }
+    params = {"b": currentMap, "m": currentMods.value, "a": str(currentAcc)}
 
     data = None
     try:
         async with aiohttp.ClientSession() as sess:
-            async with sess.get('http://127.0.0.1:5002/api/v1/pp', params=params, timeout=10) as resp:
+            async with sess.get(
+                "http://127.0.0.1:5002/api/v1/pp", params=params, timeout=10
+            ) as resp:
                 try:
                     data = await resp.json()
                 finally:
@@ -56,13 +69,17 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
     except Exception as e:
         capture_exception(e)
         traceback.print_exc()
-        return 'LETS api is down. Try later!'
+        return "LETS api is down. Try later!"
 
     if "status" not in data:
-        return 'Unknown error in LETS API call. Try later!'
+        return "Unknown error in LETS API call. Try later!"
 
-    if data['status'] != 200:
-        return f'Error in LETS API call ({data["message"]})' if "message" in data else "Unknown error in LETS API call. Try later!"
+    if data["status"] != 200:
+        return (
+            f'Error in LETS API call ({data["message"]})'
+            if "message" in data
+            else "Unknown error in LETS API call. Try later!"
+        )
 
     if just_data:
         return data
@@ -73,7 +90,7 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
     else:
         msg += f'95%: {data["pp"][3]}pp | 98%: {data["pp"][2]}pp | 99% {data["pp"][1]}pp | 100%: {data["pp"][0]}pp'
 
-    original_ar = data['ar']
+    original_ar = data["ar"]
     # calc new AR if HR/EZ is on
     if currentMods & Mods.Easy:
         data["ar"] = max(0, data["ar"] / 2)
@@ -82,14 +99,22 @@ async def get_pp_message(token: 'Player', just_data: bool = False) -> Union[str,
 
     ar_to_msg = "({})".format(original_ar) if original_ar != data["ar"] else ""
 
-    msg += f' | {data["bpm"]} BPM | AR {data["ar"]}{ar_to_msg} | {round(data["stars"], 2)} stars'
+    msg += (
+        f' | {data["bpm"]} BPM | AR {data["ar"]}{ar_to_msg} | {round(data["stars"], 2)} stars'
+    )
 
     return msg
 
 
-@CrystalBot.register_command("\x01ACTION is listening to", aliases=['\x01ACTION is playing', '\x01ACTION is watching'])
-async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
-    if message.to.startswith("#") and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
+@CrystalBot.register_command(
+    "\x01ACTION is listening to",
+    aliases=["\x01ACTION is playing", "\x01ACTION is watching"],
+)
+async def tilleino_like(args: List[str], token: "Player", message: "Message"):
+    if (
+        message.to.startswith("#")
+        and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor
+    ):
         return False  # don't allow run np commands in public channels!
 
     play_or_watch = "playing" in message.body or "watching" in message.body
@@ -106,11 +131,11 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
             "+DoubleTime": Mods.DoubleTime,
             "-HalfTime": Mods.HalfTime,
             "+Flashlight": Mods.Flashlight,
-            "-SpunOut": Mods.SpunOut
+            "-SpunOut": Mods.SpunOut,
         }
         for part in args:
             part = part.replace("\x01", "")
-            if part in mapping.keys():
+            if part in mapping:
                 modsEnum |= mapping[part]
     try:
         beatmap_id = NP_REGEX.search(beatmap_url).groups(3)[2]
@@ -125,15 +150,18 @@ async def tilleino_like(args: List[str], token: 'Player', message: 'Message'):
 
 
 @CrystalBot.register_command("!with")
-async def tillerino_mods(args: List[str], token: 'Player', message: 'Message'):
+async def tillerino_mods(args: List[str], token: "Player", message: "Message"):
     if not args:
-        return 'Enter mods as first argument'
+        return "Enter mods as first argument"
 
-    if message.to.startswith("#") and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
+    if (
+        message.to.startswith("#")
+        and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor
+    ):
         return False  # don't allow run np commands in public channels!
 
     if token.tillerino[0] == 0:
-        return 'Please give me beatmap first with /np command'
+        return "Please give me beatmap first with /np command"
 
     mods_list = [a.upper() for a in args]
     mods_enum = Mods(0)
@@ -147,45 +175,65 @@ async def tillerino_mods(args: List[str], token: 'Player', message: 'Message'):
 
     return await get_pp_message(token)
 
-@CrystalBot.register_command("!acc")
-async def tillerino_acc(args: List[str], token: 'Player', message: 'Message'):
-    if not args:
-        return 'Enter mods as first argument'
 
-    if message.to.startswith("#") and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
+@CrystalBot.register_command("!acc")
+async def tillerino_acc(args: List[str], token: "Player", message: "Message"):
+    if not args:
+        return "Enter mods as first argument"
+
+    if (
+        message.to.startswith("#")
+        and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor
+    ):
         return False  # don't allow run np commands in public channels!
 
     if token.tillerino[0] == 0:
-        return 'Please give me beatmap first with /np command'
+        return "Please give me beatmap first with /np command"
 
     try:
         acc = float(args[0])
-    except:
-        return 'Please enter proper accuracy'
-    
+    except Exception:
+        return "Please enter proper accuracy"
+
     token.tillerino[2] = acc
     return await get_pp_message(token)
 
+
 @CrystalBot.register_command("!last")
-async def tillerino_last(_, token: 'Player', message: 'Message'):
-    if message.to.startswith("#") and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor:
+async def tillerino_last(_, token: "Player", message: "Message"):
+    if (
+        message.to.startswith("#")
+        and (token.privileges & KurikkuPrivileges.Donor) != KurikkuPrivileges.Donor
+    ):
         return False  # don't allow run np commands in public channels!
 
-    data = await Context.mysql.fetch("""SELECT beatmaps.song_name as sn, scores.*,
+    data = await Context.mysql.fetch(
+        """SELECT beatmaps.song_name as sn, scores.*,
         beatmaps.beatmap_id as bid, beatmaps.difficulty_std, beatmaps.difficulty_taiko, beatmaps.difficulty_ctb,
         beatmaps.difficulty_mania, beatmaps.max_combo as fc
     FROM scores
     LEFT JOIN beatmaps ON beatmaps.beatmap_md5=scores.beatmap_md5
     WHERE scores.userid = %s
     ORDER BY scores.time DESC
-    LIMIT 1""", [token.id])
+    LIMIT 1""",
+        [token.id],
+    )
 
     diffString = f"difficulty_{GameModes.resolve_to_str(GameModes(data['play_mode']))}"
-    rank = legacy_utils.getRank(data["play_mode"], data["mods"], data["accuracy"],
-                                data["300_count"], data["100_count"], data["50_count"], data["misses_count"])
+    rank = legacy_utils.getRank(
+        data["play_mode"],
+        data["mods"],
+        data["accuracy"],
+        data["300_count"],
+        data["100_count"],
+        data["50_count"],
+        data["misses_count"],
+    )
 
     ifPlayer = f"{token.name if message.to != CrystalBot.bot_name else ''} | "
-    ifFc = " (FC)" if data["max_combo"] == data["fc"] else f" {data['max_combo']}x/{data['fc']}x"
+    ifFc = (
+        " (FC)" if data["max_combo"] == data["fc"] else f" {data['max_combo']}x/{data['fc']}x"
+    )
     beatmapLink = f"[http://osu.ppy.sh/b/{data['bid']} {data['sn']}]"
 
     hasPP = data["play_mode"] != GameModes.CTB.value
@@ -196,7 +244,7 @@ async def tillerino_last(_, token: 'Player', message: 'Message'):
         msg += f" <{GameModes.resolve_to_str(GameModes(data['play_mode']))}>"
 
     if data["mods"]:
-        msg += ' +' + new_utils.readable_mods(Mods(data["mods"]))
+        msg += " +" + new_utils.readable_mods(Mods(data["mods"]))
 
     if not hasPP:
         msg += " | {0:,}".format(data["score"])
@@ -216,7 +264,7 @@ async def tillerino_last(_, token: 'Player', message: 'Message'):
         token.tillerino[1] = Mods(data["mods"])
         peace_data = await get_pp_message(token, just_data=True)
         if "stars" in peace_data:
-            stars = peace_data['stars']
+            stars = peace_data["stars"]
 
     msg += " | {0:.2f} stars".format(stars)
     return msg

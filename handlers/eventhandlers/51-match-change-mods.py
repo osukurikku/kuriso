@@ -4,13 +4,14 @@ from packets.OsuPacketID import OsuPacketID
 from packets.Reader.PacketResolver import PacketResolver
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from objects.Player import Player
 
 
 # client packet: 51, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchChangeMods)
-async def update_match_mods(packet_data: bytes, token: 'Player'):
+async def update_match_mods(packet_data: bytes, token: "Player"):
     if not token.match:
         return False
 

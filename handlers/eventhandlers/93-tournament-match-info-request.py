@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 # client packet: 93, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_SpecialMatchInfoRequest)
-async def refresh_user_stats(packet_data: bytes, token: 'Player'):
+async def refresh_user_stats(packet_data: bytes, token: "Player"):
     if not token.is_tourneymode:
         return False  # not allow use that packet for non-tourney player
 
@@ -28,13 +28,21 @@ async def refresh_user_stats(packet_data: bytes, token: 'Player'):
         manager_obj = Context.players.get_token(uid=token.id)
         manager_token = manager_obj.token
 
-        manager_obj.additional_clients.pop(old_token)  # remove our actual manager form additional clients
+        manager_obj.additional_clients.pop(
+            old_token
+        )  # remove our actual manager form additional clients
         token.token = manager_token  # moving manager token to additional token
-        manager_obj.additional_clients[manager_token] = token  # add this token to additional clients
+        manager_obj.additional_clients[
+            manager_token
+        ] = token  # add this token to additional clients
 
-        Context.players.store_by_token.pop(manager_token)  # remove our additional client from manager accounts
+        Context.players.store_by_token.pop(
+            manager_token
+        )  # remove our additional client from manager accounts
         manager_obj.token = old_token  # assign our pseudo additional client to manager
-        Context.players.store_by_token[old_token] = manager_obj  # store this token, like it should be
+        Context.players.store_by_token[
+            old_token
+        ] = manager_obj  # store this token, like it should be
 
         token = manager_obj  # for next code part
 

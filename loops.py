@@ -9,12 +9,12 @@ LAST_PACKET_TIMEOUT = 240
 
 
 async def clean_timeouts():
-    '''
-        loop, that cleans timeout users, because if dude ALT-F4 Client, it can have bad end
-    '''
+    """
+    loop, that cleans timeout users, because if dude ALT-F4 Client, it can have bad end
+    """
 
     tasks = []
-    for (id, user) in Context.players.store_by_token.items():
+    for (_, user) in Context.players.store_by_token.items():
         if user.is_bot:
             continue  # ignore bot
 
@@ -42,15 +42,15 @@ async def add_stats():
 
         await Context.mysql.execute(
             "INSERT INTO bancho_stats (users_osu, multiplayer_games) VALUES (%s, %s)",
-            [online_users, multiplayers_matches]
+            [online_users, multiplayers_matches],
         )
 
 
 async def add_prometheus_stats():
-    '''
-        That code calls every 15s!
-    '''
+    """
+    That code calls every 15s!
+    """
     online_users = len(Context.players.get_all_tokens(ignore_tournament_clients=True))
     multiplayers_matches = len(Context.matches.items())
-    Context.stats['online_users'].set(online_users)
-    Context.stats['multiplayer_matches'].set(multiplayers_matches)
+    Context.stats["online_users"].set(online_users)
+    Context.stats["multiplayer_matches"].set(multiplayers_matches)

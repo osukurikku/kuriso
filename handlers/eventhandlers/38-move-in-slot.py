@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 # client packet: 38, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchChangeSlot)
-async def move_in_slot(packet_data: bytes, token: 'Player'):
+async def move_in_slot(packet_data: bytes, token: "Player"):
     if not token.match:
         return False
 

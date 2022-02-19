@@ -3,13 +3,14 @@ from objects.constants.Slots import SlotTeams
 from packets.OsuPacketID import OsuPacketID
 
 from typing import TYPE_CHECKING
+
 if TYPE_CHECKING:
     from objects.Player import Player
 
 
 # client packet: 77, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchChangeTeam)
-async def match_change_team(_, token: 'Player'):
+async def match_change_team(_, token: "Player"):
     if not token.match:
         return False
 

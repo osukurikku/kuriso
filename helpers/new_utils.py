@@ -10,8 +10,8 @@ from packets.Builder.index import PacketBuilder
 
 def readable_mods(m: Mods) -> str:
     """
-        Return a string with readable std mods.
-        Used to convert a mods number for oppai
+    Return a string with readable std mods.
+    Used to convert a mods number for oppai
     """
     r = ""
     if m == 0:
@@ -42,30 +42,32 @@ def readable_mods(m: Mods) -> str:
 
 
 mod_codes = {
-    'NF': 1,
-    'EZ': 2,
-    'TD': 4,
-    'HD': 8,
-    'HR': 16,
-    'SD': 32,
-    'DT': 64,
-    'RX': 128,
-    'HT': 256,
-    'NC': 576,
-    'FL': 1024,
-    'AT': 2048,
-    'SO': 4096,
-    'AP': 8192,
-    'PF': 16416,
-    'V2': 536870912
+    "NF": 1,
+    "EZ": 2,
+    "TD": 4,
+    "HD": 8,
+    "HR": 16,
+    "SD": 32,
+    "DT": 64,
+    "RX": 128,
+    "HT": 256,
+    "NC": 576,
+    "FL": 1024,
+    "AT": 2048,
+    "SO": 4096,
+    "AP": 8192,
+    "PF": 16416,
+    "V2": 536870912,
 }
+
+
 def string_to_mods(m: str) -> int:
     m = m.upper()
     mod_number = 0
     mods = re.findall(r".{1,2}", m)
     if not mods:
         return 0
-    
+
     for mod in mods:
         mod_number += mod_codes.get(mod, 0)
 
@@ -73,11 +75,13 @@ def string_to_mods(m: str) -> int:
 
 
 def humanize(value: int) -> str:
+    # pylint: disable=consider-using-f-string
     return "{:,}".format(round(value)).replace(",", ".")
 
 
 def random_hash() -> str:
-    return '%032x' % random.getrandbits(128)
+    # pylint: disable=consider-using-f-string
+    return "%032x" % random.getrandbits(128)
 
 
 async def reload_settings() -> bool:
@@ -87,7 +91,7 @@ async def reload_settings() -> bool:
     # reload default channels
     await registrator.load_default_channels()
 
-    main_menu_packet = await PacketBuilder.MainMenuIcon(Context.bancho_settings['menu_icon'])
+    main_menu_packet = await PacketBuilder.MainMenuIcon(Context.bancho_settings["menu_icon"])
     channel_info_end = await PacketBuilder.ChannelListeningEnd()
     tasks = []
     for _, channel in Context.channels.items():
@@ -97,6 +101,6 @@ async def reload_settings() -> bool:
     channel_info_packets = await asyncio.gather(*tasks)
 
     for token in Context.players.get_all_tokens():
-        token.enqueue(main_menu_packet + channel_info_end + b''.join(channel_info_packets))
+        token.enqueue(main_menu_packet + channel_info_end + b"".join(channel_info_packets))
 
     return True

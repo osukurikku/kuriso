@@ -11,18 +11,18 @@ if TYPE_CHECKING:
 
 # client packet: 56, bancho response: update match
 @OsuEvent.register_handler(OsuPacketID.Client_MatchFailed)
-async def player_failed(_, token: 'Player'):
+async def player_failed(_, token: "Player"):
     if not token.match:
         return False
 
     match = token.match
-    slotInd = -1
+    slot_ind = -1
     for (ind, slot) in enumerate(match.slots):
         if slot.token == token:
-            slotInd = ind
+            slot_ind = ind
             break
 
-    match.slots[slotInd].passed = False
-    player_failed = await PacketBuilder.MatchPlayerFailed(slotInd)
-    await match.enqueue_to_specific(player_failed, SlotStatus.Playing)
+    match.slots[slot_ind].passed = False
+    is_player_failed = await PacketBuilder.MatchPlayerFailed(slot_ind)
+    await match.enqueue_to_specific(is_player_failed, SlotStatus.Playing)
     return True

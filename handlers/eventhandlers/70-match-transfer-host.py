@@ -1,5 +1,4 @@
 from handlers.decorators import OsuEvent
-from packets.Builder.index import PacketBuilder
 from packets.OsuPacketID import OsuPacketID
 
 from typing import TYPE_CHECKING
@@ -12,8 +11,8 @@ if TYPE_CHECKING:
 
 # client packet: 70, bancho response: 50 for new host
 @OsuEvent.register_handler(OsuPacketID.Client_MatchTransferHost)
-async def transfer_host(packet_data: bytes, token: 'Player'):
-    if not token.match or not (token == token.match.host_tourney or token == token.match.host):
+async def transfer_host(packet_data: bytes, token: "Player"):
+    if not token.match or token not in (token.match.host_tourney, token.match.host):
         return False
 
     match = token.match
