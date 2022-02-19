@@ -31,6 +31,6 @@ jobs:
     - name: Analysing the code with pylint
       run: |
         pylint $(git ls-files '*.py') --disable=missing-docstring,invalid-name,fixme,line-too-long,too-few-public-methods,no-member,wrong-import-order,too-many-statements,too-many-branches,too-many-locals,broad-except,ungrouped-imports,too-many-instance-attributes,too-many-arguments,too-many-public-methods,duplicate-code,too-many-return-statements
-    - name: Analysing the code is in black codestyle
-      run: |
-        black $(git ls-files '*.py') --check
+    - uses: psf/black@stable
+      with:
+        options: "--check --verbose"
