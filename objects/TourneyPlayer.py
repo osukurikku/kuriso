@@ -1,4 +1,4 @@
-from typing import Union, Optional, Dict, Tuple, TYPE_CHECKING
+from typing import Optional, Dict, Tuple, TYPE_CHECKING
 
 from blob import Context
 from helpers import userHelper
@@ -26,9 +26,9 @@ class TourneyPlayer(Player):
 
     def __init__(
         self,
-        user_id: Union[int],
-        user_name: Union[str],
-        privileges: Union[int],
+        user_id: int,
+        user_name: str,
+        privileges: int,
         utc_offset: Optional[int] = 0,
         pm_private: bool = False,
         silence_end: int = 0,

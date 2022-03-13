@@ -4,14 +4,16 @@ import time
 import bcrypt
 from typing import Union, Tuple, List, TYPE_CHECKING
 
-# pylint: disable=wrong-import-position
-if TYPE_CHECKING:
-    from objects import Player, TourneyPlayer
 from objects.constants import Privileges
 from blob import Context
 from lib import logger
 
 from functools import lru_cache
+
+# pylint: disable=wrong-import-position
+if TYPE_CHECKING:
+    from objects.Player import Player
+    from objects.TourneyPlayer import TourneyPlayer
 
 
 @lru_cache(maxsize=64)
@@ -99,16 +101,20 @@ async def set_country(user_id: int, country: str) -> bool:
 
 
 async def append_notes(
-    user_id: int, notes: Union[Tuple[str], List[str]], add_date: bool = True
+    user_id: int,
+    notes: Union[Tuple[str], List[str]],
+    add_date: bool = True,
+    need_new_line: bool = True,
 ):
     to_apply = ""
     if add_date:
         to_apply += f"[{time.strftime('%Y-%m-%d %H:%M:%S', time.localtime())}] "
 
-    to_apply += "\n".join(notes)
+    nl = "\n" if need_new_line else ""
+    to_apply += nl.join(notes)
     await Context.mysql.execute(
         "update users set notes = concat(coalesce(notes, ''), %s) where id = %s limit 1",
-        [notes, user_id],
+        [to_apply, user_id],
     )
     return True
 
@@ -182,15 +188,23 @@ async def activate_user(
         )
         return False
 
+    (
+        _,
+        _,
+        adapters_md5,
+        uninstall_md5,
+        disk_sig_md5,
+    ) = hashes
+
     match: dict
     if (
-        hashes[2] == "b4ec3c4334a0249dae95c284ec5983df"
-        or hashes[4] == "ffae06fb022871fe9beb58b005c5e21d"
+        adapters_md5 == "b4ec3c4334a0249dae95c284ec5983df"
+        or disk_sig_md5 == "ffae06fb022871fe9beb58b005c5e21d"
     ):
         # user logins from wine(old bancho checks)
         match = await Context.mysql.fetch(
             "select userid from hw_user where unique_id = %(unique_id)s and userid != %(userid)s and activated = 1 limit 1",
-            {"unique_id": hashes[3], "userid": user_id},
+            {"unique_id": uninstall_md5, "userid": user_id},
         )
     else:
         # its 100%(prob 80%) windows
@@ -201,9 +215,9 @@ async def activate_user(
             "and userid != %(userid)s "
             "and activated = 1 LIMIT 1",
             {
-                "mac": hashes[2],
-                "unique_id": hashes[3],
-                "disk_id": hashes[4],
+                "mac": adapters_md5,
+                "unique_id": uninstall_md5,
+                "disk_id": disk_sig_md5,
                 "userid": user_id,
             },
         )
@@ -225,6 +239,7 @@ async def activate_user(
                 f"{source_user_name}'s multiaccount ({hashes[2:5]}),found HWID match while verifying account ({user_id})"
             ],
         )
+
         await append_notes(
             source_user_id,
             [f"Has created multiaccount {user_name} ({user_id})"],
@@ -236,6 +251,9 @@ async def activate_user(
         "UPDATE users SET privileges = privileges | %s WHERE id = %s LIMIT 1",
         [(Privileges.USER_PUBLIC | Privileges.USER_NORMAL), user_id],
     )
+
+    await logHardware(user_id, hashes)
+    await activateHardware(user_id, hashes)
     return True
 
 
@@ -408,4 +426,28 @@ async def handle_username_change(
                 "There was a critical error while trying to change your username. Please contact a developer.",
                 "username_change_fail",
             )
+    return True
+
+
+async def logHardware(user_id: int, hashes: List[str] = None) -> bool:
+    if not hashes:
+        return False
+
+    await Context.mysql.execute(
+        """
+        INSERT INTO hw_user (userid, mac, unique_id, disk_id, occurencies) VALUES (%s, %s, %s, %s, 1)
+        ON DUPLICATE KEY UPDATE occurencies = occurencies + 1""",
+        [user_id, hashes[2], hashes[3], hashes[4]],
+    )
+    return True
+
+
+async def activateHardware(user_id: int, hashes: List[str] = None) -> bool:
+    if not hashes:
+        return False
+
+    await Context.mysql.execute(
+        "UPDATE hw_user SET activated = 1 WHERE userid = %s AND mac = %s AND unique_id = %s AND disk_id = %s",
+        [user_id, hashes[2], hashes[3], hashes[4]],
+    )
     return True

@@ -85,9 +85,9 @@ class Status:
 class Player:
     def __init__(
         self,
-        user_id: Union[int],
-        user_name: Union[str],
-        privileges: Union[int],
+        user_id: int,
+        user_name: str,
+        privileges: int,
         utc_offset: Optional[int] = 0,
         pm_private: bool = False,
         silence_end: int = 0,
@@ -116,7 +116,7 @@ class Player:
         self.timezone_offset: int = utc_offset
 
         self.pm_private: bool = pm_private  # Как я понял, это типо только друзья могут писать
-        self.friends: Union[List[int]] = []
+        self.friends: List[int] = []
         self.away_msg: Optional[str] = None
         self.silence_end: int = silence_end
 
@@ -124,7 +124,6 @@ class Player:
         self.bot_np: Optional[dict] = None  # TODO: Beatmap
 
         self._match: Optional["Match"] = None
-        self.friends: Union[List[int]] = []  # bot by default xd
 
         self.queue: bytearray = bytearray()  # main thing
         self.login_time: int = int(time.time())
@@ -167,7 +166,6 @@ class Player:
 
     @property
     def is_restricted(self) -> bool:
-        # return (self.privileges & Privileges.USER_NORMAL) and not (self.privileges & Privileges.USER_PUBLIC)
         return (self.privileges & KurikkuPrivileges.Normal) != KurikkuPrivileges.Normal
 
     @property
@@ -200,6 +198,10 @@ class Player:
             return True
 
         return False
+
+    @property
+    def is_tournament_stuff(self) -> bool:
+        return self.privileges & Privileges.USER_TOURNAMENT_STAFF
 
     @property
     def current_stats(self) -> StatsMode:

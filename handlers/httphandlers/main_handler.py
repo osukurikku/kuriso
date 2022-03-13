@@ -29,6 +29,12 @@ ALLOWED_RESTRICT_PACKETS = [
     OsuPacketID.Client_ChannelLeave.value,
 ]  # these packets available in restrict mode
 
+# don't log these packets due to much noise :/
+DONT_LOG_PACKETS = [
+    OsuPacketID.Client_SpectateFrames.value,
+    OsuPacketID.Client_MatchScoreUpdate.value,
+]
+
 
 @HttpEvent.register_handler("/", methods=["GET", "POST"])
 async def main_handler(request: Request):
@@ -75,9 +81,10 @@ async def main_handler(request: Request):
                 # This packet can be handled by OsuEvent Class, call it now!
                 # Oh wait let go this thing in async executor.
                 await OsuEvent.handlers[packet_id](data, token_object)
-                logger.klog(
-                    f"[{token_object.token}/{token_object.name}] Has triggered {OsuPacketID(packet_id)} with packet length: {packet_length}"
-                )
+                if not packet_id in DONT_LOG_PACKETS:
+                    logger.klog(
+                        f"[{token_object.token}/{token_object.name}] Has triggered {OsuPacketID(packet_id)} with packet length: {packet_length}"
+                    )
             else:
                 logger.wlog(f"[Events] Packet ID: {packet_id} not found in events handlers")
 
@@ -132,17 +139,9 @@ async def main_handler(request: Request):
             )
             return BanchoResponse(bytes(response))
 
-        await Context.mysql.execute(
-            """
-            INSERT INTO hw_user (userid, mac, unique_id, disk_id, occurencies) VALUES (%s, %s, %s, %s, 1)
-            ON DUPLICATE KEY UPDATE occurencies = occurencies + 1""",
-            [user_data["id"], hashes[2], hashes[3], hashes[4]],
-        )
         user_data["privileges"] = KurikkuPrivileges.Normal.value
-        await Context.mysql.execute(
-            "UPDATE hw_user SET activated = 1 WHERE userid = %s AND mac = %s AND unique_id = %s AND disk_id = %s",
-            [user_data["id"], hashes[2], hashes[3], hashes[4]],
-        )
+
+    await userHelper.logHardware(user_data["id"], hashes)
 
     if (user_data["privileges"] & KurikkuPrivileges.Normal) != KurikkuPrivileges.Normal and (
         user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION
@@ -155,9 +154,9 @@ async def main_handler(request: Request):
         return BanchoResponse(bytes(response))
 
     if (
-        (user_data["privileges"] & Privileges.USER_PUBLIC > 0)
-        and (user_data["privileges"] & Privileges.USER_NORMAL == 0)
-    ) and (user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION) == 0:
+        not user_data["privileges"] & Privileges.USER_PUBLIC
+        and user_data["privileges"] & Privileges.USER_NORMAL
+    ) and not user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION:
         logger.elog(f"[{loginData}] Locked dude tried to login")
         response = await PacketBuilder.UserID(-1) + await PacketBuilder.Notification(
             "You are locked by staff. Join discord and ask for unlock!"
@@ -167,7 +166,7 @@ async def main_handler(request: Request):
 
     if bool(Context.bancho_settings["bancho_maintenance"]):
         # send to user that maintenance
-        if not user_data["privileges"] & KurikkuPrivileges.Developer:
+        if not user_data["privileges"] & Privileges.ADMIN_MANAGE_SERVERS:
             response = await PacketBuilder.UserID(-1) + await PacketBuilder.Notification(
                 "Kuriso! is in maintenance mode. Please try to login again later."
             )
@@ -242,13 +241,7 @@ async def main_handler(request: Request):
             ]
         )
 
-    if "ppy.sh" in request.url.netloc and not (
-        player.is_admin
-        or (
-            player.privileges & KurikkuPrivileges.TournamentStaff
-            == KurikkuPrivileges.TournamentStaff
-        )
-    ):
+    if "ppy.sh" in request.url.netloc and not (player.is_admin or player.is_tournament_stuff):
         return BanchoResponse(
             bytes(
                 await PacketBuilder.UserID(-5)
