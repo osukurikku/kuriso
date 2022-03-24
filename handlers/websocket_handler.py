@@ -6,7 +6,7 @@ from blob import Context
 from handlers.wshandlers.wsRegistry import WebsocketHandlers
 from helpers import userHelper
 from lib import logger
-from lib.websocket_formatter import WebsocketEvent, WebsocketEvents
+from lib.websocket_formatter import WebsocketEvent
 from objects.WebsocketPlayer import WebsocketPlayer
 from objects.constants import Privileges
 from packets.Builder.index import PacketBuilder
