@@ -26,7 +26,7 @@ async def websocket_endpoint(websocket: WebSocket):
         )
     token = token[-1]
     user = await Context.mysql.fetch(
-        f"SELECT tokens.user as uid, users.username FROM tokens INNER JOIN users ON users.id = tokens.user WHERE token = %s",
+        "SELECT tokens.user as uid, users.username FROM tokens INNER JOIN users ON users.id = tokens.user WHERE token = %s",
         [token],
     )
     if not user:
@@ -136,15 +136,15 @@ async def websocket_endpoint(websocket: WebSocket):
             if player.is_socket_closing:
                 break
 
-            next = await websocket.receive_json()
-            if "event" not in next or "data" not in next:
+            msg = await websocket.receive_json()
+            if "event" not in msg or "data" not in msg:
                 continue
 
-            event_function = WebsocketHandlers().get_handler(next["event"])
+            event_function = WebsocketHandlers().get_handler(msg["event"])
             if not event_function:
                 continue
 
-            await event_function(player, next["data"])
+            await event_function(player, msg["data"])
     except WebSocketDisconnect as d:
         if d.code == 1000:
             await player.logout()

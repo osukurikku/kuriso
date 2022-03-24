@@ -10,7 +10,7 @@ class TokenStorage:
     __slots__ = ("store_by_token", "store_by_id", "store_by_name")
 
     def __init__(self):
-        self.store_by_token: Dict[str, Union["Player", WebsocketPlayer]] = {}
+        self.store_by_token: Dict[str, Union["Player", "WebsocketPlayer"]] = {}
         self.store_by_id: Dict[int, Union["Player", "WebsocketPlayer"]] = {}
         self.store_by_name: Dict[str, Union["Player", "WebsocketPlayer"]] = {}
 
