@@ -139,6 +139,7 @@ return result
     scheduler = AsyncIOScheduler()
     scheduler.start()
     scheduler.add_job(loops.clean_timeouts, "interval", seconds=60)
+    scheduler.add_job(loops.ping_ws_users, "interval", seconds=30)
     if Config.config["prometheus"]["enabled"]:
         scheduler.add_job(loops.add_prometheus_stats, "interval", seconds=15)
     scheduler.add_job(loops.add_stats, "interval", seconds=120)

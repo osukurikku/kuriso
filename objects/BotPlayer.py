@@ -3,6 +3,7 @@ from typing import Optional, TYPE_CHECKING
 
 from blob import Context
 from lib import logger
+from lib.websocket_formatter import WebsocketEvent
 from objects.Player import Status, Player
 from objects.constants import Countries
 from objects.constants.GameModes import GameModes
@@ -143,6 +144,10 @@ class BotPlayer(Player):
         logger.klog(
             f"#DM {self.name}({self.id})/Bot -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}"
         )
+        if hasattr(receiver, "websocket"):
+            await receiver.websocket.send_json(WebsocketEvent.build_message(self.id, message))
+            return True
+
         receiver.enqueue(await PacketBuilder.BuildMessage(self.id, message))
         return True
 

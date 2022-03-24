@@ -10,6 +10,7 @@ from starlette.responses import HTMLResponse
 from handlers.decorators import HttpEvent, OsuEvent
 from lib.BanchoResponse import BanchoResponse
 from blob import Context
+from lib.websocket_formatter import WebsocketEvent
 from objects.TourneyPlayer import TourneyPlayer
 from objects.constants import Privileges
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
@@ -306,6 +307,9 @@ async def main_handler(request: Request):
             start_bytes += bytes(
                 await PacketBuilder.UserPresence(p) + await PacketBuilder.UserStats(p)
             )
+            if hasattr(p, "websocket"):
+                await p.websocket.send_json(WebsocketEvent.user_joined(player.id))
+                continue
             p.enqueue(
                 bytes(
                     await PacketBuilder.UserPresence(player)

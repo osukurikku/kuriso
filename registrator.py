@@ -1,11 +1,12 @@
 from starlette.applications import Starlette
-from starlette.routing import Route, Router
+from starlette.routing import Route, Router, WebSocketRoute
 
 import sys
 import os
 
 from blob import Context
 from handlers.decorators import HttpEvent
+from handlers.websocket_handler import websocket_endpoint
 from lib import logger
 from objects.Channel import Channel
 
@@ -37,7 +38,11 @@ def load_handlers(app: Starlette):
             )
         )
 
+    handlers.append(WebSocketRoute("/api/chat/ws", endpoint=websocket_endpoint))
     app.mount("", Router(handlers))
+
+    # app.add_websocket_route("", websocket_endpoint)
+    # app.mount("/api/chat/ws", websocket_endpoint)
     return True
 
 

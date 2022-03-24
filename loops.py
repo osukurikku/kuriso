@@ -4,6 +4,7 @@ import time
 from blob import Context
 from config import Config
 from lib import logger
+from lib.websocket_formatter import WebsocketEvent
 
 LAST_PACKET_TIMEOUT = 240
 
@@ -54,3 +55,18 @@ async def add_prometheus_stats():
     multiplayers_matches = len(Context.matches.items())
     Context.stats["online_users"].set(online_users)
     Context.stats["multiplayer_matches"].set(multiplayers_matches)
+
+
+async def ping_ws_users():
+    """
+    That code calls every 30s!
+    """
+    tasks = []
+    for (_, user) in Context.players.store_by_token.items():
+        if user.is_bot:
+            continue  # ignore bot
+
+        if hasattr(user, "websocket"):
+            tasks.append(user.websocket.send_json(WebsocketEvent.ping()))
+
+    await asyncio.gather(*tasks)

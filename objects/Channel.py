@@ -1,6 +1,7 @@
-from typing import List
+from typing import List, Union
 
 from lib import logger
+from lib.websocket_formatter import WebsocketEvent
 
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
 from packets.Builder.index import PacketBuilder
@@ -11,6 +12,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from objects.BanchoObjects import Message
     from objects.Player import Player
+    from objects.WebsocketPlayer import WebsocketPlayer
 
 
 class Channel:
@@ -22,7 +24,7 @@ class Channel:
         public_write: bool = False,
         temp_channel: bool = False,
     ):
-        self.users: List["Player"] = []
+        self.users: List[Union["Player", "WebsocketPlayer"]] = []
         # for use this client should be like #osu, #admin, #osu, #specatator, #multiplayer, #lobby and etc.
         # server can store it like #banana, #spec_<id>, #multi_<id> and etc.
         self.server_name: str = server_name
@@ -56,12 +58,23 @@ class Channel:
             if receiver.id == from_id:
                 continue  # ignore ourself
 
+            if hasattr(receiver, "websocket"):
+                message.to = self.server_name
+                await receiver.websocket.send_json(
+                    WebsocketEvent.build_message(from_id, message)
+                )
+                continue
+
             receiver.enqueue(await PacketBuilder.BuildMessage(from_id, message))
 
         return True
 
-    async def join_channel(self, p: "Player") -> bool:
+    async def join_channel(self, p: Union["Player", "WebsocketPlayer"]) -> bool:
         if p in self.users:
+            if hasattr(p, "websocket"):
+                await p.websocket.send_json(WebsocketEvent.join_channel(self.name))
+                return True
+
             p.enqueue(await PacketBuilder.SuccessJoinChannel(self.name))
             return True
 
@@ -73,7 +86,10 @@ class Channel:
             return False
 
         # enqueue join channel
-        p.enqueue(await PacketBuilder.SuccessJoinChannel(self.name))
+        if hasattr(p, "websocket"):
+            await p.websocket.send_json(WebsocketEvent.join_channel(self.name))
+        else:
+            p.enqueue(await PacketBuilder.SuccessJoinChannel(self.name))
         self.users.append(p)
         logger.klog(f"[{p.name}] Joined to {self.server_name}")
 
@@ -83,17 +99,24 @@ class Channel:
         else:
             receivers = Context.players.get_all_tokens()
         for receiver in receivers:
+            if hasattr(receiver, "websocket"):
+                await receiver.websocket.send_json(WebsocketEvent.channel_users(self))
+                continue
+
             receiver.enqueue(await PacketBuilder.ChannelAvailable(self))
         return True
 
-    async def leave_channel(self, p: "Player") -> bool:
+    async def leave_channel(self, p: Union["Player", "WebsocketPlayer"]) -> bool:
         if p not in self.users:
             return False
 
         # enqueue leave channel
-        p.enqueue(await PacketBuilder.PartChannel(self.name))
+        if hasattr(p, "websocket"):
+            await p.websocket.send_json(WebsocketEvent.part_channel(self.server_name))
+        else:
+            p.enqueue(await PacketBuilder.PartChannel(self.name))
         self.users.pop(self.users.index(p))
-        logger.klog(f"[{p.name}] Parted from {self.server_name}")
+        logger.klog(f"[{p.name}] Parted from {self.server_name} {len(self.users)}")
 
         # now we need update channel stats
         if self.temp_channel:
@@ -101,6 +124,10 @@ class Channel:
         else:
             receivers = Context.players.get_all_tokens()
         for receiver in receivers:
+            if hasattr(receiver, "websocket"):
+                await receiver.websocket.send_json(WebsocketEvent.channel_users(self))
+                continue
+
             receiver.enqueue(await PacketBuilder.ChannelAvailable(self))
 
         if len(self.users) < 1 and self.temp_channel:

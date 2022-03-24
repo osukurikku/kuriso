@@ -49,7 +49,11 @@ class TourneyPlayer(Player):
 
         self.additional_clients: Dict[str, "Player"] = {}
 
-    def add_additional_client(self) -> Tuple[str, "Player"]:
+    def add_additional_client(self, client=None, token=None) -> Tuple[str, "Player"]:
+        if client and token:
+            self.additional_clients[token] = client
+            return token, client
+
         token = self.generate_token()
         self.additional_clients[token] = Player(
             self.id,

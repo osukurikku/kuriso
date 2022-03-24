@@ -2,6 +2,7 @@ from typing import Union, TYPE_CHECKING, Dict, List
 
 if TYPE_CHECKING:
     from objects.Player import Player
+    from objects.WebsocketPlayer import WebsocketPlayer
     from objects.TourneyPlayer import TourneyPlayer
 
 
@@ -9,9 +10,9 @@ class TokenStorage:
     __slots__ = ("store_by_token", "store_by_id", "store_by_name")
 
     def __init__(self):
-        self.store_by_token: Dict[str, "Player"] = {}
-        self.store_by_id: Dict[int, "Player"] = {}
-        self.store_by_name: Dict[str, "Player"] = {}
+        self.store_by_token: Dict[str, Union["Player", WebsocketPlayer]] = {}
+        self.store_by_id: Dict[int, Union["Player", "WebsocketPlayer"]] = {}
+        self.store_by_name: Dict[str, Union["Player", "WebsocketPlayer"]] = {}
 
     def add_token(self, player: "Player") -> bool:
         if (
@@ -28,7 +29,7 @@ class TokenStorage:
 
     def get_token(
         self, uid: int = None, token: str = None, name: str = None
-    ) -> Union[Union["Player", "TourneyPlayer"], None]:
+    ) -> Union[Union["Player", "TourneyPlayer", "WebsocketPlayer"], None]:
         if uid:  # if uid presents
             return self.store_by_id.get(uid, None)
 
@@ -71,7 +72,9 @@ class TokenStorage:
         token.token = ""
         return res
 
-    def get_all_tokens(self, ignore_tournament_clients: bool = False) -> List["Player"]:
+    def get_all_tokens(
+        self, ignore_tournament_clients: bool = False
+    ) -> List[Union["Player", "WebsocketPlayer"]]:
         normal_tokens = [
             v for (k, v) in self.store_by_token.items()
         ]  # just return all player instances

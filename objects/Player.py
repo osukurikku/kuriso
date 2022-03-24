@@ -7,6 +7,7 @@ from blob import Context
 from config import Config
 from helpers import userHelper
 from lib import logger
+from lib.websocket_formatter import WebsocketEvent
 from objects.constants import Privileges, Countries
 from objects.constants.BanchoRanks import BanchoRanks
 from objects.constants.GameModes import GameModes
@@ -318,6 +319,9 @@ class Player:
 
         if not self.is_tourneymode:
             for p in Context.players.get_all_tokens():
+                if hasattr(p, "websocket"):
+                    await p.websocket.send_json(WebsocketEvent.user_leaved(self.id))
+                    continue
                 p.enqueue(await PacketBuilder.Logout(self.id))
 
         Context.players.delete_token(self)
@@ -421,6 +425,10 @@ class Player:
         logger.klog(
             f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}"
         )
+
+        if hasattr(receiver, "websocket"):
+            await receiver.websocket.send_json(WebsocketEvent.build_message(self.id, message))
+            return True
 
         receiver.enqueue(await PacketBuilder.BuildMessage(self.id, message))
         return True
