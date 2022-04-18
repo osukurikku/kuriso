@@ -79,17 +79,19 @@ async def recommend(args: List[str], player: "Player", __):
 async def user_stats(args: List[str], player: "Player", _):
     mode = GameModes(0)
     if len(args) < 1:
-        nickname = player.name
+        nickname = player.safe_name
     else:
-        nickname = args[0]
+        nickname = args[0].lower()
 
     if len(args) > 1 and args[1].isdigit():
-        mode = GameModes(int(args[1]))
+        mode = int(args[1])
 
     if mode > 3:
         return "GameMode is incorrect"
 
-    token = Context.players.get_token(name=nickname.lower())
+    mode = GameModes(mode)
+
+    token = Context.players.get_token(name=nickname)
     if not token:
         return "Player not online"
 

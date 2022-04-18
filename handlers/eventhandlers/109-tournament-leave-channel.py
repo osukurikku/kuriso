@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 # client packet: 109, bancho response: leave channel
 @OsuEvent.register_handler(OsuPacketID.Client_SpecialLeaveMatchChannel)
 async def leave_tourney_channel(packet_data: bytes, token: "Player"):
-    if not token.is_tourneymode:
+    if not token.is_tourneymode and not hasattr(token, "irc"):
         return False  # not allow use that packet for non-tourney player
 
     match_id = await PacketResolver.read_match_id(packet_data)

@@ -9,10 +9,12 @@ ENDC = "\033[0m"
 BOLD = "\033[1m"
 UNDERLINE = "\033[4m"
 
-logging.basicConfig(format="[%(asctime)s] %(message)s", filemode="at", filename="kuriso.log")
-
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
+handler = logging.FileHandler('kuriso.log', 'at', 'utf-8')
+handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s'))
+
+logger.addHandler(handler)
 
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)

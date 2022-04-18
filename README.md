@@ -54,8 +54,8 @@ TODO:
     * [x] Handle osu-tourney
     * [x] Handle osu-tourney when it want to spectate user
 - IRC
-    * [ ] IRC server
-    * [ ] Handle connections
+    * [x] IRC server
+    * [x] Handle connections
 - RipplePeppyAPI v1
     * [x] Implementation
 - RipplePeppyAPI v2(delta preview)

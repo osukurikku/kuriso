@@ -161,10 +161,6 @@ class Player:
         return self.name.lower().strip().replace(" ", "_")
 
     @property
-    def irc_name(self) -> str:
-        return self.name.replace(" ", "_")
-
-    @property
     def is_restricted(self) -> bool:
         return (self.privileges & KurikkuPrivileges.Normal) != KurikkuPrivileges.Normal
 
@@ -318,7 +314,7 @@ class Player:
 
         if not self.is_tourneymode:
             for p in Context.players.get_all_tokens():
-                p.enqueue(await PacketBuilder.Logout(self.id))
+                await p.on_another_user_logout(self)
 
         Context.players.delete_token(self)
         return
@@ -390,7 +386,7 @@ class Player:
 
             self.user_chat_log.append(message)
             logger.klog(
-                f"{self.name}({self.id}) -> {channel.server_name}: {bytes(message.body, 'latin_1').decode()}"
+                f"{self.name}({self.id}) -> {channel.server_name}: {message.body}"
             )
             await channel.send_message(self.id, message)
             return True
@@ -419,10 +415,10 @@ class Player:
 
         self.user_chat_log.append(message)
         logger.klog(
-            f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}"
+            f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {message.body}"
         )
 
-        receiver.enqueue(await PacketBuilder.BuildMessage(self.id, message))
+        await receiver.on_message(self.id, message)
         return True
 
     async def add_spectator(self, new_spec: "Player") -> bool:
@@ -487,6 +483,42 @@ class Player:
     async def say_bancho_restarting(self, delay: int = 20) -> bool:
         self.enqueue(await PacketBuilder.BanchoRestarting(delay * 1000))
         return True
+
+    async def on_another_user_logout(self, p: "Player") -> None:
+        """
+            Function implementation, when user leaved kuriso!
+        """
+        return self.enqueue(await PacketBuilder.Logout(p.id))
+
+    async def on_message(self, from_id: int, message: "Message", **_) -> None:
+        """
+            Function implementation, when user got a message!
+        """
+        return self.enqueue(await PacketBuilder.BuildMessage(from_id, message))
+
+    async def on_channel_another_user_join(self, _, **kwargs) -> None:
+        """
+            Function implementation, when user joined a channel!
+        """
+        return self.enqueue(await PacketBuilder.ChannelAvailable(kwargs["channel"]))
+
+    async def on_channel_another_user_leave(self, _, **kwargs) -> None:
+        """
+            Function implementation, when another user leaved a channel!
+        """
+        return self.enqueue(await PacketBuilder.ChannelAvailable(kwargs["channel"]))
+
+    async def on_channel_join(self, channel_name: str, _) -> None:
+        """
+            Function implementation, when user joined a channel!
+        """
+        return self.enqueue(await PacketBuilder.SuccessJoinChannel(channel_name))
+
+    async def on_channel_leave(self, channel_name: str, _) -> None:
+        """
+            Function implementation, when user leaved a channel!
+        """
+        return self.enqueue(await PacketBuilder.PartChannel(channel_name))
 
     def enqueue(self, b: bytes) -> None:
         self.queue += b
