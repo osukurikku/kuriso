@@ -1,4 +1,5 @@
 import asyncio
+import hashlib
 import time
 import re
 import traceback
@@ -57,9 +58,10 @@ class IRCClient:
         self.writer.write((message + "\r\n").encode())
 
     async def login(self, irc_token: str = ""):
+        double_md5 = hashlib.md5(irc_token.encode()).hexdigest()
         r1 = await Context.mysql.fetch(
             "SELECT irc_tokens.userid, irc_tokens.token, users.username FROM irc_tokens INNER JOIN users ON users.id = irc_tokens.userid WHERE token = %s",
-            [irc_token],
+            [double_md5],
         )
 
         if not r1:
