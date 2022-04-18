@@ -29,7 +29,7 @@ class IRCPlayer(Player):
         silence_end: int = 0,
         is_tourneymode: bool = False,
         ip: str = "",
-        irc: 'IRCClient' = None,
+        irc: "IRCClient" = None,
     ):
         super().__init__(
             user_id,
@@ -123,9 +123,7 @@ class IRCPlayer(Player):
                 return False
 
             self.user_chat_log.append(message)
-            logger.klog(
-                f"{self.name}({self.id}) -> {channel.server_name}: {message.body}"
-            )
+            logger.klog(f"{self.name}({self.id}) -> {channel.server_name}: {message.body}")
             await channel.send_message(self.id, message)
             return True
 
@@ -168,7 +166,7 @@ class IRCPlayer(Player):
                 sender=msg.sender,
                 to=kwargs["server_name"],
                 body=msg.body,
-                client_id=msg.client_id
+                client_id=msg.client_id,
             )
 
         return self.irc.receive_message(msg)

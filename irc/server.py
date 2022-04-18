@@ -1,4 +1,5 @@
-import asyncio, time
+import asyncio
+import time
 import re
 import traceback
 from typing import TYPE_CHECKING
@@ -28,21 +29,20 @@ class BanchoIRCException(Exception):
         self.code: int = code_error
         self.error: str = error
 
+        super().__init__()
+
     def __str__(self):
         return repr(self.error)
 
 
 class IRCClient:
-    def __init__(
-            self,
-            writer: asyncio.StreamWriter = None
-         ):
+    def __init__(self, writer: asyncio.StreamWriter = None):
         self.writer = writer
 
         self.ping_time: int = int(time.time())
         self.queue: bytearray = bytearray()
         self.is_authenticated: bool = False
-        self.player_instance: 'Player' = None
+        self.player_instance: "Player" = None
         self.is_closing: bool = False
 
     def __str__(self):
@@ -63,7 +63,7 @@ class IRCClient:
         )
 
         if not r1:
-            raise BanchoIRCException(464, f"PASS :Password incorrect")
+            raise BanchoIRCException(464, "PASS :Password incorrect")
 
         start_data = await userHelper.get_start_user(r1["username"])
         if not start_data:
@@ -76,8 +76,8 @@ class IRCClient:
 
         # checking for user correct privileges at least equals 3 (NORMAL|PUBLIC)
         is_user_valid = (
-                start_data["privileges"] & Privileges.USER_PUBLIC
-                and start_data["privileges"] & Privileges.USER_NORMAL
+            start_data["privileges"] & Privileges.USER_PUBLIC
+            and start_data["privileges"] & Privileges.USER_NORMAL
         )
 
         if not is_user_valid:
@@ -93,7 +93,7 @@ class IRCClient:
             await pToken.logout()
             pToken = None
 
-        socket_ip = self.writer.get_extra_info('peername')[0]
+        socket_ip = self.writer.get_extra_info("peername")[0]
 
         player = None
         start_params = {
@@ -112,7 +112,9 @@ class IRCClient:
         if pToken and pToken.is_tourneymode:
             # check if clients have correct order
             if not hasattr(pToken, "additional_clients"):
-                self.add_queue("ERROR :We have detected wrong tourney clients ordering! Wait a minute, and try again!")
+                self.add_queue(
+                    "ERROR :We have detected wrong tourney clients ordering! Wait a minute, and try again!"
+                )
                 return False
 
             # AND WE'RE READY TO GO!
@@ -134,7 +136,8 @@ class IRCClient:
 
             p.enqueue(
                 bytes(
-                    await PacketBuilder.UserPresence(player) + await PacketBuilder.UserStats(player)
+                    await PacketBuilder.UserPresence(player)
+                    + await PacketBuilder.UserStats(player)
                 )
             )
 
@@ -151,7 +154,7 @@ class IRCClient:
         self.is_authenticated = True
         return True
 
-    def receive_message(self, message: 'Message'):
+    def receive_message(self, message: "Message"):
         irc_body = message.body.split("\n")
         for crcf in irc_body:
             self.add_queue(f":{message.sender} PRIVMSG {message.to} {crcf}")
@@ -159,6 +162,7 @@ class IRCClient:
 
     async def data_received(self, data):
         message = data.decode("utf-8")
+        # pylint: disable=too-many-nested-blocks
         try:
             client_data = WHITE_SPACE.split(message)[:-1]
             for cmd in client_data:
@@ -175,12 +179,19 @@ class IRCClient:
                         login_result = await self.login(args)
                         if login_result:
                             self.add_queue(
-                                f":{NAME} 001 {self.player_instance.name} :Welcome to the Internet Relay Network {str(self)}!")
-                            self.add_queue(f":{NAME} 251 :There are 1 users and 0 services on 1 server")
+                                f":{NAME} 001 {self.player_instance.name} :Welcome to the Internet Relay Network {str(self)}!"
+                            )
+                            self.add_queue(
+                                f":{NAME} 251 :There are 1 users and 0 services on 1 server"
+                            )
                             self.add_queue(f":{NAME} 375 :- {NAME} Message of the day -")
-                            self.add_queue(f":{NAME} 372 {self.player_instance.name} :- {int(time.time())}")
+                            self.add_queue(
+                                f":{NAME} 372 {self.player_instance.name} :- {int(time.time())}"
+                            )
                             for line in Context.motd.split("\n"):
-                                self.add_queue(f":{NAME} 372 {self.player_instance.name} :{line}")
+                                self.add_queue(
+                                    f":{NAME} 372 {self.player_instance.name} :{line}"
+                                )
                             self.add_queue(f":{NAME} 376 :End of MOTD command")
                             continue
 
@@ -208,7 +219,7 @@ class IRCClient:
             sender=self.player_instance.name,
             to=channel,
             body=msg,
-            client_id=self.player_instance.id
+            client_id=self.player_instance.id,
         )
         if channel == CrystalBot.bot_name:
             await CrystalBot.proceed_command(message)
@@ -229,8 +240,12 @@ class IRCClient:
 
             self.add_queue(f":Unknown TOPIC {chan.server_name} :{chan.description}")
             nicks = " ".join([client.name for client in chan.users])
-            self.add_queue(f":{NAME} 353 {self.player_instance.name} = {chan.server_name} :{nicks}")
-            self.add_queue(f":{NAME} 366 {self.player_instance.name} {chan.server_name} :End of /NAMES list")
+            self.add_queue(
+                f":{NAME} 353 {self.player_instance.name} = {chan.server_name} :{nicks}"
+            )
+            self.add_queue(
+                f":{NAME} 366 {self.player_instance.name} {chan.server_name} :End of /NAMES list"
+            )
 
     async def handler_part(self, after_part: str):
         channel = after_part.split(" ", 1)[0]
@@ -255,16 +270,16 @@ class IRCClient:
             await self.player_instance.logout()
 
     async def handler_nick(self, _):
-        ...
+        pass
 
     async def handler_user(self, _):
-        ...
+        pass
 
     async def handler_who(self, _):
-        ...
+        pass
 
     async def handler_mode(self, _):
-        ...
+        pass
 
 
 async def IRCStreamsServer(reader: asyncio.StreamReader, writer: asyncio.StreamWriter):

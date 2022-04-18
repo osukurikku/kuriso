@@ -127,9 +127,7 @@ class BotPlayer(Player):
                 )
                 return False
 
-            logger.klog(
-                f"{self.name}({self.id})/Bot -> {channel.server_name}: {message.body}"
-            )
+            logger.klog(f"{self.name}({self.id})/Bot -> {channel.server_name}: {message.body}")
             await channel.send_message(self.id, message)
             return True
 

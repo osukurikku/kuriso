@@ -77,8 +77,7 @@ class KurisoBuffer:
         )[0]
 
     async def read_string(self, length) -> str:
-        return (await self.slice_buffer(length)).decode(errors="ignore"
-        )  # ignore, because meh
+        return (await self.slice_buffer(length)).decode(errors="ignore")  # ignore, because meh
 
     async def read_int_8(self) -> int:
         return await self.read_int(1)

@@ -385,9 +385,7 @@ class Player:
                 return False
 
             self.user_chat_log.append(message)
-            logger.klog(
-                f"{self.name}({self.id}) -> {channel.server_name}: {message.body}"
-            )
+            logger.klog(f"{self.name}({self.id}) -> {channel.server_name}: {message.body}")
             await channel.send_message(self.id, message)
             return True
 
@@ -486,37 +484,37 @@ class Player:
 
     async def on_another_user_logout(self, p: "Player") -> None:
         """
-            Function implementation, when user leaved kuriso!
+        Function implementation, when user leaved kuriso!
         """
         return self.enqueue(await PacketBuilder.Logout(p.id))
 
     async def on_message(self, from_id: int, message: "Message", **_) -> None:
         """
-            Function implementation, when user got a message!
+        Function implementation, when user got a message!
         """
         return self.enqueue(await PacketBuilder.BuildMessage(from_id, message))
 
     async def on_channel_another_user_join(self, _, **kwargs) -> None:
         """
-            Function implementation, when user joined a channel!
+        Function implementation, when user joined a channel!
         """
         return self.enqueue(await PacketBuilder.ChannelAvailable(kwargs["channel"]))
 
     async def on_channel_another_user_leave(self, _, **kwargs) -> None:
         """
-            Function implementation, when another user leaved a channel!
+        Function implementation, when another user leaved a channel!
         """
         return self.enqueue(await PacketBuilder.ChannelAvailable(kwargs["channel"]))
 
     async def on_channel_join(self, channel_name: str, _) -> None:
         """
-            Function implementation, when user joined a channel!
+        Function implementation, when user joined a channel!
         """
         return self.enqueue(await PacketBuilder.SuccessJoinChannel(channel_name))
 
     async def on_channel_leave(self, channel_name: str, _) -> None:
         """
-            Function implementation, when user leaved a channel!
+        Function implementation, when user leaved a channel!
         """
         return self.enqueue(await PacketBuilder.PartChannel(channel_name))
 

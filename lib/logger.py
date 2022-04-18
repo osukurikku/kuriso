@@ -11,8 +11,8 @@ UNDERLINE = "\033[4m"
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
-handler = logging.FileHandler('kuriso.log', 'at', 'utf-8')
-handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s'))
+handler = logging.FileHandler("kuriso.log", "at", "utf-8")
+handler.setFormatter(logging.Formatter("[%(asctime)s] %(message)s"))
 
 logger.addHandler(handler)
 
