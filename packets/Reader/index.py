@@ -77,9 +77,7 @@ class KurisoBuffer:
         )[0]
 
     async def read_string(self, length) -> str:
-        return (await self.slice_buffer(length)).decode(
-            "latin_1", errors="ignore"
-        )  # ignore, because meh
+        return (await self.slice_buffer(length)).decode(errors="ignore")  # ignore, because meh
 
     async def read_int_8(self) -> int:
         return await self.read_int(1)
@@ -199,7 +197,7 @@ class KurisoBuffer:
         return await self.write_to_buffer(struct.pack("<d", value))
 
     async def write_string(self, value: str) -> bool:
-        return await self.write_to_buffer(value.encode("latin_1", errors="ignore"))
+        return await self.write_to_buffer(value.encode(errors="ignore"))
 
     async def write_bool(self, value: bool) -> bool:
         return await self.write_byte(1 if value else 0)
@@ -222,7 +220,7 @@ class KurisoBuffer:
             await self.write_byte(0)
         else:
             await self.write_byte(11)
-            await self.write_variant(len(value))
+            await self.write_variant(len(value.encode(errors="ignore")))
             await self.write_string(value)
 
         return True

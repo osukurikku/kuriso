@@ -6,6 +6,7 @@ from objects.Player import Player
 
 if TYPE_CHECKING:
     from objects.Multiplayer import Match
+    from objects.BanchoObjects import Message
 
 
 class TourneyPlayer(Player):
@@ -49,7 +50,11 @@ class TourneyPlayer(Player):
 
         self.additional_clients: Dict[str, "Player"] = {}
 
-    def add_additional_client(self) -> Tuple[str, "Player"]:
+    def add_additional_client(self, client=None, token=None) -> Tuple[str, "Player"]:
+        if client and token:
+            self.additional_clients[token] = client
+            return token, client
+
         token = self.generate_token()
         self.additional_clients[token] = Player(
             self.id,
@@ -82,3 +87,45 @@ class TourneyPlayer(Player):
 
         await super().logout()  # super() will ignore ^ delete bancho session
         return
+
+    async def on_another_user_logout(self, p: "Player") -> None:
+        f_irc = list(filter(lambda u: hasattr(u, "irc"), self.additional_clients.values()))
+        for irc in f_irc:
+            await irc.on_another_user_logout(p)
+
+        return await super().on_another_user_logout(p)
+
+    async def on_message(self, from_id: int, message: "Message", **kwargs) -> None:
+        f_irc = list(filter(lambda u: hasattr(u, "irc"), self.additional_clients.values()))
+        for irc in f_irc:
+            await irc.on_message(from_id, message, **kwargs)
+
+        return await super().on_message(from_id, message, **kwargs)
+
+    async def on_channel_another_user_join(self, p_name: str, **kwargs) -> None:
+        f_irc = list(filter(lambda u: hasattr(u, "irc"), self.additional_clients.values()))
+        for irc in f_irc:
+            await irc.on_channel_another_user_join(p_name, **kwargs)
+
+        return await super().on_channel_another_user_join(p_name, **kwargs)
+
+    async def on_channel_another_user_leave(self, p_name: str, **kwargs) -> None:
+        f_irc = list(filter(lambda u: hasattr(u, "irc"), self.additional_clients.values()))
+        for irc in f_irc:
+            await irc.on_channel_another_user_leave(p_name, **kwargs)
+
+        return await super().on_channel_another_user_leave(p_name, **kwargs)
+
+    async def on_channel_join(self, channel_name: str, server_name: str) -> None:
+        f_irc = list(filter(lambda u: hasattr(u, "irc"), self.additional_clients.values()))
+        for irc in f_irc:
+            await irc.on_channel_join(channel_name, server_name)
+
+        return await super().on_channel_join(channel_name, server_name)
+
+    async def on_channel_leave(self, channel_name: str, server_name: str) -> None:
+        f_irc = list(filter(lambda u: hasattr(u, "irc"), self.additional_clients.values()))
+        for irc in f_irc:
+            await irc.on_channel_leave(channel_name, server_name)
+
+        return await super().on_channel_leave(channel_name, server_name)

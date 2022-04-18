@@ -21,6 +21,7 @@ from starlette.applications import Starlette
 
 from config import Config
 from blob import Context
+from irc import IRCStreamsServer
 
 from lib import AsyncSQLPoolWrapper
 from lib import logger
@@ -146,6 +147,7 @@ return result
     # Setup pub/sub listeners for LETS/old admin panel events
     event_loop = asyncio.get_event_loop()
     event_loop.create_task(pubsub_listeners.init())
+    event_loop.create_task(asyncio.start_server(IRCStreamsServer, "127.0.0.1", 6667, loop=loop))
 
     Context.load_motd()
     uvicorn.run(

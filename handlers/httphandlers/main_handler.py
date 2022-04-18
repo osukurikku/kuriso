@@ -194,7 +194,12 @@ async def main_handler(request: Request):
         return BanchoResponse(bytes(response))
 
     if isTourney:
-        if Context.players.get_token(uid=user_data["id"]):
+        uToken = Context.players.get_token(uid=user_data["id"])
+        if hasattr(uToken, "irc"):
+            await uToken.logout()
+            uToken = None
+
+        if uToken:
             # manager was logged before, we need just add additional token
             token, player = Context.players.get_token(
                 uid=user_data["id"]

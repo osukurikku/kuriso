@@ -1,9 +1,8 @@
-from typing import List
+from typing import List, Union
 
 from lib import logger
 
 from objects.constants.KurikkuPrivileges import KurikkuPrivileges
-from packets.Builder.index import PacketBuilder
 from blob import Context
 
 from typing import TYPE_CHECKING
@@ -11,6 +10,7 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from objects.BanchoObjects import Message
     from objects.Player import Player
+    from objects.IRCPlayer import IRCPlayer
 
 
 class Channel:
@@ -22,7 +22,7 @@ class Channel:
         public_write: bool = False,
         temp_channel: bool = False,
     ):
-        self.users: List["Player"] = []
+        self.users: List[Union["Player", "IRCPlayer"]] = []
         # for use this client should be like #osu, #admin, #osu, #specatator, #multiplayer, #lobby and etc.
         # server can store it like #banana, #spec_<id>, #multi_<id> and etc.
         self.server_name: str = server_name
@@ -56,13 +56,13 @@ class Channel:
             if receiver.id == from_id:
                 continue  # ignore ourself
 
-            receiver.enqueue(await PacketBuilder.BuildMessage(from_id, message))
+            await receiver.on_message(from_id, message, server_name=self.server_name)
 
         return True
 
-    async def join_channel(self, p: "Player") -> bool:
+    async def join_channel(self, p: Union["Player", "IRCPlayer"]) -> bool:
         if p in self.users:
-            p.enqueue(await PacketBuilder.SuccessJoinChannel(self.name))
+            await p.on_channel_join(self.name, self.server_name)
             return True
 
         if not self.can_read and not self.is_privileged(p.privileges):
@@ -73,7 +73,7 @@ class Channel:
             return False
 
         # enqueue join channel
-        p.enqueue(await PacketBuilder.SuccessJoinChannel(self.name))
+        await p.on_channel_join(self.name, self.server_name)
         self.users.append(p)
         logger.klog(f"[{p.name}] Joined to {self.server_name}")
 
@@ -83,17 +83,17 @@ class Channel:
         else:
             receivers = Context.players.get_all_tokens()
         for receiver in receivers:
-            receiver.enqueue(await PacketBuilder.ChannelAvailable(self))
+            await receiver.on_channel_another_user_join(p.name, channel=self)
         return True
 
-    async def leave_channel(self, p: "Player") -> bool:
+    async def leave_channel(self, p: Union["Player", "IRCPlayer"]) -> bool:
         if p not in self.users:
             return False
 
         # enqueue leave channel
-        p.enqueue(await PacketBuilder.PartChannel(self.name))
+        await p.on_channel_leave(self.name, self.server_name)
         self.users.pop(self.users.index(p))
-        logger.klog(f"[{p.name}] Parted from {self.server_name}")
+        logger.klog(f"[{p.name}] Parted from {self.server_name} {len(self.users)}")
 
         # now we need update channel stats
         if self.temp_channel:
@@ -101,7 +101,7 @@ class Channel:
         else:
             receivers = Context.players.get_all_tokens()
         for receiver in receivers:
-            receiver.enqueue(await PacketBuilder.ChannelAvailable(self))
+            await receiver.on_channel_another_user_leave(p.name, channel=self)
 
         if len(self.users) < 1 and self.temp_channel:
             # clean channel because all left and channel is temp(for multi lobby or spectator)

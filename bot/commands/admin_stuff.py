@@ -361,6 +361,7 @@ async def system_maintenance(maintenance: bool = False) -> str:
             user.enqueue(maintenance_packet)
             if not user.is_admin:
                 user.enqueue(force_disconnect)
+                await user.logout()
 
         return "The server is now in maintenance mode!"
 

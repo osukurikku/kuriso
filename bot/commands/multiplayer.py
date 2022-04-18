@@ -95,7 +95,6 @@ async def mp_make(args: List[str], player: "Player", _):
     match.channel = match_channel
     Context.matches[match.id] = match
 
-    # TODO: IRC Ignore join
     if not player.is_tourneymode:
         await match.join_player(player, match.password)  # allow player to join match
     else:

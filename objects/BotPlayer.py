@@ -7,7 +7,6 @@ from objects.Player import Status, Player
 from objects.constants import Countries
 from objects.constants.GameModes import GameModes
 from objects.constants.IdleStatuses import Action
-from packets.Builder.index import PacketBuilder
 
 if TYPE_CHECKING:
     from objects.BanchoObjects import Message
@@ -111,7 +110,7 @@ class BotPlayer(Player):
 
         if not self.is_tourneymode:
             for p in Context.players.get_all_tokens():
-                p.enqueue(await PacketBuilder.Logout(self.id))
+                await p.on_another_user_logout(self)
 
         Context.players.delete_token(self)
         return
@@ -128,9 +127,7 @@ class BotPlayer(Player):
                 )
                 return False
 
-            logger.klog(
-                f"{self.name}({self.id})/Bot -> {channel.server_name}: {bytes(message.body, 'latin_1').decode()}"
-            )
+            logger.klog(f"{self.name}({self.id})/Bot -> {channel.server_name}: {message.body}")
             await channel.send_message(self.id, message)
             return True
 
@@ -141,9 +138,10 @@ class BotPlayer(Player):
             return False
 
         logger.klog(
-            f"#DM {self.name}({self.id})/Bot -> {message.to}({receiver.id}): {bytes(message.body, 'latin_1').decode()}"
+            f"#DM {self.name}({self.id})/Bot -> {message.to}({receiver.id}): {message.body}"
         )
-        receiver.enqueue(await PacketBuilder.BuildMessage(self.id, message))
+
+        await receiver.on_message(self.id, message)
         return True
 
     async def kick(self, *_) -> bool:
