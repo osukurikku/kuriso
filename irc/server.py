@@ -213,7 +213,7 @@ class IRCClient:
 
     async def handler_ping(self, _):
         self.player_instance.last_packet_unix = int(time.time())
-        self.add_queue(f":{NAME} PONG :{NAME}")
+        self.add_queue(f":{NAME} PONG")
 
     async def handler_privmsg(self, args):
         channel, msg = args.split(" :", 1)
@@ -277,8 +277,21 @@ class IRCClient:
     async def handler_user(self, _):
         pass
 
-    async def handler_who(self, _):
-        pass
+    async def handler_who(self, channels: str):
+        channel_list = channels.split(",")
+        for ch in channel_list:
+            ctx_channel = Context.channels.get(ch, None)
+            if ctx_channel:
+                self.add_queue(f":{NAME} 315 {ctx_channel.server_name} :End of /WHO list.")
+
+    async def handler_names(self, channels: str):
+        channel_list = channels.split(",")
+        for ch in channel_list:
+            ctx_channel = Context.channels.get(ch, None)
+            if ctx_channel:
+                users_string = " ".join([user.name for user in ctx_channel.users])
+                self.add_queue(f":{NAME} 353 {self.player_instance.name} = {ctx_channel.server_name} :{users_string}")
+                self.add_queue(f":{NAME} 366 {self.player_instance.name} {ctx_channel.server_name} :End of /NAMES list.")
 
     async def handler_mode(self, _):
         pass
@@ -300,6 +313,11 @@ async def IRCStreamsServer(reader: asyncio.StreamReader, writer: asyncio.StreamW
 
             await writer.drain()
     except ConnectionResetError:
-        ...
+        pass
+    except Exception as e:
+        # other exception that I can't handle right now!
+        if not writer.is_closing():
+            writer.close()
+        capture_exception(e)
     finally:
         await client.connection_lost()
