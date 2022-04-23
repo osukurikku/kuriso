@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 # client packet: 16, bancho response: 42
 @OsuEvent.register_handler(OsuPacketID.Client_StartSpectating)
 async def join_spectator(packet_data: bytes, token: "Player"):
-    to_spectate_id = await PacketResolver.read_specatator_id(packet_data)
+    to_spectate_id = PacketResolver.read_specatator_id(packet_data)
 
     player_spec = Context.players.get_token(uid=to_spectate_id)
     if not player_spec:
@@ -23,8 +23,7 @@ async def join_spectator(packet_data: bytes, token: "Player"):
 
     if player_spec:
         token.enqueue(
-            await PacketBuilder.UserStats(player_spec)
-            + await PacketBuilder.UserPresence(player_spec)
+            PacketBuilder.UserStats(player_spec) + PacketBuilder.UserPresence(player_spec)
         )
 
     if token.spectating:

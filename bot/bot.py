@@ -39,8 +39,8 @@ class CrystalBot:
         if Context.players.get_token(uid=cls.bot_id):
             return False
 
-        bot_name = await Context.mysql.fetch(
-            "select username from users where id = %s", [cls.bot_id]
+        bot_name = await Context.mysql.fetch_one(
+            "select username from users where id = :bot_id", {"bot_id": cls.bot_id}
         )
         if not bot_name:
             return False
@@ -58,11 +58,11 @@ class CrystalBot:
             ]
         )
 
-        uPanel = await PacketBuilder.UserPresence(token)
-        uStats = await PacketBuilder.UserStats(token)
+        u_panel = PacketBuilder.UserPresence(token)
+        u_stats = PacketBuilder.UserStats(token)
         for user in Context.players.get_all_tokens():
-            user.enqueue(uPanel)
-            user.enqueue(uStats)
+            user.enqueue(u_panel)
+            user.enqueue(u_stats)
 
         cls.token = token
         cls.connected_time = int(time.time())

@@ -59,9 +59,9 @@ class IRCClient:
 
     async def login(self, irc_token: str = ""):
         double_md5 = hashlib.md5(irc_token.encode()).hexdigest()
-        r1 = await Context.mysql.fetch(
-            "SELECT irc_tokens.userid, irc_tokens.token, users.username FROM irc_tokens INNER JOIN users ON users.id = irc_tokens.userid WHERE token = %s",
-            [double_md5],
+        r1 = await Context.mysql.fetch_one(
+            "SELECT irc_tokens.userid, irc_tokens.token, users.username FROM irc_tokens INNER JOIN users ON users.id = irc_tokens.userid WHERE token = :md5",
+            {"md5": double_md5},
         )
 
         if not r1:
@@ -137,10 +137,7 @@ class IRCClient:
                 continue
 
             p.enqueue(
-                bytes(
-                    await PacketBuilder.UserPresence(player)
-                    + await PacketBuilder.UserStats(player)
-                )
+                bytes(PacketBuilder.UserPresence(player) + PacketBuilder.UserStats(player))
             )
 
         await asyncio.gather(
@@ -150,7 +147,7 @@ class IRCClient:
                 player.parse_country(),
             ]
         )
-        logger.klog(f"[{player.token}/{start_data['username']}] logged in, through irc!chat")
+        logger.klog(f"<{start_data['username']}> logged in, through irc!chat")
 
         self.player_instance = player
         self.is_authenticated = True
@@ -290,8 +287,12 @@ class IRCClient:
             ctx_channel = Context.channels.get(ch, None)
             if ctx_channel:
                 users_string = " ".join([user.name for user in ctx_channel.users])
-                self.add_queue(f":{NAME} 353 {self.player_instance.name} = {ctx_channel.server_name} :{users_string}")
-                self.add_queue(f":{NAME} 366 {self.player_instance.name} {ctx_channel.server_name} :End of /NAMES list.")
+                self.add_queue(
+                    f":{NAME} 353 {self.player_instance.name} = {ctx_channel.server_name} :{users_string}"
+                )
+                self.add_queue(
+                    f":{NAME} 366 {self.player_instance.name} {ctx_channel.server_name} :End of /NAMES list."
+                )
 
     async def handler_mode(self, _):
         pass

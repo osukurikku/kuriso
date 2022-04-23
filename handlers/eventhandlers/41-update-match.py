@@ -16,27 +16,29 @@ async def update_match(data: bytes, token: "Player"):
     if not token.match or token not in (token.match.host_tourney, token.match.host):
         return False
 
-    newMatch = await PacketResolver.read_match(data)
+    new_match = PacketResolver.read_match(data)
     match = token.match
 
     if (
-        match.beatmap_md5 != newMatch["beatmap_md5"]
-        or match.match_playmode != newMatch["play_mode"]
-        or match.match_type != newMatch["match_type"]
-        or match.match_scoring_type != newMatch["scoring_type"]
-        or match.match_team_type != newMatch["team_type"]
+        match.beatmap_md5 != new_match["beatmap_md5"]
+        or match.match_playmode != new_match["play_mode"]
+        or match.match_type != new_match["match_type"]
+        or match.match_scoring_type != new_match["scoring_type"]
+        or match.match_team_type != new_match["team_type"]
     ):
         await match.unready_everyone()
 
-    match.beatmap_name = newMatch["beatmap_name"]
-    match.beatmap_md5 = newMatch["beatmap_md5"]
-    match.beatmap_id = newMatch["beatmap_id"]
-    match.name = newMatch["name"] if len(newMatch["name"]) > 0 else f"{match.host.name}'s game"
+    match.beatmap_name = new_match["beatmap_name"]
+    match.beatmap_md5 = new_match["beatmap_md5"]
+    match.beatmap_id = new_match["beatmap_id"]
+    match.name = (
+        new_match["name"] if len(new_match["name"]) > 0 else f"{match.host.name}'s game"
+    )
 
-    if match.match_team_type != newMatch["team_type"]:
+    if match.match_team_type != new_match["team_type"]:
         if (
-            newMatch["team_type"] == MatchTeamTypes.TagTeamVs
-            or newMatch["team_type"] == MatchTeamTypes.TeamVs
+            new_match["team_type"] == MatchTeamTypes.TagTeamVs
+            or new_match["team_type"] == MatchTeamTypes.TeamVs
         ):
             for (i, slot) in enumerate(match.slots):
                 if slot.team == SlotTeams.Neutral:
@@ -45,13 +47,13 @@ async def update_match(data: bytes, token: "Player"):
             for slot in match.slots:
                 slot.team = SlotTeams.Neutral
 
-    match.match_type = newMatch["match_type"]
-    match.match_scoring_type = newMatch["scoring_type"]
-    match.match_team_type = newMatch["team_type"]
-    match.match_playmode = newMatch["play_mode"]
-    match.seed = newMatch["seed"]
+    match.match_type = new_match["match_type"]
+    match.match_scoring_type = new_match["scoring_type"]
+    match.match_team_type = new_match["team_type"]
+    match.match_playmode = new_match["play_mode"]
+    match.seed = new_match["seed"]
 
-    await match.change_special_mods(newMatch["match_freemod"])
+    await match.change_special_mods(new_match["match_freemod"])
 
     await match.update_match()
     return True

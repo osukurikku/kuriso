@@ -16,11 +16,11 @@ async def slot_lock(packet_data: bytes, token: "Player"):
         return False
 
     match = token.match
-    slotIndex = await PacketResolver.read_slot_index(packet_data)
-    if match.in_progress or slotIndex > 15 or slotIndex < 0:
+    slot_index = PacketResolver.read_slot_index(packet_data)
+    if match.in_progress or slot_index > 15 or slot_index < 0:
         return False
 
-    slot = match.slots[slotIndex]
+    slot = match.slots[slot_index]
     if slot.token in (match.host, match.host_tourney):
         return
 

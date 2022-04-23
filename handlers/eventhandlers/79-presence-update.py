@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 # client packet: 79
 @OsuEvent.register_handler(OsuPacketID.Client_ReceiveUpdates)
 async def presence_update(packet_data: bytes, p: "Player"):
-    data = await PacketResolver.read_pr_filter(packet_data)
+    data = PacketResolver.read_pr_filter(packet_data)
 
     if not 0 <= data < 3:
         logger.elog(f"[Player/{p.name}] Tried to set bad pr filter")

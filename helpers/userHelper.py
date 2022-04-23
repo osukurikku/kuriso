@@ -2,7 +2,7 @@ import asyncio
 import time
 
 import bcrypt
-from typing import Union, Tuple, List, TYPE_CHECKING
+from typing import Union, Tuple, List, TYPE_CHECKING, Optional, Mapping
 
 from objects.constants import Privileges
 from blob import Context
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from objects.TourneyPlayer import TourneyPlayer
 
 
-@lru_cache(maxsize=64)
+@lru_cache(maxsize=1024)
 def check_pw(password: bytes, db_password: bytes) -> bool:
     """Just wondering how it will work"""
     return bcrypt.checkpw(password, db_password)
@@ -24,9 +24,9 @@ def check_pw(password: bytes, db_password: bytes) -> bool:
 
 async def check_login(login: str, password: str, ip: str):
     safe_login = login.lower().strip().replace(" ", "_")
-    user = await Context.mysql.fetch(
-        "SELECT id, password_md5, salt, password_version FROM users WHERE username_safe = %s",
-        [safe_login],
+    user = await Context.mysql.fetch_one(
+        "SELECT id, password_md5, salt, password_version FROM users WHERE username_safe = :username_safe",
+        {"username_safe": safe_login},
     )
 
     if not user:
@@ -50,12 +50,12 @@ async def check_login(login: str, password: str, ip: str):
     return check_pw(password, db_password)
 
 
-async def get_start_user(login: str) -> Union[None, dict]:
+async def get_start_user(login: str) -> Union[None, Optional[Mapping]]:
     safe_login = login.lower().strip().replace(" ", "_")
 
-    user = await Context.mysql.fetch(
-        "select id, username, silence_end, privileges, donor_expire from users where username_safe = %s",
-        [safe_login],
+    user = await Context.mysql.fetch_one(
+        "select id, username, silence_end, privileges, donor_expire from users where username_safe = :username_safe",
+        {"username_safe": safe_login},
     )
     if not user:
         return None
@@ -63,10 +63,10 @@ async def get_start_user(login: str) -> Union[None, dict]:
     return user
 
 
-async def get_start_user_id(user_id: int) -> Union[None, dict]:
-    user = await Context.mysql.fetch(
-        "select id, username, silence_end, privileges, donor_expire from users where id = %s",
-        [user_id],
+async def get_start_user_id(user_id: int) -> Union[None, Optional[Mapping]]:
+    user = await Context.mysql.fetch_one(
+        "select id, username, silence_end, privileges, donor_expire from users where id = :id",
+        {"id": user_id},
     )
     if not user:
         return None
@@ -75,28 +75,31 @@ async def get_start_user_id(user_id: int) -> Union[None, dict]:
 
 
 async def get_username(user_id: int) -> Union[str, None]:
-    r = await Context.mysql.fetch("select username from users where id = %s", [user_id])
+    r = await Context.mysql.fetch_one(
+        "select username from users where id = :id", {"id": user_id}
+    )
     return r.get("username", None)
 
 
 async def user_have_hardware(user_id: int) -> bool:
-    hardware = await Context.mysql.fetch(
-        "SELECT id FROM hw_user WHERE userid = %s AND activated = 1 LIMIT 1",
-        [user_id],
+    hardware = await Context.mysql.fetch_one(
+        "SELECT id FROM hw_user WHERE userid = :id AND activated = 1 LIMIT 1",
+        {"id": user_id},
     )
     return bool(hardware)
 
 
 async def get_country(user_id: int) -> str:
-    r = await Context.mysql.fetch(
-        "SELECT country FROM users_stats WHERE id = %s LIMIT 1", [user_id]
+    r = await Context.mysql.fetch_one(
+        "SELECT country FROM users_stats WHERE id = :id LIMIT 1", {"id": user_id}
     )
     return r["country"]
 
 
 async def set_country(user_id: int, country: str) -> bool:
     return await Context.mysql.execute(
-        "UPDATE users_stats SET country = %s WHERE id = %s", [country, user_id]
+        "UPDATE users_stats SET country = :country WHERE id = :id",
+        {"country": country, "id": user_id},
     )
 
 
@@ -113,8 +116,8 @@ async def append_notes(
     nl = "\n" if need_new_line else ""
     to_apply += nl.join(notes)
     await Context.mysql.execute(
-        "update users set notes = concat(coalesce(notes, ''), %s) where id = %s limit 1",
-        [to_apply, user_id],
+        "update users set notes = concat(coalesce(notes, ''), :to_apply) where id = :id limit 1",
+        {"to_apply": to_apply, "id": user_id},
     )
     return True
 
@@ -139,8 +142,12 @@ async def remove_from_leaderboard(user_id: int) -> bool:
 async def ban(user_id: int) -> bool:
     ban_time = int(time.time())
     await Context.mysql.execute(
-        "UPDATE users SET privileges = privileges & %s, ban_datetime = %s WHERE id = %s LIMIT 1",
-        [~(Privileges.USER_NORMAL | Privileges.USER_PUBLIC), ban_time, user_id],
+        "UPDATE users SET privileges = privileges & :privileges, ban_datetime = :ban_time WHERE id = :id LIMIT 1",
+        {
+            "privileges": ~(Privileges.USER_NORMAL | Privileges.USER_PUBLIC),
+            "ban_time": ban_time,
+            "id": user_id,
+        },
     )
 
     # Notify our ban handler about the ban
@@ -152,8 +159,8 @@ async def ban(user_id: int) -> bool:
 
 async def unban(user_id: int) -> bool:
     await Context.mysql.execute(
-        "UPDATE users SET privileges = privileges | %s, ban_datetime = 0 WHERE id = %s LIMIT 1",
-        [(Privileges.USER_NORMAL | Privileges.USER_PUBLIC), user_id],
+        "UPDATE users SET privileges = privileges | :privileges, ban_datetime = 0 WHERE id = :id LIMIT 1",
+        {"privileges": (Privileges.USER_NORMAL | Privileges.USER_PUBLIC), "id": user_id},
     )
     await Context.redis.publish("peppy:ban", str(user_id))
     return True
@@ -167,8 +174,8 @@ async def restrict(user_id: int) -> bool:
     ):
         ban_datetime = int(time.time())
         await Context.mysql.execute(
-            "update users set privileges = privileges & %s, ban_datetime = %s where id = %s LIMIT 1",
-            [~Privileges.USER_PUBLIC, ban_datetime, user_id],
+            "update users set privileges = privileges & :privileges , ban_datetime = :ban_time where id = :id LIMIT 1",
+            {"privileges": ~Privileges.USER_PUBLIC, "ban_time": ban_datetime, "id": user_id},
         )
 
         await Context.redis.publish(
@@ -196,23 +203,23 @@ async def activate_user(
         disk_sig_md5,
     ) = hashes
 
-    match: dict
+    match: Optional[Mapping]
     if (
         adapters_md5 == "b4ec3c4334a0249dae95c284ec5983df"
         or disk_sig_md5 == "ffae06fb022871fe9beb58b005c5e21d"
     ):
         # user logins from wine(old bancho checks)
-        match = await Context.mysql.fetch(
-            "select userid from hw_user where unique_id = %(unique_id)s and userid != %(userid)s and activated = 1 limit 1",
+        match = await Context.mysql.fetch_one(
+            "select userid from hw_user where unique_id = :unique_id and userid != :userid and activated = 1 limit 1",
             {"unique_id": uninstall_md5, "userid": user_id},
         )
     else:
         # its 100%(prob 80%) windows
-        match = await Context.mysql.fetch(
+        match = await Context.mysql.fetch_one(
             "select userid from hw_user "
-            "where mac = %(mac)s and unique_id = %(unique_id)s "
-            "and disk_id = %(disk_id)s "
-            "and userid != %(userid)s "
+            "where mac = :mac and unique_id = :unique_id "
+            "and disk_id = :disk_id "
+            "and userid != :user_id "
             "and activated = 1 LIMIT 1",
             {
                 "mac": adapters_md5,
@@ -223,8 +230,8 @@ async def activate_user(
         )
 
     await Context.mysql.execute(
-        "update users set privileges = privileges & %s where id = %s limit 1",
-        [~Privileges.USER_PENDING_VERIFICATION, user_id],
+        "update users set privileges = privileges & :privileges where id = :id limit 1",
+        {"privileges": ~Privileges.USER_PENDING_VERIFICATION, "id": user_id},
     )
     if match:
         source_user_id = match["userid"]
@@ -244,12 +251,12 @@ async def activate_user(
             source_user_id,
             [f"Has created multiaccount {user_name} ({user_id})"],
         )
-        logger.klog(f"[{source_user_name}] Has created multiaccount {user_name} ({user_id})")
+        logger.klog(f"<{source_user_name}> Has created multiaccount {user_name} ({user_id})")
         return False
 
     await Context.mysql.execute(
-        "UPDATE users SET privileges = privileges | %s WHERE id = %s LIMIT 1",
-        [(Privileges.USER_PUBLIC | Privileges.USER_NORMAL), user_id],
+        "UPDATE users SET privileges = privileges | :privileges WHERE id = :id LIMIT 1",
+        {"privileges": (Privileges.USER_PUBLIC | Privileges.USER_NORMAL), "id": user_id},
     )
 
     await logHardware(user_id, hashes)
@@ -260,22 +267,23 @@ async def activate_user(
 async def add_friend(user_id: int, friend_id: int) -> bool:
     await Context.mysql.execute(
         "INSERT INTO users_relationships (user1, user2) VALUES (%s, %s)",
-        [user_id, friend_id],
+        {"user1": user_id, "user2": friend_id},
     )
     return True
 
 
 async def remove_friend(user_id: int, friend_id: int) -> bool:
     await Context.mysql.execute(
-        "DELETE FROM users_relationships WHERE user1 = %s AND user2 = %s",
-        [user_id, friend_id],
+        "DELETE FROM users_relationships WHERE user1 = :user1 AND user2 = :user2",
+        {"user1": user_id, "user2": friend_id},
     )
     return True
 
 
 async def setUserLastOsuVer(user_id: int, osu_ver: str) -> bool:
     await Context.mysql.execute(
-        "UPDATE users SET osuver = %s WHERE id = %s LIMIT 1", [osu_ver, user_id]
+        "UPDATE users SET osuver = :osu_ver WHERE id = :id LIMIT 1",
+        {"osu_ver": osu_ver, "id": user_id},
     )
     return True
 
@@ -292,40 +300,40 @@ async def deleteBanchoSession(user_id: int, ip: str) -> bool:
 
 async def log_rap(user_id: int, message: str, through: str = "Crystal"):
     await Context.mysql.execute(
-        "INSERT INTO rap_logs (id, userid, text, datetime, through) VALUES (NULL, %s, %s, %s, %s)",
-        [user_id, message, int(time.time()), through],
+        "INSERT INTO rap_logs (id, userid, text, datetime, through) VALUES (NULL, :id, :message, :time, :through)",
+        {"id": user_id, "message": message, "time": int(time.time()), "through": through},
     )
     return True
 
 
 async def getSilenceEnd(user_id: int) -> int:
     return (
-        await Context.mysql.fetch(
-            "SELECT silence_end FROM users WHERE id = %s LIMIT 1", [user_id]
+        await Context.mysql.fetch_one(
+            "SELECT silence_end FROM users WHERE id = :id LIMIT 1", {"id": user_id}
         )
     )["silence_end"]
 
 
 async def silence(user_id: int, seconds: int, silence_reason: str, author: int = 999) -> bool:
     # db qurey
-    silenceEndTime = int(time.time()) + seconds
+    silence_end_time = int(time.time()) + seconds
     await Context.mysql.execute(
-        "UPDATE users SET silence_end = %s, silence_reason = %s WHERE id = %s LIMIT 1",
-        [silenceEndTime, silence_reason, user_id],
+        "UPDATE users SET silence_end = :end, silence_reason = :reason WHERE id = :id LIMIT 1",
+        {"end": silence_end_time, "reason": silence_reason, "id": user_id},
     )
 
     # Log
-    targetUsername = await get_username(user_id)
-    if not targetUsername:
+    target_username = await get_username(user_id)
+    if not target_username:
         return False
 
     if seconds > 0:
         await log_rap(
             author,
-            f'has silenced {targetUsername} for {seconds} seconds for the following reason: "{silence_reason}"',
+            f'has silenced {target_username} for {seconds} seconds for the following reason: "{silence_reason}"',
         )
     else:
-        await log_rap(author, f"has removed {targetUsername}'s silence")
+        await log_rap(author, f"has removed {target_username}'s silence")
 
     return True
 
@@ -371,12 +379,12 @@ async def changeUsername(
 
     # Change username
     await Context.mysql.execute(
-        "UPDATE users SET username = %s, username_safe = %s WHERE id = %s LIMIT 1",
-        [new_username, newUsernameSafe, user_id],
+        "UPDATE users SET username = :username, username_safe = :username_safe WHERE id = :id LIMIT 1",
+        {"username": new_username, "username_safe": newUsernameSafe, "id": user_id},
     )
     await Context.mysql.execute(
-        "UPDATE users_stats SET username = %s WHERE id = %s LIMIT 1",
-        [new_username, user_id],
+        "UPDATE users_stats SET username = :username WHERE id = :id LIMIT 1",
+        {"username": new_username, "id": user_id},
     )
 
     # Empty redis username cache
@@ -410,7 +418,7 @@ async def handle_username_change(
         )
         await Context.redis.delete(f"ripple:change_username_pending:{user_id}")
         if target_token:
-            target_token.kick(
+            await target_token.kick(
                 "There was a critical error while trying to change your username. Please contact a developer.",
                 "username_change_fail",
             )
@@ -422,7 +430,7 @@ async def handle_username_change(
         )
         await Context.redis.delete(f"ripple:change_username_pending:{user_id}")
         if target_token:
-            target_token.kick(
+            await target_token.kick(
                 "There was a critical error while trying to change your username. Please contact a developer.",
                 "username_change_fail",
             )
@@ -435,9 +443,9 @@ async def logHardware(user_id: int, hashes: List[str] = None) -> bool:
 
     await Context.mysql.execute(
         """
-        INSERT INTO hw_user (userid, mac, unique_id, disk_id, occurencies) VALUES (%s, %s, %s, %s, 1)
+        INSERT INTO hw_user (userid, mac, unique_id, disk_id, occurencies) VALUES (:uid, :mac, :unique_id, :disk_id, 1)
         ON DUPLICATE KEY UPDATE occurencies = occurencies + 1""",
-        [user_id, hashes[2], hashes[3], hashes[4]],
+        {"uid": user_id, "mac": hashes[2], "unique_id": hashes[3], "disk_id": hashes[4]},
     )
     return True
 
@@ -447,7 +455,7 @@ async def activateHardware(user_id: int, hashes: List[str] = None) -> bool:
         return False
 
     await Context.mysql.execute(
-        "UPDATE hw_user SET activated = 1 WHERE userid = %s AND mac = %s AND unique_id = %s AND disk_id = %s",
-        [user_id, hashes[2], hashes[3], hashes[4]],
+        "UPDATE hw_user SET activated = 1 WHERE userid = :uid AND mac = :mac AND unique_id = :unique_id AND disk_id = :disk_id",
+        {"uid": user_id, "mac": hashes[2], "unique_id": hashes[3], "disk_id": hashes[4]},
     )
     return True

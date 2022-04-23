@@ -11,4 +11,4 @@ class GameModes(IntEnum):
     @staticmethod
     def resolve_to_str(m: "GameModes") -> str:
         mods = {m.STD: "std", m.TAIKO: "taiko", m.CTB: "ctb", m.MANIA: "mania"}
-        return mods.get(m.value, None)
+        return mods.get(m, None)

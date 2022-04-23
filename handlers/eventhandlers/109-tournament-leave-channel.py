@@ -16,7 +16,7 @@ async def leave_tourney_channel(packet_data: bytes, token: "Player"):
     if not token.is_tourneymode and not hasattr(token, "irc"):
         return False  # not allow use that packet for non-tourney player
 
-    match_id = await PacketResolver.read_match_id(packet_data)
+    match_id = PacketResolver.read_match_id(packet_data)
     if match_id not in Context.matches:
         return False
 

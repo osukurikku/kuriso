@@ -15,10 +15,10 @@ if TYPE_CHECKING:
 @OsuEvent.register_handler(OsuPacketID.Client_SendIrcMessagePrivate)
 async def send_private_message(packet_data: bytes, token: "Player"):
     if token.silenced:
-        logger.klog(f"[{token.name}] This bruh tried to send message, when he is muted")
+        logger.klog(f"<{token.name}> This bruh tried to send message, when he is muted")
         return False
 
-    message = await PacketResolver.read_message(packet_data)
+    message = PacketResolver.read_message(packet_data)
     message.client_id = token.id
     message.sender = token.name
     if message.to == CrystalBot.bot_name:

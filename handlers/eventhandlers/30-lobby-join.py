@@ -18,6 +18,6 @@ async def lobby_join(_, token: "Player"):
         if match.is_tourney:
             continue
 
-        token.enqueue(await PacketBuilder.NewMatch(match))
+        token.enqueue(PacketBuilder.NewMatch(match))
 
     return True

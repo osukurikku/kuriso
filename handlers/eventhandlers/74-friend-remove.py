@@ -12,6 +12,6 @@ if TYPE_CHECKING:
 # Client packet: 74
 @OsuEvent.register_handler(OsuPacketID.Client_FriendRemove)
 async def remove_friend(packet_data: bytes, token: "Player"):
-    not_friend_id = await PacketResolver.read_friend_id(packet_data)
+    not_friend_id = PacketResolver.read_friend_id(packet_data)
     await userHelper.remove_friend(token.id, not_friend_id)
     return True

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 # client packet: 78
 @OsuEvent.register_handler(OsuPacketID.Client_ChannelLeave)
 async def channel_join(packet_data: bytes, token: "Player"):
-    chan_name = await PacketResolver.read_channel_name(packet_data)
+    chan_name = PacketResolver.read_channel_name(packet_data)
     if (
         not chan_name.startswith("#")
         or chan_name.startswith("#spec")

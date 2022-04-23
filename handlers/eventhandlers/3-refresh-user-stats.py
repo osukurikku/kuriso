@@ -12,5 +12,5 @@ if TYPE_CHECKING:
 @OsuEvent.register_handler(OsuPacketID.Client_RequestStatusUpdate)
 async def refresh_user_stats(_, token: "Player"):
     await token.update_stats()
-    token.enqueue(await PacketBuilder.UserStats(token))
+    token.enqueue(PacketBuilder.UserStats(token))
     return True

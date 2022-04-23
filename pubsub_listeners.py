@@ -3,6 +3,8 @@ Hard-coded
 """
 import asyncio
 import traceback
+
+import async_timeout
 from sentry_sdk import capture_exception
 
 import aioredis
@@ -14,16 +16,17 @@ from lib import logger
 from objects.constants.BanchoRanks import BanchoRanks
 from objects.constants.IdleStatuses import Action
 from packets.Builder.index import PacketBuilder
+import json
 
 
-async def disconnect_handler(ch: aioredis.Channel) -> bool:
+async def disconnect_handler(_, message: dict) -> bool:
     try:
-        data = await ch.get_json()
+        print(message)
+        data = json.loads(message["data"])
         if not data.get("userID", 0):
             raise ValueError("userID must be integer")
 
-        token = Context.players.get_token(uid=data.get("userID"))
-        if token:
+        if token := Context.players.get_token(uid=data.get("userID")):
             await token.kick(reason=data.get("reason", ""))
     except Exception as e:
         capture_exception(e)
@@ -33,15 +36,14 @@ async def disconnect_handler(ch: aioredis.Channel) -> bool:
     return True
 
 
-async def notification(ch: aioredis.Channel) -> bool:
+async def notification(_, message: dict) -> bool:
     try:
-        data = await ch.get_json()
+        data = json.loads(message["data"])
         if not data.get("userID", 0):
             raise ValueError("userID must be integer")
 
-        token = Context.players.get_token(uid=data.get("userID"))
-        if token:
-            token.enqueue(await PacketBuilder.Notification(data.get("message", "")))
+        if token := Context.players.get_token(uid=data.get("userID")):
+            token.enqueue(PacketBuilder.Notification(data.get("message", "")))
     except Exception as e:
         capture_exception(e)
         traceback.print_exc()
@@ -50,25 +52,24 @@ async def notification(ch: aioredis.Channel) -> bool:
     return True
 
 
-async def change_username(ch: aioredis.Channel) -> bool:
+async def change_username(redis: aioredis.client.Redis, message: dict) -> bool:
     try:
-        data = await ch.get_json()
+        data = json.loads(message["data"])
         if not data.get("userID", 0):
             raise ValueError("userID must be integer")
 
-        token = Context.players.get_token(uid=data.get("userID"))
-        if token:
+        if token := Context.players.get_token(uid=data.get("userID")):
             if token.pr_status.action not in (Action.Playing, Action.Multiplayer_play):
                 await userHelper.handle_username_change(
                     data.get("userID"), data.get("newUsername"), token
                 )
             else:
-                await Context.redis.set(
+                await redis.set(
                     f"ripple:change_username_pending:{data.get('userID')}",
                     data.get("newUsername"),
                 )
         else:
-            await Context.redis.set(
+            await redis.set(
                 f"ripple:change_username_pending:{data.get('userID')}",
                 data.get("newUsername"),
             )
@@ -80,90 +81,94 @@ async def change_username(ch: aioredis.Channel) -> bool:
     return True
 
 
-async def reload_settings(ch: aioredis.Channel) -> bool:
-    return await ch.get() == b"reload" and await new_utils.reload_settings()
+async def reload_settings(_, message: dict) -> bool:
+    return message["data"] == b"reload" and await new_utils.reload_settings()
 
 
-async def update_cached_stats(ch: aioredis.Channel) -> bool:
-    data = await ch.get()
+async def update_cached_stats(_, message: dict) -> bool:
+    data = message["data"]
     if not data.isdigit():
         return False
 
-    token = Context.players.get_token(uid=int(data))
-    if token:
+    if token := Context.players.get_token(uid=data.get("userID")):
         await token.update_stats()
 
     return True
 
 
-async def silence(ch: aioredis.Channel) -> bool:
-    data = await ch.get()
+async def silence(_, message: dict) -> bool:
+    data = message["data"]
     if not data.isdigit():
         return False
 
-    userID = int(data)
-    token = Context.players.get_token(uid=userID)
-    if token:
+    user_id = int(data)
+    if token := Context.players.get_token(uid=user_id):
         await token.silence()
 
     return True
 
 
-async def ban(ch: aioredis.Channel) -> bool:
-    data = await ch.get()
+async def ban(_, message: dict) -> bool:
+    data = message["data"]
     if not data.isdigit():
         return False
 
-    userID = int(data)
-    token = Context.players.get_token(uid=userID)
-    if token:
+    user_id = int(data)
+    if token := Context.players.get_token(uid=user_id):
         await userHelper.ban(token.id)
         await token.kick("You are banned. Join our discord for additional information.")
 
     return True
 
 
-async def killHQUser(ch: aioredis.Channel) -> bool:
-    data = await ch.get()
+async def killHQUser(_, message: dict) -> bool:
+    data = message["data"]
     if not data.isdigit():
         return False
 
-    userID = int(data)
-    token = Context.players.get_token(uid=userID)
-    if token:
-        token.enqueue(await PacketBuilder.Notification("Bye-bye! See ya!"))
+    user_id = int(data)
+    if token := Context.players.get_token(uid=user_id):
+        token.enqueue(PacketBuilder.Notification("Bye-bye! See ya!"))
         token.enqueue(
-            await PacketBuilder.BanchoPrivileges(
+            PacketBuilder.BanchoPrivileges(
                 BanchoRanks(BanchoRanks.SUPPORTER + BanchoRanks.PLAYER)
             )
         )
         token.enqueue(
-            await PacketBuilder.BanchoPrivileges(
-                BanchoRanks(BanchoRanks.BAT + BanchoRanks.PLAYER)
-            )
+            PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.BAT + BanchoRanks.PLAYER))
         )
-        token.enqueue(await PacketBuilder.KillPing())
+        token.enqueue(PacketBuilder.KillPing())
 
     return True
 
 
 MAPPED_FUNCTIONS = {
-    b"peppy:disconnect": disconnect_handler,
-    b"peppy:change_username": change_username,
-    b"peppy:reload_settings": reload_settings,
-    b"peppy:update_cached_stats": update_cached_stats,
-    b"peppy:silence": silence,
-    b"peppy:ban": ban,
-    b"peppy:notification": notification,
-    b"kotrik:hqosu": killHQUser,
+    "peppy:disconnect": disconnect_handler,
+    "peppy:change_username": change_username,
+    "peppy:reload_settings": reload_settings,
+    "peppy:update_cached_stats": update_cached_stats,
+    "peppy:silence": silence,
+    "peppy:ban": ban,
+    "peppy:notification": notification,
+    "kotrik:hqosu": killHQUser,
 }
 
 
-async def sub_reader(ch: aioredis.Channel):
-    while await ch.wait_message():
-        if ch.name in MAPPED_FUNCTIONS:
-            logger.klog(f"[Redis/Pubsub] Received event in {ch.name}")
-            await MAPPED_FUNCTIONS[ch.name](ch)
+async def sub_reader(subscriber: aioredis.client.Redis, ch: aioredis.client.PubSub):
+    while True:
+        try:
+            async with async_timeout.timeout(1):
+                message = await ch.get_message(ignore_subscribe_messages=True)
+                if message is not None:
+                    channel = message["channel"]
+                    if channel in MAPPED_FUNCTIONS:
+                        logger.klog(f"<Redis/Pubsub> Received event in {channel}")
+                        await MAPPED_FUNCTIONS[channel](subscriber, message)
+                await asyncio.sleep(0.01)
+        except asyncio.TimeoutError:
+            pass
+        except RuntimeError:
+            pass
 
 
 async def init():
@@ -171,17 +176,12 @@ async def init():
     if Config.config["redis"]["password"]:
         redis_values["password"] = Config.config["redis"]["password"]
 
-    subscriber = await aioredis.create_redis(
-        f"redis://{Config.config['redis']['host']}", **redis_values
-    )
+    pubsub = Context.redis.pubsub()
 
-    subscribed_channels = await subscriber.subscribe(
-        *[k for (k, _) in MAPPED_FUNCTIONS.items()]
-    )
+    await pubsub.subscribe(*[k for (k, _) in MAPPED_FUNCTIONS.items()])
 
-    Context.redis_sub = subscriber
+    Context.redis_sub = pubsub
 
-    loop = asyncio.get_event_loop()
-    for ch in subscribed_channels:
-        loop.create_task(sub_reader(ch))
+    future = asyncio.create_task(sub_reader(Context.redis, pubsub))
+    asyncio.ensure_future(future)
     return True

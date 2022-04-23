@@ -46,9 +46,9 @@ async def refresh_user_stats(packet_data: bytes, token: "Player"):
 
         token = manager_obj  # for next code part
 
-    match_id = await PacketResolver.read_match_id(packet_data)
+    match_id = PacketResolver.read_match_id(packet_data)
     if match_id not in Context.matches:
         return False
 
-    token.enqueue(await PacketBuilder.UpdateMatch(Context.matches.get(match_id), False))
+    token.enqueue(PacketBuilder.UpdateMatch(Context.matches.get(match_id), False))
     return True

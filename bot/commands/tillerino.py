@@ -207,16 +207,16 @@ async def tillerino_last(_, token: "Player", message: "Message"):
     ):
         return False  # don't allow run np commands in public channels!
 
-    data = await Context.mysql.fetch(
+    data = await Context.mysql.fetch_one(
         """SELECT beatmaps.song_name as sn, scores.*,
         beatmaps.beatmap_id as bid, beatmaps.difficulty_std, beatmaps.difficulty_taiko, beatmaps.difficulty_ctb,
         beatmaps.difficulty_mania, beatmaps.max_combo as fc
     FROM scores
     LEFT JOIN beatmaps ON beatmaps.beatmap_md5=scores.beatmap_md5
-    WHERE scores.userid = %s
+    WHERE scores.userid = :id
     ORDER BY scores.time DESC
     LIMIT 1""",
-        [token.id],
+        {"id": token.id},
     )
 
     diffString = f"difficulty_{GameModes.resolve_to_str(GameModes(data['play_mode']))}"

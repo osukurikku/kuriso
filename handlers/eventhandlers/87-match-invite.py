@@ -17,7 +17,7 @@ async def match_change_team(packet_data: bytes, token: "Player"):
     if not token.match:
         return False
 
-    user_id = await PacketResolver.read_user_id(packet_data)
+    user_id = PacketResolver.read_user_id(packet_data)
     to = Context.players.get_token(uid=user_id)
     msg = Message(
         sender=token.name,

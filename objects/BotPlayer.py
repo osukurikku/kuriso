@@ -57,7 +57,7 @@ class BotPlayer(Player):
             ),
         )
 
-        self.pr_status: Status = bot_pr
+        self.pr_status = bot_pr
 
     @property
     def is_queue_empty(self) -> bool:
@@ -69,8 +69,8 @@ class BotPlayer(Player):
 
     async def parse_country(self, *_) -> bool:
         donor_location: str = (
-            await Context.mysql.fetch(
-                "select country from users_stats where id = %s", [self.id]
+            await Context.mysql.fetch_one(
+                "select country from users_stats where id = :id", {"id": self.id}
             )
         )["country"].upper()
         self.country = (
@@ -84,11 +84,11 @@ class BotPlayer(Player):
     async def update_stats(self, selected_mode: GameModes = None) -> bool:
         for mode in GameModes if not selected_mode else [selected_mode]:
             # pylint: disable=consider-using-f-string
-            res = await Context.mysql.fetch(
+            res = await Context.mysql.fetch_one(
                 "select total_score_{0} as total_score, ranked_score_{0} as ranked_score, "
                 "pp_{0} as pp, playcount_{0} as total_plays, avg_accuracy_{0} as accuracy, playtime_{0} as playtime "
-                "from users_stats where id = %s".format(GameModes.resolve_to_str(mode)),
-                [self.id],
+                "from users_stats where id = :id".format(GameModes.resolve_to_str(mode)),
+                {"id": self.id},
             )
 
             if not res:
@@ -97,9 +97,7 @@ class BotPlayer(Player):
                 )
                 return False
 
-            res["leaderboard_rank"] = 0
-
-            self.stats[mode].update(**res)
+            self.stats[mode].update(**{**res, **{"leaderboard_rank": 0}})
         return True
 
     async def logout(self) -> None:
@@ -123,7 +121,7 @@ class BotPlayer(Player):
             channel: "Channel" = Context.channels.get(chan, None)
             if not channel:
                 logger.klog(
-                    f"[{self.name}/Bot] Tried to send message in unknown channel. Ignoring it..."
+                    f"<{self.name}/Bot> Tried to send message in unknown channel. Ignoring it..."
                 )
                 return False
 
@@ -134,7 +132,7 @@ class BotPlayer(Player):
         # DM
         receiver = Context.players.get_token(name=message.to.lower().strip().replace(" ", "_"))
         if not receiver:
-            logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
+            logger.klog(f"<{self.name}> Tried to offline user. Ignoring it...")
             return False
 
         logger.klog(

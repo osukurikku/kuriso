@@ -23,6 +23,6 @@ async def match_skip(_, token: "Player"):
         if slot.status == SlotStatus.Playing and not slot.skipped:
             return
 
-    match_skip_packet = await PacketBuilder.MultiSkip()
+    match_skip_packet = PacketBuilder.MultiSkip()
     await match.enqueue_to_specific(match_skip_packet, SlotStatus.Playing)
     return True

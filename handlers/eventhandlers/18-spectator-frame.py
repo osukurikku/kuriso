@@ -16,7 +16,7 @@ async def send_spec_frame(packet_data: bytes, token: "Player"):
     This thing is kinda weird because we can't handle properly.
     This thing sending so frequently. We need quick handle for it!
     """
-    spectator_frame = await PacketBuilder.QuickSpectatorFrame(packet_data)
+    spectator_frame = PacketBuilder.QuickSpectatorFrame(packet_data)
     for recv in token.spectators:
         recv.enqueue(spectator_frame)
 

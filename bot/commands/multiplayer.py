@@ -101,7 +101,7 @@ async def mp_make(args: List[str], player: "Player", _):
         # join only in channel
         await match_channel.join_channel(player)
 
-    info_packet = await PacketBuilder.NewMatch(match)
+    info_packet = PacketBuilder.NewMatch(match)
     for user in Context.players.get_all_tokens(ignore_tournament_clients=True):
         if not user.is_in_lobby:
             continue
@@ -366,8 +366,8 @@ async def mp_map(args: List[str], player: "Player", __):
     if gameMode < 0 or gameMode > 3:
         return "Gamemode must be 0, 1, 2 or 3"
 
-    beatmapData = await Context.mysql.fetch(
-        "SELECT * FROM beatmaps WHERE beatmap_id = %s LIMIT 1", [beatmapID]
+    beatmapData = await Context.mysql.fetch_all(
+        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1", {"bid": beatmapID}
     )
     if not beatmapData:
         return (

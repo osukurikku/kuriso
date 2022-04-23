@@ -23,7 +23,7 @@ async def alert(args: List[str], *_):
     if not args:
         return "What do you wanna to say?"
 
-    notify_packet = await PacketBuilder.Notification(" ".join(args))
+    notify_packet = PacketBuilder.Notification(" ".join(args))
     for user in Context.players.get_all_tokens(ignore_tournament_clients=True):
         user.enqueue(notify_packet)
 
@@ -46,7 +46,7 @@ async def user_alert(args: List[str], *_):
     if not to_token:
         return "User not found"
 
-    notify_packet = await PacketBuilder.Notification(text)
+    notify_packet = PacketBuilder.Notification(text)
     to_token.enqueue(notify_packet)
     return "Message was sent"
 
@@ -128,9 +128,7 @@ async def silence(args: List[str], player: "Player", _):
             return "You can't silence that dude"
 
         await to_token.silence(silenceTime, reason, player.id)
-        logger.klog(
-            f"[Player/{to_token.name}] has been silenced for following reason: {reason}"
-        )
+        logger.klog(f"<Player/{to_token.name}has been silenced for following reason: {reason}")
         return "User silenced"
 
     offline_user = await userHelper.get_start_user(target.lower())
@@ -145,7 +143,7 @@ async def silence(args: List[str], player: "Player", _):
         return "Not silenced!"
 
     logger.klog(
-        f"[Player/{offline_user['username']}] has been silenced for following reason: {reason}"
+        f"<Player/{offline_user['username']}> has been silenced for following reason: {reason}"
     )
     return "User successfully silenced"
 
@@ -160,7 +158,7 @@ async def remove_silence(args: List[str], player: "Player", _):
 
     to_token = Context.players.get_token(name=target.lower())
     if to_token:
-        logger.klog(f"[Player/{to_token.name}] silence reset")
+        logger.klog(f"<Player/{to_token.name}> silence reset")
         await to_token.silence(0, "", player.id)
         return "User silenced"
 
@@ -172,7 +170,7 @@ async def remove_silence(args: List[str], player: "Player", _):
     if not res:
         return "Not silenced!"
 
-    logger.klog(f"[Player/{offline_user['username']}] silence reset")
+    logger.klog(f"<Player/{offline_user['username']}> silence reset")
     return "User successfully silenced"
 
 
@@ -194,7 +192,7 @@ async def ban(args: List[str], player: "Player", _):
     # send packet to user if he's online
     to_token = Context.players.get_token(name=args[0].lower())
     if to_token:
-        to_token.enqueue(await PacketBuilder.UserID(-1))
+        to_token.enqueue(PacketBuilder.UserID(-1))
 
     if Config.config["crystalbot_api"]:
         params = {
@@ -227,7 +225,7 @@ async def lock(args: List[str], player: "Player", _):
     if to_token.privileges > player.privileges:
         return "You can't touch this player"
 
-    to_token.enqueue(await PacketBuilder.UserID(-3))  # ban client id
+    to_token.enqueue(PacketBuilder.UserID(-3))  # ban client id
     return "Player's client has been locked"
 
 
@@ -280,7 +278,7 @@ async def restrict(args: List[str], player: "Player", _):
     to_token = Context.players.get_token(name=args[0].lower())
     if to_token:
         to_token.privileges &= ~Privileges.USER_PUBLIC
-        to_token.enqueue(await PacketBuilder.UserRestricted())
+        to_token.enqueue(PacketBuilder.UserRestricted())
         await CrystalBot.ez_message(
             args[0].lower(),
             "Your account is currently in restricted mode. Please visit kurikku's website for more information.",
@@ -347,12 +345,12 @@ async def system_reload():
 async def system_maintenance(maintenance: bool = False) -> str:
     Context.bancho_settings["bancho_maintenance"] = maintenance
     await Context.mysql.execute(
-        "UPDATE bancho_settings SET value_int = %s WHERE name = 'bancho_maintenance'",
-        [int(maintenance)],
+        "UPDATE bancho_settings SET value_int = :maintenance WHERE name = 'bancho_maintenance'",
+        {"maintenance": int(maintenance)},
     )
 
-    force_disconnect = await PacketBuilder.UserID(-5)
-    maintenance_packet = await PacketBuilder.Notification(
+    force_disconnect = PacketBuilder.UserID(-5)
+    maintenance_packet = PacketBuilder.Notification(
         "Our bancho server is in maintenance mode. Please try to login again later."
     )
 
@@ -377,7 +375,7 @@ async def system_status():
         lets_version = "unknown version"
 
     msg = f"kuriso server v{Context.version}\n"
-    msg += f"LETS scores server v{lets_version.decode()}\n"
+    msg += f"LETS scores server v{lets_version}\n"
     msg += "made by the Kurikku team\n"
     msg += "\n"
     msg += "=== KURISO STATS ===\n"
@@ -446,13 +444,13 @@ async def report_user(args: List[str], token: "Player", _):
     await Context.mysql.execute(
         """
 INSERT INTO reports (id, from_uid, to_uid, reason, chatlog, time, assigned)
-VALUES (NULL, %s, %s, %s, %s, UNIX_TIMESTAMP(), 0)""",
-        [
-            token.id,
-            target_id["id"],
-            f"{reason} - ingame {additionalInfo}",
-            chat_log,
-        ],
+VALUES (NULL, :id, :tid, :reason, :chatlog, UNIX_TIMESTAMP(), 0)""",
+        {
+            "id": token.id,
+            "tid": target_id["id"],
+            "reason": f"{reason} - ingame {additionalInfo}",
+            "chatlog": chat_log,
+        },
     )
 
     msg = (
@@ -478,7 +476,7 @@ async def switch_server(args: List[str], *_):
     if not to_token:
         return "This dude currently not connected to bancho"
 
-    to_token.enqueue(await PacketBuilder.SwitchServer(new_server))
+    to_token.enqueue(PacketBuilder.SwitchServer(new_server))
 
     return f"{to_token.name} has been connected to {new_server}"
 
@@ -495,7 +493,7 @@ async def rtx(args: List[str], *_):
     if not to_token:
         return "Player is not online"
 
-    to_token.enqueue(await PacketBuilder.RTX(message))
+    to_token.enqueue(PacketBuilder.RTX(message))
     return "Pee-poo"
 
 
@@ -514,14 +512,12 @@ async def kill(args: List[str], token: "Player", _):
         return "Player is not online"
 
     to_token.enqueue(
-        await PacketBuilder.BanchoPrivileges(
-            BanchoRanks(BanchoRanks.SUPPORTER + BanchoRanks.PLAYER)
-        )
+        PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.SUPPORTER + BanchoRanks.PLAYER))
     )
     to_token.enqueue(
-        await PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.BAT + BanchoRanks.PLAYER))
+        PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.BAT + BanchoRanks.PLAYER))
     )
-    to_token.enqueue(await PacketBuilder.KillPing())
+    to_token.enqueue(PacketBuilder.KillPing())
 
     return "User should be happy now! Bye-bye"
 
@@ -566,16 +562,20 @@ async def map_rank(args: List[str], token: "Player", _):
         freeze_status = 0
 
     # Grab beatmap_data from db
-    beatmap_data = await Context.mysql.fetch(
-        "SELECT * FROM beatmaps WHERE beatmap_id = %s LIMIT 1", [map_id]
+    beatmap_data = await Context.mysql.fetch_one(
+        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1", {"bid": map_id}
     )
     if not beatmap_data:
         return "Are you sure that you present bid(not set id)?"
 
     if map_type == "set":
         await Context.mysql.execute(
-            "UPDATE beatmaps SET ranked = %s, ranked_status_freezed = %s WHERE beatmapset_id = %s LIMIT 100",
-            [rank_type_id, freeze_status, beatmap_data["beatmapset_id"]],
+            "UPDATE beatmaps SET ranked = :rti, ranked_status_freezed = :freeze WHERE beatmapset_id = :sid LIMIT 100",
+            {
+                "rti": rank_type_id,
+                "freeze": freeze_status,
+                "sid": beatmap_data["beatmapset_id"],
+            },
         )
         if freeze_status:
             await Context.mysql.execute(
@@ -586,16 +586,16 @@ UPDATE scores s JOIN
     JOIN beatmaps ON scores.beatmap_md5 = beatmaps.beatmap_md5
     WHERE beatmaps.beatmap_md5 = (
         SELECT beatmap_md5 FROM beatmaps
-        WHERE beatmapset_id = %s LIMIT 1
+        WHERE beatmapset_id = :sid LIMIT 1
     )
     GROUP BY userid
 ) s2 ON s.score = s2.maxscore AND s.userid = s2.userid SET completed = 3""",
-                [beatmap_data["beatmapset_id"]],
+                {"sid": beatmap_data["beatmapset_id"]},
             )
     elif map_type == "map":
         await Context.mysql.execute(
-            "UPDATE beatmaps SET ranked = %s, ranked_status_freezed = %s WHERE beatmap_id = %s LIMIT 1",
-            [rank_type_id, freeze_status, map_id],
+            "UPDATE beatmaps SET ranked = :rti, ranked_status_freezed = :freeze WHERE beatmap_id = :bid LIMIT 1",
+            {"rti": rank_type_id, "freeze": freeze_status, "bid": map_id},
         )
         if freeze_status:
             await Context.mysql.execute(
@@ -605,10 +605,10 @@ UPDATE scores s JOIN (
     JOIN beatmaps ON scores.beatmap_md5 = beatmaps.beatmap_md5
     WHERE beatmaps.beatmap_md5 = (
         SELECT beatmap_md5 FROM beatmaps
-        WHERE beatmap_id = %s LIMIT 1
+        WHERE beatmap_id = :bid LIMIT 1
     ) GROUP BY userid
 ) s2 ON s.score = s2.maxscore AND s.userid = s2.userid SET completed = 3""",
-                [beatmap_data["beatmap_id"]],
+                {"bid": beatmap_data["beatmap_id"]},
             )
     else:
         return (
@@ -635,10 +635,10 @@ UPDATE scores s JOIN (
             FROM scores
             JOIN beatmaps ON scores.beatmap_md5 = beatmaps.beatmap_md5
             WHERE beatmaps.beatmap_md5 = (
-                SELECT beatmap_md5 FROM beatmaps WHERE beatmap_id = %s LIMIT 1
+                SELECT beatmap_md5 FROM beatmaps WHERE beatmap_id = :bid LIMIT 1
             ) GROUP BY userid
         ) s2 ON s.score = s2.maxscore AND s.userid = s2.userid SET completed = 2""",
-        [beatmap_data["beatmap_id"]],
+        {"bid": beatmap_data["beatmap_id"]},
     )
 
     if Config.config["crystalbot_api"]:

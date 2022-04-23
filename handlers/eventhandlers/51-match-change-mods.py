@@ -16,8 +16,8 @@ async def update_match_mods(packet_data: bytes, token: "Player"):
         return False
 
     match = token.match
-    newMods = Mods(await PacketResolver.read_mods(packet_data))
-    await match.change_mods(newMods, token)
+    new_mods = Mods(PacketResolver.read_mods(packet_data))
+    await match.change_mods(new_mods, token)
 
     await match.update_match()
     return True

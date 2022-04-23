@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 # client packet: 31, bancho response:
 @OsuEvent.register_handler(OsuPacketID.Client_MatchCreate)
 async def create_match(packet_data: bytes, token: "Player"):
-    match_object: "TypedReadMatch" = await PacketResolver.read_match(packet_data)
+    match_object: "TypedReadMatch" = PacketResolver.read_match(packet_data)
 
     if not match_object["password"]:
         match_object["password"] = None
@@ -60,7 +60,7 @@ async def create_match(packet_data: bytes, token: "Player"):
 
     await match.join_player(token, match_object["password"])  # allow player to join match
 
-    info_packet = await PacketBuilder.NewMatch(match)
+    info_packet = PacketBuilder.NewMatch(match)
     for user in Context.players.get_all_tokens(ignore_tournament_clients=True):
         if not user.is_in_lobby:
             continue

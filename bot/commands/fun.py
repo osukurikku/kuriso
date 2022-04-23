@@ -124,8 +124,8 @@ async def flag_change_donor(args: List[str], player: "Player", _):
         return "Unknowing flag"
 
     await Context.mysql.execute(
-        "UPDATE users_stats SET country = %s WHERE id = %s",
-        [args[0].upper(), player.id],
+        "UPDATE users_stats SET country = :country WHERE id = :id",
+        {"country": args[0].upper(), "id": player.id},
     )
 
     await player.parse_country(player.ip)
@@ -143,7 +143,7 @@ async def clantop(args: List[str], player: "Player", _):
     if not user_settings:
         user_settings = {"clan_top_enabled": status}
     else:
-        user_settings = json.loads(user_settings.decode())
+        user_settings = json.loads(user_settings)
         user_settings["clan_top_enabled"] = status
 
     await Context.redis.set(f"kr:user_settings:{player.id}", json.dumps(user_settings))

@@ -1,7 +1,7 @@
 import json
 import random
 import time
-from typing import List, Union
+from typing import List, Union, Optional
 from typing import TYPE_CHECKING
 
 from blob import Context
@@ -128,36 +128,36 @@ class Match:
         is_tourney: bool = False,
     ):
         self.slots: List[Slot] = [Slot() for _ in range(0, 16)]
-        self.id: int = match_id
-        self.name: str = name
-        self.password: str = password
+        self.id = match_id
+        self.name = name
+        self.password = password
 
-        self.host: "Player" = host
-        self.host_tourney: "Player" = host_tourney
+        self.host = host
+        self.host_tourney = host_tourney
 
-        self.beatmap_name: str = ""
-        self.beatmap_md5: str = ""
-        self.beatmap_id: int = -1
+        self.beatmap_name = ""
+        self.beatmap_md5 = ""
+        self.beatmap_id = -1
 
-        self.in_progress: bool = False
-        self.is_locked: bool = False
-        self.mods: Mods = Mods.NoMod
-        self.seed: int = 0
-        self.need_load: int = 0
+        self.in_progress = False
+        self.is_locked = False
+        self.mods = Mods.NoMod
+        self.seed = 0
+        self.need_load = 0
 
-        self.channel: Channel = None
+        self.channel: Optional[Channel] = None
 
-        self.match_type: MatchTypes = MatchTypes.Standart
-        self.match_playmode: GameModes = GameModes.STD
-        self.match_scoring_type: MatchScoringTypes = MatchScoringTypes.Score
-        self.match_team_type: MatchTeamTypes = MatchTeamTypes.HeadToHead
-        self.match_freemod: MultiSpecialModes = MultiSpecialModes.Empty
+        self.match_type = MatchTypes.Standart
+        self.match_playmode = GameModes.STD
+        self.match_scoring_type = MatchScoringTypes.Score
+        self.match_team_type = MatchTeamTypes.HeadToHead
+        self.match_freemod = MultiSpecialModes.Empty
 
-        self.is_tourney: bool = is_tourney
+        self.is_tourney = is_tourney
         self.referees: List[int] = []
 
-        self.timer_force: bool = False
-        self.timer_runned: bool = False
+        self.timer_force = False
+        self.timer_runned = False
 
         self.vinse_id = 0
 
@@ -211,12 +211,12 @@ class Match:
 
     async def update_match(self) -> bool:
         asked = []
-        info_packet = await PacketBuilder.UpdateMatch(self)
+        info_packet = PacketBuilder.UpdateMatch(self)
         for user in self.channel.users:
             asked.append(user.id)
             user.enqueue(info_packet)
 
-        info_packet_for_foreign = await PacketBuilder.UpdateMatch(self, False)
+        info_packet_for_foreign = PacketBuilder.UpdateMatch(self, False)
         for user in Context.players.get_all_tokens(ignore_tournament_clients=True):
             if not user.is_in_lobby:
                 continue
@@ -242,12 +242,12 @@ class Match:
 
     async def join_player(self, player: "Player", entered_password: str = None) -> bool:
         if player.match or (self.is_password_required and self.password != entered_password):
-            player.enqueue(await PacketBuilder.MatchJoinFailed())
+            player.enqueue(PacketBuilder.MatchJoinFailed())
             return False
 
         slot = self.free_slot
         if not slot:
-            player.enqueue(await PacketBuilder.MatchJoinFailed())
+            player.enqueue(PacketBuilder.MatchJoinFailed())
             return False
 
         slot.status = SlotStatus.NotReady
@@ -255,17 +255,15 @@ class Match:
 
         # pylint: disable=protected-access
         player._match = self
-        player.enqueue(await PacketBuilder.MatchJoinSuccess(self))
+        player.enqueue(PacketBuilder.MatchJoinSuccess(self))
 
         await self.update_match()
         await self.channel.join_channel(player)
         return True
 
     async def leave_player(self, player: "Player") -> bool:
-        pl_slot = self.get_slot(player)
-
         is_was_host = False
-        if pl_slot:
+        if pl_slot := self.get_slot(player):
             is_was_host = (
                 pl_slot.token == self.host
                 if not self.is_tourney
@@ -286,7 +284,7 @@ class Match:
         if len(self.channel.users) == 0:
             # опа ча, игроки поливали, дизбендим матч
             Context.matches.pop(self.id)  # bye match
-            info_packet = await PacketBuilder.DisbandMatch(self)
+            info_packet = PacketBuilder.DisbandMatch(self)
             for user in Context.players.get_all_tokens(ignore_tournament_clients=True):
                 if not user.is_in_lobby:
                     continue
@@ -304,11 +302,11 @@ class Match:
                 if not self.is_tourney:
                     self.host = slot.token
                     self.host.enqueue(
-                        await PacketBuilder.MatchHostTransfer()
+                        PacketBuilder.MatchHostTransfer()
                     )  # notify new host, that he become host
                 else:
                     self.host_tourney = slot.token
-                    self.host_tourney.enqueue(await PacketBuilder.MatchHostTransfer())
+                    self.host_tourney.enqueue(PacketBuilder.MatchHostTransfer())
 
             await self.update_match()
 
@@ -320,7 +318,7 @@ class Match:
         return True
 
     async def disband_match(self) -> bool:
-        info_packet = await PacketBuilder.DisbandMatch(self)
+        info_packet = PacketBuilder.DisbandMatch(self)
         await self.enqueue_to_all(info_packet)
 
         return True
@@ -355,10 +353,10 @@ class Match:
 
         if self.is_tourney:
             self.host_tourney = to_host.token
-            self.host_tourney.enqueue(await PacketBuilder.MatchHostTransfer())
+            self.host_tourney.enqueue(PacketBuilder.MatchHostTransfer())
         else:
             self.host = to_host.token
-            self.host.enqueue(await PacketBuilder.MatchHostTransfer())
+            self.host.enqueue(PacketBuilder.MatchHostTransfer())
 
         await self.update_match()
         return True
@@ -395,7 +393,7 @@ class Match:
                 dudes_who_ready_to_play.append(slot.token)
 
         self.in_progress = True
-        match_start_packet = await PacketBuilder.InitiateStartMatch(self)
+        match_start_packet = PacketBuilder.InitiateStartMatch(self)
         for dude in dudes_who_ready_to_play:
             # enqueue MatchStart
             dude.enqueue(match_start_packet)
@@ -411,7 +409,7 @@ class Match:
         return True
 
     async def all_players_loaded(self) -> bool:
-        ready_packet = await PacketBuilder.AllPlayersLoaded()
+        ready_packet = PacketBuilder.AllPlayersLoaded()
         await self.enqueue_to_all(ready_packet)
         return True
 
@@ -426,7 +424,7 @@ class Match:
 
         self.need_load = 0
         await self.update_match()
-        await self.enqueue_to_all(await PacketBuilder.MatchAborted())
+        await self.enqueue_to_all(PacketBuilder.MatchAborted())
         return True
 
     async def match_ended(self) -> bool:

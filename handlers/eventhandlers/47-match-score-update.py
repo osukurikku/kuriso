@@ -5,7 +5,7 @@ from packets.OsuPacketID import OsuPacketID
 
 from typing import TYPE_CHECKING
 
-from packets.Reader.index import KurisoBuffer
+from packets.Reader.index import KurisoPacketReader
 
 if TYPE_CHECKING:
     from objects.Player import Player
@@ -26,12 +26,12 @@ async def match_score_update(packet_data: bytes, token: "Player"):
     slot = match.slots[slotInd]
 
     # We need extract score and hp
-    buf = KurisoBuffer("")
-    await buf.write_to_buffer(packet_data)
-    await buf.slice_buffer(17)  # = skip 17 bytes
-    score = await buf.read_int_32()  # = 4 bytes
-    await buf.slice_buffer(5)  # = skip 5 bytes
-    hp_points = await buf.read_byte()
+    with memoryview(packet_data) as packet:
+        reader = KurisoPacketReader(packet)
+        reader.slice_buffer(17)
+        score = reader.read_int_32()
+        reader.slice_buffer(5)
+        hp_points = reader.read_byte()
 
     slot.score = score
     slot.failed = hp_points == 254
@@ -39,6 +39,6 @@ async def match_score_update(packet_data: bytes, token: "Player"):
     packet_data = bytearray(packet_data)
     packet_data[4] = slotInd
 
-    score_updated = await PacketBuilder.MultiScoreUpdate(packet_data)
+    score_updated = PacketBuilder.MultiScoreUpdate(packet_data)
     await match.enqueue_to_specific(score_updated, SlotStatus.Playing)
     return True

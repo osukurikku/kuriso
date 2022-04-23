@@ -4,9 +4,9 @@ This file contains context features :sip:
 import os
 from typing import Dict
 
+import databases
 import geoip2.database
 
-from lib import AsyncSQLPoolWrapper
 import aioredis
 import time
 import git
@@ -32,9 +32,9 @@ class Context:
     motd: str = ""
     motd_html: str = ""
 
-    mysql: AsyncSQLPoolWrapper = None
-    redis: aioredis.Redis = None
-    redis_sub: aioredis.Redis = None
+    mysql: databases.Database = None
+    redis: aioredis.client.Redis = None
+    redis_sub: aioredis.client.PubSub = None
 
     bancho_settings: dict = {}
 
@@ -81,14 +81,14 @@ class Context:
     @classmethod
     async def load_bancho_settings(cls):
         # load primary settings
-        async for setting in cls.mysql.iterall("select * from bancho_settings"):
+        for setting in await cls.mysql.fetch_all("select * from bancho_settings"):
             cls.bancho_settings[setting["name"]] = (
                 setting["value_string"]
                 if bool(setting["value_string"])
                 else setting["value_int"]
             )
 
-        menu_icon = await cls.mysql.fetch(
+        menu_icon = await cls.mysql.fetch_one(
             "select file_id, url from main_menu_icons where is_current = 1 limit 1"
         )
         if menu_icon:
