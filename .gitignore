@@ -9,3 +9,4 @@ __pycache__/
 .env
 
 ext/GeoLite2-City.mmdb
+venv/

@@ -2,6 +2,7 @@ import asyncio
 import hashlib
 import time
 import re
+import async_timeout
 import traceback
 from typing import TYPE_CHECKING
 
@@ -302,17 +303,18 @@ async def IRCStreamsServer(reader: asyncio.StreamReader, writer: asyncio.StreamW
     client = IRCClient(writer)
     try:
         while True:
-            dequeue = client.dequeue()
-            if dequeue:
-                writer.write(dequeue)
+            async with async_timeout.timeout(1):
+                dequeue = client.dequeue()
+                if dequeue:
+                    writer.write(dequeue)
 
-            if client.is_closing:
-                break
+                if client.is_closing:
+                    break
 
-            data = await reader.read(1024)
-            await client.data_received(data)
-
-            await writer.drain()
+                data = await reader.read(1024)
+                await client.data_received(data)
+                await writer.drain()
+                await asyncio.sleep(0.01)
     except ConnectionResetError:
         pass
     except Exception as e:

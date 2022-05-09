@@ -13,7 +13,6 @@ if TYPE_CHECKING:
 
 
 class KurisoPacketWriter:
-
     def __init__(self):
         self.buffer = b""
 

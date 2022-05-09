@@ -118,7 +118,7 @@ class CrystalBot:
         return wrapper
 
     @classmethod
-    async def proceed_command(cls, message: "Message") -> Union[bool]:
+    async def proceed_command(cls, message: "Message") -> bool:
         if message.sender == cls.bot_name:
             return False
 
@@ -144,9 +144,8 @@ class CrystalBot:
         if not cmd:
             return False
 
-        comand = cmd
         args = shlex.split(
-            message.body[len(cmd) :].replace("'", "\\'").replace('"', '\\"'),
+            message.body.removeprefix(cmd).replace("'", "\\'").replace('"', '\\"'),
             posix=True,
         )
 
@@ -165,7 +164,7 @@ class CrystalBot:
         try:
             result = await func_command(args, sender, message)
         except Exception as e:
-            logger.elog(f"[Bot] {sender.name} with {comand} crashed {args}")
+            logger.elog(f"[Bot] {sender.name} with {cmd} crashed {args}")
             capture_exception(e)
             traceback.print_exc()
             return await cls.token.send_message(

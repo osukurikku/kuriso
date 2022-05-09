@@ -173,6 +173,8 @@ async def main_handler(request: Request):
     osu_version = data[0]
     await userHelper.setUserLastOsuVer(user_data["id"], osu_version)
     osu_version_int = osu_version[1:9]
+    if not osu_version_int.isdigit():
+        return BanchoResponse(PacketBuilder.UserID(-1))
 
     now = datetime.datetime.now()
     vernow = datetime.datetime(

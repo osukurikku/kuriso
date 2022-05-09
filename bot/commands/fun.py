@@ -90,7 +90,6 @@ async def user_stats(args: List[str], player: "Player", _):
         return "GameMode is incorrect"
 
     mode = GameModes(mode)
-
     token = Context.players.get_token(name=nickname)
     if not token:
         return "Player not online"
@@ -101,7 +100,7 @@ async def user_stats(args: List[str], player: "Player", _):
     # pylint: disable=consider-using-f-string
     acc = "{0:.2f}%".format(stats.accuracy)
     return (
-        f"User: {nickname}\n"
+        f"User: {token.name}\n"
         f"ID: {token.id}\n"
         "---------------------\n"
         f"Stats for {mode_str} #{stats.leaderboard_rank}\n"
@@ -117,7 +116,7 @@ async def user_stats(args: List[str], player: "Player", _):
 @CrystalBot.check_perms(need_perms=Privileges.USER_DONOR)
 async def flag_change_donor(args: List[str], player: "Player", _):
     if not args:
-        return "Enter country in ISO format. Google it, if you dont know what is this"
+        return "Enter country in ISO format. Google it, if you don't know what is this"
 
     flag = Countries.get_country_id(args[0].upper())
     if not flag:

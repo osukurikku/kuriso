@@ -107,23 +107,18 @@ async def silence(args: List[str], player: "Player", _):
         return "The amount must be a number."
 
     # Calculate silence seconds
-    if unit == "s":
-        silenceTime = int(amount)
-    elif unit == "m":
-        silenceTime = int(amount) * 60
-    elif unit == "h":
-        silenceTime = int(amount) * 3600
-    elif unit == "d":
-        silenceTime = int(amount) * 86400
-    else:
-        return "Invalid time unit (s/m/h/d)."
+    silenceTime = {
+        "s": int(amount),
+        "m": int(amount) * 60,
+        "h": int(amount) * 3600,
+        "d": int(amount) * 86400,
+    }[unit]
 
     # Max silence time is 7 days
     if silenceTime > 604800:
         return "Invalid silence time. Max silence time is 7 days."
 
-    to_token = Context.players.get_token(name=target.lower())
-    if to_token:
+    if to_token := Context.players.get_token(name=target.lower()):
         if to_token.id == player.id or to_token.privileges >= player.privileges:
             return "You can't silence that dude"
 
@@ -156,11 +151,10 @@ async def remove_silence(args: List[str], player: "Player", _):
 
     target = args[0]
 
-    to_token = Context.players.get_token(name=target.lower())
-    if to_token:
+    if to_token := Context.players.get_token(name=target.lower()):
         logger.klog(f"<Player/{to_token.name}> silence reset")
         await to_token.silence(0, "", player.id)
-        return "User silenced"
+        return "User silence is removed"
 
     offline_user = await userHelper.get_start_user(target.lower())
     if not offline_user:
@@ -190,8 +184,7 @@ async def ban(args: List[str], player: "Player", _):
     await userHelper.ban(offline_user["id"])
 
     # send packet to user if he's online
-    to_token = Context.players.get_token(name=args[0].lower())
-    if to_token:
+    if to_token := Context.players.get_token(name=args[0].lower()):
         to_token.enqueue(PacketBuilder.UserID(-1))
 
     if Config.config["crystalbot_api"]:
@@ -275,8 +268,7 @@ async def restrict(args: List[str], player: "Player", _):
     await userHelper.restrict(offline_user["id"])
 
     # send packet to user if he's online
-    to_token = Context.players.get_token(name=args[0].lower())
-    if to_token:
+    if to_token := Context.players.get_token(name=args[0].lower()):
         to_token.privileges &= ~Privileges.USER_PUBLIC
         to_token.enqueue(PacketBuilder.UserRestricted())
         await CrystalBot.ez_message(
@@ -306,16 +298,14 @@ async def restrict(args: List[str], player: "Player", _):
 @CrystalBot.check_perms(need_perms=Privileges.ADMIN_BAN_USERS)
 async def unrestrict(args: List[str], player: "Player", _):
     if not args:
-        return "Which player should unrestrict?"
+        return "Which player should unrestricted?"
 
     offline_user = await userHelper.get_start_user(args[0].lower())
     if not offline_user:
         return "User not found!"
 
     await userHelper.unban(offline_user["id"])
-
-    to_token = Context.players.get_token(uid=offline_user["id"])
-    if to_token:
+    if to_token := Context.players.get_token(uid=offline_user["id"]):
         await to_token.logout()  # just update him privileges
 
     if Config.config["crystalbot_api"]:
@@ -472,8 +462,7 @@ async def switch_server(args: List[str], *_):
     target = args[0]
     new_server = args[1].strip()
 
-    to_token = Context.players.get_token(name=target.lower())
-    if not to_token:
+    if not (to_token := Context.players.get_token(name=target.lower())):
         return "This dude currently not connected to bancho"
 
     to_token.enqueue(PacketBuilder.SwitchServer(new_server))
@@ -489,8 +478,7 @@ async def rtx(args: List[str], *_):
 
     target = args[0]
     message = " ".join(args[1:]).strip()
-    to_token = Context.players.get_token(name=target.lower())
-    if not to_token:
+    if not (to_token := Context.players.get_token(name=target.lower())):
         return "Player is not online"
 
     to_token.enqueue(PacketBuilder.RTX(message))
