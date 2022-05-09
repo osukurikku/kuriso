@@ -1,6 +1,4 @@
 import asyncio
-import functools
-import signal
 
 import nest_asyncio
 
