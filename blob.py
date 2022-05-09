@@ -48,7 +48,8 @@ class Context:
 
     stats: Dict[str, prometheus_client.Gauge] = {
         "online_users": prometheus_client.Gauge(
-            "kuriso_online_users", "Counter of online users on kuriso",
+            "kuriso_online_users",
+            "Counter of online users on kuriso",
         ),
         "multiplayer_matches": prometheus_client.Gauge(
             "kuriso_multiplayer_matches",
@@ -60,7 +61,9 @@ class Context:
             ("osu_version",),
         ),
         "devclient_usage": prometheus_client.Gauge(
-            "kuriso_devclient_usage", "Usage of devserver right now", ("host",),
+            "kuriso_devclient_usage",
+            "Usage of devserver right now",
+            ("host",),
         ),
     }
 

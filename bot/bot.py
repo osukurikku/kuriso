@@ -40,7 +40,8 @@ class CrystalBot:
             return False
 
         bot_name = await Context.mysql.fetch_one(
-            "select username from users where id = :bot_id", {"bot_id": cls.bot_id},
+            "select username from users where id = :bot_id",
+            {"bot_id": cls.bot_id},
         )
         if not bot_name:
             return False
@@ -106,7 +107,9 @@ class CrystalBot:
 
         def wrapper(func: Callable):
             async def wrapper_func(
-                args: List[str], player: "Player", message: "Message",
+                args: List[str],
+                player: "Player",
+                message: "Message",
             ) -> Union[str, bool]:
                 if (player.privileges & need_perms) == need_perms:
                     return await func(args, player, message)

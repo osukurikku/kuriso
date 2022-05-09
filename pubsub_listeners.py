@@ -61,7 +61,9 @@ async def change_username(redis: aioredis.client.Redis, message: dict) -> bool:
         if token := Context.players.get_token(uid=data.get("userID")):
             if token.pr_status.action not in (Action.Playing, Action.Multiplayer_play):
                 await userHelper.handle_username_change(
-                    data.get("userID"), data.get("newUsername"), token,
+                    data.get("userID"),
+                    data.get("newUsername"),
+                    token,
                 )
             else:
                 await redis.set(

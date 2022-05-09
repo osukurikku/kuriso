@@ -48,7 +48,8 @@ ALLOWED_MODS_MAPPING = {
 
 # pylint: disable=consider-using-f-string
 async def get_pp_message(
-    token: "Player", just_data: bool = False,
+    token: "Player",
+    just_data: bool = False,
 ) -> Union[str, Dict[Any, Any]]:
     currentMap = token.tillerino[0]
     currentMods = token.tillerino[1]
@@ -60,7 +61,9 @@ async def get_pp_message(
     try:
         async with aiohttp.ClientSession() as sess:
             async with sess.get(
-                "http://127.0.0.1:5002/api/v1/pp", params=params, timeout=10,
+                "http://127.0.0.1:5002/api/v1/pp",
+                params=params,
+                timeout=10,
             ) as resp:
                 try:
                     data = await resp.json()

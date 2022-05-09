@@ -70,7 +70,8 @@ class BotPlayer(Player):
     async def parse_country(self, *_) -> bool:
         donor_location: str = (
             await Context.mysql.fetch_one(
-                "select country from users_stats where id = :id", {"id": self.id},
+                "select country from users_stats where id = :id",
+                {"id": self.id},
             )
         )["country"].upper()
         self.country = (

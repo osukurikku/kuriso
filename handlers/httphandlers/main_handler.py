@@ -128,7 +128,9 @@ async def main_handler(request: Request):
     ) or not await userHelper.user_have_hardware(user_data["id"]):
         # we need to verify our user
         is_success_verify = await userHelper.activate_user(
-            user_data["id"], user_data["username"], hashes,
+            user_data["id"],
+            user_data["username"],
+            hashes,
         )
         if not is_success_verify:
             response = PacketBuilder.UserID(-1) + PacketBuilder.Notification(
@@ -303,7 +305,8 @@ async def main_handler(request: Request):
 
         Context.players.add_token(player)
         await Context.redis.set(
-            "ripple:online_users", len(Context.players.get_all_tokens(True)),
+            "ripple:online_users",
+            len(Context.players.get_all_tokens(True)),
         )
         logger.klog(f"<{player.name}> Joined kuriso!")
 

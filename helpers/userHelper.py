@@ -76,7 +76,8 @@ async def get_start_user_id(user_id: int) -> Union[None, Optional[Mapping]]:
 
 async def get_username(user_id: int) -> Union[str, None]:
     r = await Context.mysql.fetch_one(
-        "select username from users where id = :id", {"id": user_id},
+        "select username from users where id = :id",
+        {"id": user_id},
     )
     return r.get("username", None)
 
@@ -91,7 +92,8 @@ async def user_have_hardware(user_id: int) -> bool:
 
 async def get_country(user_id: int) -> str:
     r = await Context.mysql.fetch_one(
-        "SELECT country FROM users_stats WHERE id = :id LIMIT 1", {"id": user_id},
+        "SELECT country FROM users_stats WHERE id = :id LIMIT 1",
+        {"id": user_id},
     )
     return r["country"]
 
@@ -179,7 +181,8 @@ async def restrict(user_id: int) -> bool:
         )
 
         await Context.redis.publish(
-            "peppy:ban", str(user_id),
+            "peppy:ban",
+            str(user_id),
         )  # а вот тут передаётся integer, вот какого чёрта
         await remove_from_leaderboard(user_id)
 
@@ -187,7 +190,9 @@ async def restrict(user_id: int) -> bool:
 
 
 async def activate_user(
-    user_id: int, user_name: str, hashes: Union[Tuple[str], List[str]],
+    user_id: int,
+    user_name: str,
+    hashes: Union[Tuple[str], List[str]],
 ) -> bool:
     if len(hashes) < 5 or not all(x for x in hashes):
         logger.elog(
@@ -309,7 +314,8 @@ async def log_rap(user_id: int, message: str, through: str = "Crystal"):
 async def getSilenceEnd(user_id: int) -> int:
     return (
         await Context.mysql.fetch_one(
-            "SELECT silence_end FROM users WHERE id = :id LIMIT 1", {"id": user_id},
+            "SELECT silence_end FROM users WHERE id = :id LIMIT 1",
+            {"id": user_id},
         )
     )["silence_end"]
 
@@ -347,7 +353,9 @@ class UsernameAlreadyInUseError(Exception):
 
 
 async def changeUsername(
-    user_id: int = 0, old_username: str = "", new_username: str = "",
+    user_id: int = 0,
+    old_username: str = "",
+    new_username: str = "",
 ) -> bool:
     """
     Change `userID`'s username to `newUsername` in database

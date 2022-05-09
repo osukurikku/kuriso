@@ -223,7 +223,8 @@ class Player:
             # we need to remember donor have locked location
             donor_location: str = (
                 await Context.mysql.fetch_one(
-                    "select country from users_stats where id = :id", {"id": self.id},
+                    "select country from users_stats where id = :id",
+                    {"id": self.id},
                 )
             )["country"].upper()
             self.country = (
@@ -304,7 +305,8 @@ class Player:
     async def logout(self) -> None:
         if not self.is_tourneymode:
             await Context.redis.set(
-                "ripple:online_users", len(Context.players.get_all_tokens(True)),
+                "ripple:online_users",
+                len(Context.players.get_all_tokens(True)),
             )
             if self.ip:
                 await userHelper.deleteBanchoSession(self.id, self.ip)

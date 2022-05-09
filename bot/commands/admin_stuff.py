@@ -551,7 +551,8 @@ async def map_rank(args: List[str], token: "Player", _):
 
     # Grab beatmap_data from db
     beatmap_data = await Context.mysql.fetch_one(
-        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1", {"bid": map_id},
+        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1",
+        {"bid": map_id},
     )
     if not beatmap_data:
         return "Are you sure that you present bid(not set id)?"

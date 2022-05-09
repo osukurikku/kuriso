@@ -367,7 +367,8 @@ async def mp_map(args: List[str], player: "Player", __):
         return "Gamemode must be 0, 1, 2 or 3"
 
     beatmapData = await Context.mysql.fetch_all(
-        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1", {"bid": beatmapID},
+        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1",
+        {"bid": beatmapID},
     )
     if not beatmapData:
         return (
