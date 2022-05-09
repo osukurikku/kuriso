@@ -30,7 +30,7 @@ class CrystalBot:
 
     def __new__(cls):
         if not hasattr(cls, "instance"):
-            cls.instance = super(CrystalBot, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
 
         return cls.instance
 
@@ -40,7 +40,7 @@ class CrystalBot:
             return False
 
         bot_name = await Context.mysql.fetch_one(
-            "select username from users where id = :bot_id", {"bot_id": cls.bot_id}
+            "select username from users where id = :bot_id", {"bot_id": cls.bot_id},
         )
         if not bot_name:
             return False
@@ -106,7 +106,7 @@ class CrystalBot:
 
         def wrapper(func: Callable):
             async def wrapper_func(
-                args: List[str], player: "Player", message: "Message"
+                args: List[str], player: "Player", message: "Message",
             ) -> Union[str, bool]:
                 if (player.privileges & need_perms) == need_perms:
                     return await func(args, player, message)
@@ -173,7 +173,7 @@ class CrystalBot:
                     body="Command crashed, write to KotRik!!!",
                     to=message.sender,
                     client_id=cls.token.id,
-                )
+                ),
             )
 
         if result:
@@ -183,7 +183,7 @@ class CrystalBot:
                     body=result,
                     to=message.to if message.to.startswith("#") else message.sender,
                     client_id=cls.token.id,
-                )
+                ),
             )
         return True
 
@@ -198,5 +198,5 @@ class CrystalBot:
                 body=message,
                 to=to,
                 client_id=cls.token.id,
-            )
+            ),
         )

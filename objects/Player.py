@@ -223,7 +223,7 @@ class Player:
             # we need to remember donor have locked location
             donor_location: str = (
                 await Context.mysql.fetch_one(
-                    "select country from users_stats where id = :id", {"id": self.id}
+                    "select country from users_stats where id = :id", {"id": self.id},
                 )
             )["country"].upper()
             self.country = (
@@ -288,7 +288,7 @@ class Player:
             gm = GameModes(ind)
             if not task:
                 logger.elog(
-                    f"[Player/{self.name}] Can't parse stats for {GameModes.resolve_to_str(gm)}"
+                    f"[Player/{self.name}] Can't parse stats for {GameModes.resolve_to_str(gm)}",
                 )
                 return False
 
@@ -304,7 +304,7 @@ class Player:
     async def logout(self) -> None:
         if not self.is_tourneymode:
             await Context.redis.set(
-                "ripple:online_users", len(Context.players.get_all_tokens(True))
+                "ripple:online_users", len(Context.players.get_all_tokens(True)),
             )
             if self.ip:
                 await userHelper.deleteBanchoSession(self.id, self.ip)
@@ -389,7 +389,7 @@ class Player:
             channel: "Channel" = Context.channels.get(chan, None)
             if not channel:
                 logger.klog(
-                    f"<{self.name}> Tried to send message in unknown channel. Ignoring it..."
+                    f"<{self.name}> Tried to send message in unknown channel. Ignoring it...",
                 )
                 return False
 
@@ -412,7 +412,7 @@ class Player:
         if self.pm_private and receiver.id not in self.friends:
             self.pm_private = False
             logger.klog(
-                f"<{self.name}> which has private pm sended message to non-friend user. PM unlocked"
+                f"<{self.name}> which has private pm sended message to non-friend user. PM unlocked",
             )
 
         if receiver.silenced:
@@ -422,7 +422,7 @@ class Player:
 
         self.user_chat_log.append(message)
         logger.klog(
-            f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {message.body}"
+            f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {message.body}",
         )
 
         await receiver.on_message(self.id, message)

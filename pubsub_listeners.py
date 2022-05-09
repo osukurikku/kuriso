@@ -61,7 +61,7 @@ async def change_username(redis: aioredis.client.Redis, message: dict) -> bool:
         if token := Context.players.get_token(uid=data.get("userID")):
             if token.pr_status.action not in (Action.Playing, Action.Multiplayer_play):
                 await userHelper.handle_username_change(
-                    data.get("userID"), data.get("newUsername"), token
+                    data.get("userID"), data.get("newUsername"), token,
                 )
             else:
                 await redis.set(
@@ -131,11 +131,11 @@ async def killHQUser(_, message: dict) -> bool:
         token.enqueue(PacketBuilder.Notification("Bye-bye! See ya!"))
         token.enqueue(
             PacketBuilder.BanchoPrivileges(
-                BanchoRanks(BanchoRanks.SUPPORTER + BanchoRanks.PLAYER)
-            )
+                BanchoRanks(BanchoRanks.SUPPORTER + BanchoRanks.PLAYER),
+            ),
         )
         token.enqueue(
-            PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.BAT + BanchoRanks.PLAYER))
+            PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.BAT + BanchoRanks.PLAYER)),
         )
         token.enqueue(PacketBuilder.KillPing())
 

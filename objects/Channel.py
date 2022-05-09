@@ -46,7 +46,7 @@ class Channel:
             (privs & KurikkuPrivileges.Developer) == KurikkuPrivileges.Developer
             or (privs & KurikkuPrivileges.CM) == KurikkuPrivileges.CM
             or (privs & KurikkuPrivileges.ChatMod) == KurikkuPrivileges.ChatMod
-            or (privs & KurikkuPrivileges.ReplayModerator) == KurikkuPrivileges.ReplayModerator
+            or (privs & KurikkuPrivileges.ReplayModerator) == KurikkuPrivileges.ReplayModerator,
         )
 
     async def send_message(self, from_id: int, message: "Message") -> bool:
@@ -68,7 +68,7 @@ class Channel:
         if not self.can_read and not self.is_privileged(p.privileges):
             logger.klog(
                 f"<{p.name}> Tried to join private channel {self.server_name} but haven't enough staff "
-                "permissions"
+                "permissions",
             )
             return False
 

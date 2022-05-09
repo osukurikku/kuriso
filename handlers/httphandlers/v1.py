@@ -30,7 +30,7 @@ async def onlineUsers_handler(_):
             "status": 200,
             "result": len(Context.players.get_all_tokens(ignore_tournament_clients=True)),
             "message": "ok",
-        }
+        },
     )
 
 

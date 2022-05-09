@@ -72,7 +72,7 @@ class IRCClient:
         if not start_data:
             # await websocket.send_json(WebsocketEvent.error_disconnect("server error uwu"))
             logger.elog(
-                f"[rejected/{start_data['username']}] Was attempt to connect irc!chat but server returned nothin data for stats"
+                f"[rejected/{start_data['username']}] Was attempt to connect irc!chat but server returned nothin data for stats",
             )
             self.add_queue("ERROR :Server error uwu!")
             return False
@@ -91,7 +91,7 @@ class IRCClient:
         pToken = Context.players.get_token(uid=start_data["id"])
         if hasattr(pToken, "irc"):
             logger.elog(
-                f"[{pToken.token}/{start_data['username']}] was already connected to irc! chat. Disconnecting!"
+                f"[{pToken.token}/{start_data['username']}] was already connected to irc! chat. Disconnecting!",
             )
             await pToken.logout()
             pToken = None
@@ -116,7 +116,7 @@ class IRCClient:
             # check if clients have correct order
             if not hasattr(pToken, "additional_clients"):
                 self.add_queue(
-                    "ERROR :We have detected wrong tourney clients ordering! Wait a minute, and try again!"
+                    "ERROR :We have detected wrong tourney clients ordering! Wait a minute, and try again!",
                 )
                 return False
 
@@ -125,7 +125,7 @@ class IRCClient:
             pToken.add_additional_client(player, player.token)
         elif pToken:
             logger.elog(
-                f"[{pToken.token}/{start_data['username']}] attempt to connect to irc!chat, but logged in osu!"
+                f"[{pToken.token}/{start_data['username']}] attempt to connect to irc!chat, but logged in osu!",
             )
             return False
         else:
@@ -138,7 +138,7 @@ class IRCClient:
                 continue
 
             p.enqueue(
-                bytes(PacketBuilder.UserPresence(player) + PacketBuilder.UserStats(player))
+                bytes(PacketBuilder.UserPresence(player) + PacketBuilder.UserStats(player)),
             )
 
         await asyncio.gather(
@@ -179,18 +179,18 @@ class IRCClient:
                         login_result = await self.login(args)
                         if login_result:
                             self.add_queue(
-                                f":{NAME} 001 {self.player_instance.name} :Welcome to the Internet Relay Network {str(self)}!"
+                                f":{NAME} 001 {self.player_instance.name} :Welcome to the Internet Relay Network {str(self)}!",
                             )
                             self.add_queue(
-                                f":{NAME} 251 :There are 1 users and 0 services on 1 server"
+                                f":{NAME} 251 :There are 1 users and 0 services on 1 server",
                             )
                             self.add_queue(f":{NAME} 375 :- {NAME} Message of the day -")
                             self.add_queue(
-                                f":{NAME} 372 {self.player_instance.name} :- {int(time.time())}"
+                                f":{NAME} 372 {self.player_instance.name} :- {int(time.time())}",
                             )
                             for line in Context.motd.split("\n"):
                                 self.add_queue(
-                                    f":{NAME} 372 {self.player_instance.name} :{line}"
+                                    f":{NAME} 372 {self.player_instance.name} :{line}",
                                 )
                             self.add_queue(f":{NAME} 376 :End of MOTD command")
                             continue
@@ -241,10 +241,10 @@ class IRCClient:
             self.add_queue(f":Unknown TOPIC {chan.server_name} :{chan.description}")
             nicks = " ".join([client.name for client in chan.users])
             self.add_queue(
-                f":{NAME} 353 {self.player_instance.name} = {chan.server_name} :{nicks}"
+                f":{NAME} 353 {self.player_instance.name} = {chan.server_name} :{nicks}",
             )
             self.add_queue(
-                f":{NAME} 366 {self.player_instance.name} {chan.server_name} :End of /NAMES list"
+                f":{NAME} 366 {self.player_instance.name} {chan.server_name} :End of /NAMES list",
             )
 
     async def handler_part(self, after_part: str):
@@ -260,7 +260,7 @@ class IRCClient:
 
     async def handler_quit(self, _):
         logger.elog(
-            f"[{self.player_instance.token}/{self.player_instance.name}] Disconnected from irc!."
+            f"[{self.player_instance.token}/{self.player_instance.name}] Disconnected from irc!.",
         )
         await self.player_instance.logout()
         self.is_closing = True
@@ -289,10 +289,10 @@ class IRCClient:
             if ctx_channel:
                 users_string = " ".join([user.name for user in ctx_channel.users])
                 self.add_queue(
-                    f":{NAME} 353 {self.player_instance.name} = {ctx_channel.server_name} :{users_string}"
+                    f":{NAME} 353 {self.player_instance.name} = {ctx_channel.server_name} :{users_string}",
                 )
                 self.add_queue(
-                    f":{NAME} 366 {self.player_instance.name} {ctx_channel.server_name} :End of /NAMES list."
+                    f":{NAME} 366 {self.player_instance.name} {ctx_channel.server_name} :End of /NAMES list.",
                 )
 
     async def handler_mode(self, _):

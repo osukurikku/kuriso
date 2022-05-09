@@ -40,9 +40,9 @@ def getSystemInfo():
     if data["unix"]:
         data["loadAverage"] = os.getloadavg()
         # pylint: disable=consider-using-f-string
-        data["totalMemory"] = "{0:.2f}".format(memory.total / 1074000000)
+        data["totalMemory"] = f"{memory.total / 1074000000:.2f}"
         # pylint: disable=consider-using-f-string
-        data["usedMemory"] = "{0:.2f}".format(memory.active / 1074000000)
+        data["usedMemory"] = f"{memory.active / 1074000000:.2f}"
     else:
         data["loadAverage"] = (0, 0, 0)
         data["totalMemory"] = "0"

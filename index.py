@@ -55,7 +55,7 @@ async def main():
     # load version
     Context.load_version()
     logger.klog(f"Hey! Starting kuriso! v{Context.version} (commit-id: {Context.commit_id})")
-    with open("kuriso.MOTD", mode="r", encoding="utf-8") as kuriso_hello:
+    with open("kuriso.MOTD", encoding="utf-8") as kuriso_hello:
         logger.printColored(kuriso_hello.read(), logger.YELLOW)
 
     # Load all events & handlers
@@ -103,7 +103,7 @@ return result
 
     logger.wlog("[MySQL] Making connection to MySQL Database...")
     mysql_pool = Database(
-        f"mysql://{Config.config['mysql']['user']}:{Config.config['mysql']['password']}@{Config.config['mysql']['host']}:{Config.config['mysql']['port']}/{Config.config['mysql']['database']}?charset=utf-8"
+        f"mysql://{Config.config['mysql']['user']}:{Config.config['mysql']['password']}@{Config.config['mysql']['host']}:{Config.config['mysql']['port']}/{Config.config['mysql']['database']}?charset=utf-8",
     )
     await mysql_pool.connect()
     Context.mysql = mysql_pool

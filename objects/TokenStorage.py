@@ -28,7 +28,7 @@ class TokenStorage:
         return True
 
     def get_token(
-        self, uid: int = None, token: str = None, name: str = None
+        self, uid: int = None, token: str = None, name: str = None,
     ) -> Union[Union["Player", "TourneyPlayer", "IRCPlayer"], None]:
         if uid:  # if uid presents
             return self.store_by_id.get(uid, None)
@@ -73,7 +73,7 @@ class TokenStorage:
         return res
 
     def get_all_tokens(
-        self, ignore_tournament_clients: bool = False
+        self, ignore_tournament_clients: bool = False,
     ) -> List[Union["Player", "IRCPlayer"]]:
         normal_tokens = [
             v for (k, v) in self.store_by_token.items()
@@ -83,7 +83,7 @@ class TokenStorage:
             for (_, user) in self.store_by_token.items():
                 if hasattr(user, "additional_clients"):
                     additional_tokens.extend(
-                        [token for (_, token) in user.additional_clients.items()]
+                        [token for (_, token) in user.additional_clients.items()],
                     )
 
         normal_tokens.extend(additional_tokens)

@@ -67,7 +67,7 @@ async def main_handler(request: Request):
 
                 if token_object.is_restricted and packet_id not in ALLOWED_RESTRICT_PACKETS:
                     logger.wlog(
-                        f"[{token_object.token}/{token_object.name}] Ignored packet {packet_id}(account restrict)"
+                        f"[{token_object.token}/{token_object.name}] Ignored packet {packet_id}(account restrict)",
                     )
                     continue
 
@@ -79,7 +79,7 @@ async def main_handler(request: Request):
                     end_time = time.perf_counter_ns()
                     if packet_id not in DONT_LOG_PACKETS:
                         logger.klog(
-                            f"<{token_object.name}> Has triggered {OsuPacketID(packet_id)} with packet length: {packet_length} | Request took: {magnitude_fmt_time(end_time - start_time)}"
+                            f"<{token_object.name}> Has triggered {OsuPacketID(packet_id)} with packet length: {packet_length} | Request took: {magnitude_fmt_time(end_time - start_time)}",
                         )
                 else:
                     logger.wlog(f"[Events] Packet ID: {packet_id} not found in events handlers")
@@ -128,11 +128,11 @@ async def main_handler(request: Request):
     ) or not await userHelper.user_have_hardware(user_data["id"]):
         # we need to verify our user
         is_success_verify = await userHelper.activate_user(
-            user_data["id"], user_data["username"], hashes
+            user_data["id"], user_data["username"], hashes,
         )
         if not is_success_verify:
             response = PacketBuilder.UserID(-1) + PacketBuilder.Notification(
-                "Your HWID is not clear. Contact Staff to create account!"
+                "Your HWID is not clear. Contact Staff to create account!",
             )
             return BanchoResponse(bytes(response))
 
@@ -145,7 +145,7 @@ async def main_handler(request: Request):
     ) == 0:
         logger.elog(f"[{loginData}] Banned chmo tried to login")
         response = PacketBuilder.UserID(-1) + PacketBuilder.Notification(
-            "You are banned. Join our discord for additional information."
+            "You are banned. Join our discord for additional information.",
         )
 
         return BanchoResponse(bytes(response))
@@ -156,7 +156,7 @@ async def main_handler(request: Request):
     ) and not user_data["privileges"] & Privileges.USER_PENDING_VERIFICATION:
         logger.elog(f"[{loginData}] Locked dude tried to login")
         response = PacketBuilder.UserID(-1) + PacketBuilder.Notification(
-            "You are locked by staff. Join discord and ask for unlock!"
+            "You are locked by staff. Join discord and ask for unlock!",
         )
 
         return BanchoResponse(bytes(response))
@@ -165,7 +165,7 @@ async def main_handler(request: Request):
         # send to user that maintenance
         if not user_data["privileges"] & Privileges.ADMIN_MANAGE_SERVERS:
             response = PacketBuilder.UserID(-1) + PacketBuilder.Notification(
-                "Kuriso! is in maintenance mode. Please try to login again later."
+                "Kuriso! is in maintenance mode. Please try to login again later.",
             )
 
             return BanchoResponse(bytes(response))
@@ -192,7 +192,7 @@ async def main_handler(request: Request):
         or int(osu_version_int) < 20200811
     ):
         response = PacketBuilder.UserID(-2) + PacketBuilder.Notification(
-            "Sorry, you use outdated/bad osu!version. Please update your game to join server"
+            "Sorry, you use outdated/bad osu!version. Please update your game to join server",
         )
         return BanchoResponse(bytes(response))
 
@@ -218,7 +218,7 @@ async def main_handler(request: Request):
         if u_token:
             # manager was logged before, we need just add additional token
             token, player = Context.players.get_token(
-                uid=user_data["id"]
+                uid=user_data["id"],
             ).add_additional_client()
         else:
             player_start_params["is_tourneymode"] = True
@@ -240,9 +240,9 @@ async def main_handler(request: Request):
             bytes(
                 PacketBuilder.UserID(-5)
                 + PacketBuilder.Notification(
-                    "Sorry, you use outdated connection to server. Please use devserver flag"
-                )
-            )
+                    "Sorry, you use outdated connection to server. Please use devserver flag",
+                ),
+            ),
         )
 
     user_country = await userHelper.get_country(user_data["id"])
@@ -258,25 +258,25 @@ async def main_handler(request: Request):
         PacketBuilder.FriendList(player.friends),
         PacketBuilder.SilenceEnd(player.silence_end if player.silence_end > 0 else 0),
         PacketBuilder.Notification(
-            f"""Welcome to kuriso!\nBuild ver: v{Context.version}\nCommit: {Context.commit_id}"""
+            f"""Welcome to kuriso!\nBuild ver: v{Context.version}\nCommit: {Context.commit_id}""",
         ),
     ]
     end_time = time.perf_counter_ns()
     start_bytes.append(
         PacketBuilder.Notification(
-            f"Authorization took: {magnitude_fmt_time(end_time - start_time)}"
-        )
+            f"Authorization took: {magnitude_fmt_time(end_time - start_time)}",
+        ),
     )
     start_bytes = b"".join(start_bytes)
 
     if Context.bancho_settings.get("login_notification", None):
         start_bytes += PacketBuilder.Notification(
-            Context.bancho_settings.get("login_notification", None)
+            Context.bancho_settings.get("login_notification", None),
         )
 
     if Context.bancho_settings.get("bancho_maintenance", None):
         start_bytes += PacketBuilder.Notification(
-            "Don't forget enable server after maintenance :sip:"
+            "Don't forget enable server after maintenance :sip:",
         )
 
     if Context.bancho_settings["menu_icon"]:
@@ -296,14 +296,14 @@ async def main_handler(request: Request):
 
             start_bytes += bytes(PacketBuilder.UserPresence(p) + PacketBuilder.UserStats(p))
             p.enqueue(
-                bytes(PacketBuilder.UserPresence(player) + PacketBuilder.UserStats(player))
+                bytes(PacketBuilder.UserPresence(player) + PacketBuilder.UserStats(player)),
             )
 
         await userHelper.saveBanchoSession(player.id, request.client.host)
 
         Context.players.add_token(player)
         await Context.redis.set(
-            "ripple:online_users", len(Context.players.get_all_tokens(True))
+            "ripple:online_users", len(Context.players.get_all_tokens(True)),
         )
         logger.klog(f"<{player.name}> Joined kuriso!")
 

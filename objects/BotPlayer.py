@@ -53,7 +53,7 @@ class BotPlayer(Player):
                     "\n-- flipzky should do tourneys!!!!!! ;d --",
                     "\n-- use chimu.moe instead of bloodcat.com --",
                     "\n-- i wanna 100 players online ;d --",
-                ]
+                ],
             ),
         )
 
@@ -70,7 +70,7 @@ class BotPlayer(Player):
     async def parse_country(self, *_) -> bool:
         donor_location: str = (
             await Context.mysql.fetch_one(
-                "select country from users_stats where id = :id", {"id": self.id}
+                "select country from users_stats where id = :id", {"id": self.id},
             )
         )["country"].upper()
         self.country = (
@@ -93,7 +93,7 @@ class BotPlayer(Player):
 
             if not res:
                 logger.elog(
-                    f"[Player/{self.name}] Can't parse stats for {GameModes.resolve_to_str(mode)}"
+                    f"[Player/{self.name}] Can't parse stats for {GameModes.resolve_to_str(mode)}",
                 )
                 return False
 
@@ -121,7 +121,7 @@ class BotPlayer(Player):
             channel: "Channel" = Context.channels.get(chan, None)
             if not channel:
                 logger.klog(
-                    f"<{self.name}/Bot> Tried to send message in unknown channel. Ignoring it..."
+                    f"<{self.name}/Bot> Tried to send message in unknown channel. Ignoring it...",
                 )
                 return False
 
@@ -136,7 +136,7 @@ class BotPlayer(Player):
             return False
 
         logger.klog(
-            f"#DM {self.name}({self.id})/Bot -> {message.to}({receiver.id}): {message.body}"
+            f"#DM {self.name}({self.id})/Bot -> {message.to}({receiver.id}): {message.body}",
         )
 
         await receiver.on_message(self.id, message)

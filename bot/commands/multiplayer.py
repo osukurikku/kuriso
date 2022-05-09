@@ -367,7 +367,7 @@ async def mp_map(args: List[str], player: "Player", __):
         return "Gamemode must be 0, 1, 2 or 3"
 
     beatmapData = await Context.mysql.fetch_all(
-        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1", {"bid": beatmapID}
+        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1", {"bid": beatmapID},
     )
     if not beatmapData:
         return (
@@ -403,7 +403,7 @@ async def mp_set(args: List[str], player: "Player", __):
 
     match_team_type = MatchTeamTypes(int(args[1]))
     match_scoring_type = MatchScoringTypes(
-        int(args[2]) if len(args) >= 3 else player.match.match_scoring_type.value
+        int(args[2]) if len(args) >= 3 else player.match.match_scoring_type.value,
     )
     if not 0 <= match_team_type <= 3:
         return "Match team type must be between 0 and 3"
@@ -667,7 +667,7 @@ async def mp_settings(_, player: "Player", __):
             else "!! no team !!",
             status=readable_status,
             username=slot.token.name,
-            mods=" (+ {})".format(new_utils.readable_mods(slot.mods)) if slot.mods > 0 else "",
+            mods=f" (+ {new_utils.readable_mods(slot.mods)})" if slot.mods > 0 else "",
         )
 
     if empty:

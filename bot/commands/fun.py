@@ -48,7 +48,7 @@ async def recommend(args: List[str], player: "Player", __):
     data = None
     async with aiohttp.ClientSession() as sess:
         async with sess.get(
-            "https://api.kotrik.ru/api/recommendMap", params=params, timeout=5
+            "https://api.kotrik.ru/api/recommendMap", params=params, timeout=5,
         ) as resp:
             try:
                 data = await resp.json(content_type=None)
@@ -98,7 +98,7 @@ async def user_stats(args: List[str], player: "Player", _):
     stats = token.stats[mode]
 
     # pylint: disable=consider-using-f-string
-    acc = "{0:.2f}%".format(stats.accuracy)
+    acc = f"{stats.accuracy:.2f}%"
     return (
         f"User: {token.name}\n"
         f"ID: {token.id}\n"

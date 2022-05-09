@@ -32,6 +32,6 @@ async def send_private_message(packet_data: bytes, token: "Player"):
             body=message.body,
             to=message.to,
             client_id=token.id,
-        )
+        ),
     )
     return True

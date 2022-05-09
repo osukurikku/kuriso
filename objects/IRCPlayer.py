@@ -63,7 +63,7 @@ class IRCPlayer(Player):
     async def parse_country(self, *_) -> bool:
         donor_location: str = (
             await Context.mysql.fetch_one(
-                "select country from users_stats where id = :id", {"id": self.id}
+                "select country from users_stats where id = :id", {"id": self.id},
             )
         )["country"].upper()
         self.country = (
@@ -77,7 +77,7 @@ class IRCPlayer(Player):
     async def logout(self) -> None:
         if not self.is_tourneymode:
             await Context.redis.set(
-                "ripple:online_users", len(Context.players.get_all_tokens(True))
+                "ripple:online_users", len(Context.players.get_all_tokens(True)),
             )
             if self.ip:
                 await userHelper.deleteBanchoSession(self.id, self.ip)
@@ -114,7 +114,7 @@ class IRCPlayer(Player):
             channel: "Channel" = Context.channels.get(chan, None)
             if not channel:
                 logger.klog(
-                    f"<{self.name}/irc> Tried to send message in unknown channel. Ignoring it..."
+                    f"<{self.name}/irc> Tried to send message in unknown channel. Ignoring it...",
                 )
                 return False
 
@@ -137,7 +137,7 @@ class IRCPlayer(Player):
         if self.pm_private and receiver.id not in self.friends:
             self.pm_private = False
             logger.klog(
-                f"<{self.name}/irc> which has private pm send message to non-friend user. PM unlocked"
+                f"<{self.name}/irc> which has private pm send message to non-friend user. PM unlocked",
             )
 
         if receiver.silenced:
@@ -146,7 +146,7 @@ class IRCPlayer(Player):
 
         self.user_chat_log.append(message)
         logger.klog(
-            f"#DM {self.name}/irc({self.id}) -> {message.to}({receiver.id}): {message.body}"
+            f"#DM {self.name}/irc({self.id}) -> {message.to}({receiver.id}): {message.body}",
         )
 
         await receiver.on_message(self.id, message)

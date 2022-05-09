@@ -23,7 +23,7 @@ async def join_spectator(packet_data: bytes, token: "Player"):
 
     if player_spec:
         token.enqueue(
-            PacketBuilder.UserStats(player_spec) + PacketBuilder.UserPresence(player_spec)
+            PacketBuilder.UserStats(player_spec) + PacketBuilder.UserPresence(player_spec),
         )
 
     if token.spectating:

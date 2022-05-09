@@ -76,7 +76,7 @@ def string_to_mods(m: str) -> int:
 
 def humanize(value: int) -> str:
     # pylint: disable=consider-using-f-string
-    return "{:,}".format(round(value)).replace(",", ".")
+    return f"{round(value):,}".replace(",", ".")
 
 
 def random_hash() -> str:

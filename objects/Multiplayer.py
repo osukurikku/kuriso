@@ -302,7 +302,7 @@ class Match:
                 if not self.is_tourney:
                     self.host = slot.token
                     self.host.enqueue(
-                        PacketBuilder.MatchHostTransfer()
+                        PacketBuilder.MatchHostTransfer(),
                     )  # notify new host, that he become host
                 else:
                     self.host_tourney = slot.token

@@ -25,7 +25,7 @@ class KurisoPacketWriter:
 
     def write_u_int(self, value: int, byte_length: int) -> bool:
         self.buffer = self.buffer + value.to_bytes(
-            byte_length, byteorder="little", signed=False
+            byte_length, byteorder="little", signed=False,
         )
         return True
 
@@ -219,20 +219,20 @@ class PacketBuilder:
         # -8: requires verification
         # ??: valid id
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_LoginReply.value, (user_id, osuTypes.int32)
+            OsuPacketID.Bancho_LoginReply.value, (user_id, osuTypes.int32),
         )
 
     @staticmethod
     def MainMenuIcon(icon: str) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_TitleUpdate.value, (icon, osuTypes.string)
+            OsuPacketID.Bancho_TitleUpdate.value, (icon, osuTypes.string),
         )
 
     # server packet: 25
     @staticmethod
     def Notification(message: str) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_Announce, (message, osuTypes.string)
+            OsuPacketID.Bancho_Announce, (message, osuTypes.string),
         )
 
     # server packet: 75
@@ -247,7 +247,7 @@ class PacketBuilder:
     @staticmethod
     def BanchoPrivileges(privs: int) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_LoginPermissions.value, (privs, osuTypes.int32)
+            OsuPacketID.Bancho_LoginPermissions.value, (privs, osuTypes.int32),
         )
 
     # server packet: 72
@@ -262,7 +262,7 @@ class PacketBuilder:
     @staticmethod
     def SilenceEnd(silence_time: int) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_BanInfo.value, (silence_time, osuTypes.u_int32)
+            OsuPacketID.Bancho_BanInfo.value, (silence_time, osuTypes.u_int32),
         )
 
     # server packet: 83
@@ -316,20 +316,20 @@ class PacketBuilder:
     @staticmethod
     def SuccessJoinChannel(name: str) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_ChannelJoinSuccess.value, (name, osuTypes.string)
+            OsuPacketID.Bancho_ChannelJoinSuccess.value, (name, osuTypes.string),
         )
 
     @staticmethod
     def ErrorJoinChannel(name: str) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_ChannelJoinSuccess.value, (name, osuTypes.string)
+            OsuPacketID.Bancho_ChannelJoinSuccess.value, (name, osuTypes.string),
         )
 
     # bancho response: 66
     @staticmethod
     def PartChannel(name: str) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_ChannelRevoked.value, (name, osuTypes.string)
+            OsuPacketID.Bancho_ChannelRevoked.value, (name, osuTypes.string),
         )
 
     # bancho response: 7
@@ -357,7 +357,7 @@ class PacketBuilder:
     @staticmethod
     def ChannelListeningEnd() -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_ChannelListingComplete.value
+            OsuPacketID.Bancho_ChannelListingComplete.value,
         )
 
     # bancho response: 100
@@ -394,21 +394,21 @@ class PacketBuilder:
     @staticmethod
     def SpectatorJoined(uid: int) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_SpectatorJoined.value, (uid, osuTypes.int32)
+            OsuPacketID.Bancho_SpectatorJoined.value, (uid, osuTypes.int32),
         )
 
     # bancho response: 43
     @staticmethod
     def FellowSpectatorLeft(uid: int) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_FellowSpectatorLeft.value, (uid, osuTypes.int32)
+            OsuPacketID.Bancho_FellowSpectatorLeft.value, (uid, osuTypes.int32),
         )
 
     # bancho response: 14
     @staticmethod
     def SpectatorLeft(uid: int) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_SpectatorLeft.value, (uid, osuTypes.int32)
+            OsuPacketID.Bancho_SpectatorLeft.value, (uid, osuTypes.int32),
         )
 
     # bancho response: 22
@@ -423,7 +423,7 @@ class PacketBuilder:
     @staticmethod
     def QuickSpectatorFrame(data: bytes) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_SpectateFrames.value, (data, osuTypes.raw)
+            OsuPacketID.Bancho_SpectateFrames.value, (data, osuTypes.raw),
         )
 
     # bancho response: 26
@@ -438,7 +438,7 @@ class PacketBuilder:
     @staticmethod
     def NewMatch(match: "Match") -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_MatchNew.value, ((match, False), osuTypes.match)
+            OsuPacketID.Bancho_MatchNew.value, ((match, False), osuTypes.match),
         )
 
     # bancho response: 36
@@ -458,14 +458,14 @@ class PacketBuilder:
     @staticmethod
     def InitiateStartMatch(match: "Match") -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_MatchStart.value, ((match, True), osuTypes.match)
+            OsuPacketID.Bancho_MatchStart.value, ((match, True), osuTypes.match),
         )
 
     # bancho response: 28
     @staticmethod
     def DisbandMatch(match: "Match") -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_MatchDisband.value, (match.id, osuTypes.int32)
+            OsuPacketID.Bancho_MatchDisband.value, (match.id, osuTypes.int32),
         )
 
     # bancho response: 50
@@ -482,7 +482,7 @@ class PacketBuilder:
     @staticmethod
     def AllPlayersLoaded():
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_MatchAllPlayersLoaded.value
+            OsuPacketID.Bancho_MatchAllPlayersLoaded.value,
         )
 
     # bancho response: 48
@@ -510,14 +510,14 @@ class PacketBuilder:
     @staticmethod
     def BanchoRestarting(ms: int) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_Restart, (ms, osuTypes.u_int32)
+            OsuPacketID.Bancho_Restart, (ms, osuTypes.u_int32),
         )
 
     # bancho response: 94
     @staticmethod
     def UserSilenced(user_id: int) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_UserSilenced.value, (user_id, osuTypes.u_int32)
+            OsuPacketID.Bancho_UserSilenced.value, (user_id, osuTypes.u_int32),
         )
 
     # bancho response: 104
@@ -537,14 +537,14 @@ class PacketBuilder:
     @staticmethod
     def RTX(message: str) -> bytes:
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_RTX.value, (message, osuTypes.string)
+            OsuPacketID.Bancho_RTX.value, (message, osuTypes.string),
         )
 
     # bancho response: 0 but with bad byte
     @staticmethod
     def KillPing():
         return KurisoPacketWriter.CreateBanchoPacket(
-            OsuPacketID.Bancho_Ping.value, (0, osuTypes.byte)
+            OsuPacketID.Bancho_Ping.value, (0, osuTypes.byte),
         )
 
     # bancho response: 106

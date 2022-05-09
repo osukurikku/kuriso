@@ -4,7 +4,7 @@ class HttpEvent:
 
     def __new__(cls):
         if not hasattr(cls, "instance"):
-            cls.instance = super(HttpEvent, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
         return cls.instance
 
     @classmethod

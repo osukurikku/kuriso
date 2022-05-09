@@ -138,7 +138,7 @@ async def silence(args: List[str], player: "Player", _):
         return "Not silenced!"
 
     logger.klog(
-        f"<Player/{offline_user['username']}> has been silenced for following reason: {reason}"
+        f"<Player/{offline_user['username']}> has been silenced for following reason: {reason}",
     )
     return "User successfully silenced"
 
@@ -341,7 +341,7 @@ async def system_maintenance(maintenance: bool = False) -> str:
 
     force_disconnect = PacketBuilder.UserID(-5)
     maintenance_packet = PacketBuilder.Notification(
-        "Our bancho server is in maintenance mode. Please try to login again later."
+        "Our bancho server is in maintenance mode. Please try to login again later.",
     )
 
     if maintenance:
@@ -500,10 +500,10 @@ async def kill(args: List[str], token: "Player", _):
         return "Player is not online"
 
     to_token.enqueue(
-        PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.SUPPORTER + BanchoRanks.PLAYER))
+        PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.SUPPORTER + BanchoRanks.PLAYER)),
     )
     to_token.enqueue(
-        PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.BAT + BanchoRanks.PLAYER))
+        PacketBuilder.BanchoPrivileges(BanchoRanks(BanchoRanks.BAT + BanchoRanks.PLAYER)),
     )
     to_token.enqueue(PacketBuilder.KillPing())
 
@@ -551,7 +551,7 @@ async def map_rank(args: List[str], token: "Player", _):
 
     # Grab beatmap_data from db
     beatmap_data = await Context.mysql.fetch_one(
-        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1", {"bid": map_id}
+        "SELECT * FROM beatmaps WHERE beatmap_id = :bid LIMIT 1", {"bid": map_id},
     )
     if not beatmap_data:
         return "Are you sure that you present bid(not set id)?"
