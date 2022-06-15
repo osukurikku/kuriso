@@ -12,6 +12,6 @@ if TYPE_CHECKING:
 # Client packet: 73
 @OsuEvent.register_handler(OsuPacketID.Client_FriendAdd)
 async def add_friend(packet_data: bytes, token: "Player"):
-    new_friend_id = await PacketResolver.read_friend_id(packet_data)
+    new_friend_id = PacketResolver.read_friend_id(packet_data)
     await userHelper.add_friend(token.id, new_friend_id)
     return True

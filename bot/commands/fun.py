@@ -48,7 +48,9 @@ async def recommend(args: List[str], player: "Player", __):
     data = None
     async with aiohttp.ClientSession() as sess:
         async with sess.get(
-            "https://api.kotrik.ru/api/recommendMap", params=params, timeout=5
+            "https://api.kotrik.ru/api/recommendMap",
+            params=params,
+            timeout=5,
         ) as resp:
             try:
                 data = await resp.json(content_type=None)
@@ -90,7 +92,6 @@ async def user_stats(args: List[str], player: "Player", _):
         return "GameMode is incorrect"
 
     mode = GameModes(mode)
-
     token = Context.players.get_token(name=nickname)
     if not token:
         return "Player not online"
@@ -99,9 +100,9 @@ async def user_stats(args: List[str], player: "Player", _):
     stats = token.stats[mode]
 
     # pylint: disable=consider-using-f-string
-    acc = "{0:.2f}%".format(stats.accuracy)
+    acc = f"{stats.accuracy:.2f}%"
     return (
-        f"User: {nickname}\n"
+        f"User: {token.name}\n"
         f"ID: {token.id}\n"
         "---------------------\n"
         f"Stats for {mode_str} #{stats.leaderboard_rank}\n"
@@ -117,15 +118,15 @@ async def user_stats(args: List[str], player: "Player", _):
 @CrystalBot.check_perms(need_perms=Privileges.USER_DONOR)
 async def flag_change_donor(args: List[str], player: "Player", _):
     if not args:
-        return "Enter country in ISO format. Google it, if you dont know what is this"
+        return "Enter country in ISO format. Google it, if you don't know what is this"
 
     flag = Countries.get_country_id(args[0].upper())
     if not flag:
         return "Unknowing flag"
 
     await Context.mysql.execute(
-        "UPDATE users_stats SET country = %s WHERE id = %s",
-        [args[0].upper(), player.id],
+        "UPDATE users_stats SET country = :country WHERE id = :id",
+        {"country": args[0].upper(), "id": player.id},
     )
 
     await player.parse_country(player.ip)
@@ -143,7 +144,7 @@ async def clantop(args: List[str], player: "Player", _):
     if not user_settings:
         user_settings = {"clan_top_enabled": status}
     else:
-        user_settings = json.loads(user_settings.decode())
+        user_settings = json.loads(user_settings)
         user_settings["clan_top_enabled"] = status
 
     await Context.redis.set(f"kr:user_settings:{player.id}", json.dumps(user_settings))

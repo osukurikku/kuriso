@@ -34,7 +34,7 @@ def load_handlers(app: Starlette):
                 path,
                 endpoint=path_describe["func"],
                 methods=path_describe["methods"],
-            )
+            ),
         )
 
     app.mount("", Router(handlers))
@@ -42,8 +42,8 @@ def load_handlers(app: Starlette):
 
 
 async def load_default_channels():
-    async for channel in Context.mysql.iterall(
-        "select name as server_name, description, public_read, public_write from bancho_channels"
+    for channel in await Context.mysql.fetch_all(
+        "select name as server_name, description, public_read, public_write from bancho_channels",
     ):
         if channel["server_name"] in Context.channels:
             continue

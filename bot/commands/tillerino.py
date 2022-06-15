@@ -48,7 +48,8 @@ ALLOWED_MODS_MAPPING = {
 
 # pylint: disable=consider-using-f-string
 async def get_pp_message(
-    token: "Player", just_data: bool = False
+    token: "Player",
+    just_data: bool = False,
 ) -> Union[str, Dict[Any, Any]]:
     currentMap = token.tillerino[0]
     currentMods = token.tillerino[1]
@@ -60,7 +61,9 @@ async def get_pp_message(
     try:
         async with aiohttp.ClientSession() as sess:
             async with sess.get(
-                "http://127.0.0.1:5002/api/v1/pp", params=params, timeout=10
+                "http://127.0.0.1:5002/api/v1/pp",
+                params=params,
+                timeout=10,
             ) as resp:
                 try:
                     data = await resp.json()
@@ -97,7 +100,7 @@ async def get_pp_message(
     if currentMods & Mods.HardRock:
         data["ar"] = min(10, data["ar"] * 1.4)
 
-    ar_to_msg = "({})".format(original_ar) if original_ar != data["ar"] else ""
+    ar_to_msg = f"({original_ar})" if original_ar != data["ar"] else ""
 
     msg += (
         f' | {data["bpm"]} BPM | AR {data["ar"]}{ar_to_msg} | {round(data["stars"], 2)} stars'
@@ -207,16 +210,16 @@ async def tillerino_last(_, token: "Player", message: "Message"):
     ):
         return False  # don't allow run np commands in public channels!
 
-    data = await Context.mysql.fetch(
+    data = await Context.mysql.fetch_one(
         """SELECT beatmaps.song_name as sn, scores.*,
         beatmaps.beatmap_id as bid, beatmaps.difficulty_std, beatmaps.difficulty_taiko, beatmaps.difficulty_ctb,
         beatmaps.difficulty_mania, beatmaps.max_combo as fc
     FROM scores
     LEFT JOIN beatmaps ON beatmaps.beatmap_md5=scores.beatmap_md5
-    WHERE scores.userid = %s
+    WHERE scores.userid = :id
     ORDER BY scores.time DESC
     LIMIT 1""",
-        [token.id],
+        {"id": token.id},
     )
 
     diffString = f"difficulty_{GameModes.resolve_to_str(GameModes(data['play_mode']))}"
@@ -247,7 +250,7 @@ async def tillerino_last(_, token: "Player", message: "Message"):
         msg += " +" + new_utils.readable_mods(Mods(data["mods"]))
 
     if not hasPP:
-        msg += " | {0:,}".format(data["score"])
+        msg += " | {:,}".format(data["score"])
         msg += ifFc
         msg += f" | {round(data['accuracy'], 2)}%, {rank.upper()}"
         msg += f" {{ {data['300_count']} / {data['100_count']} / {data['50_count']} / {data['misses_count']} }}"
@@ -266,5 +269,5 @@ async def tillerino_last(_, token: "Player", message: "Message"):
         if "stars" in peace_data:
             stars = peace_data["stars"]
 
-    msg += " | {0:.2f} stars".format(stars)
+    msg += f" | {stars:.2f} stars"
     return msg

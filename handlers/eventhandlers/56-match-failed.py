@@ -23,6 +23,6 @@ async def player_failed(_, token: "Player"):
             break
 
     match.slots[slot_ind].passed = False
-    is_player_failed = await PacketBuilder.MatchPlayerFailed(slot_ind)
+    is_player_failed = PacketBuilder.MatchPlayerFailed(slot_ind)
     await match.enqueue_to_specific(is_player_failed, SlotStatus.Playing)
     return True

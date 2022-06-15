@@ -34,15 +34,14 @@ async def clean_timeouts():
 
 
 async def add_stats():
-    isStatsEnabled = Config.config["stats_enabled"]
-    if isStatsEnabled:
+    if Config.config["stats_enabled"]:
         # start thread
         online_users = len(Context.players.get_all_tokens(ignore_tournament_clients=True))
         multiplayers_matches = len(Context.matches.items())
 
         await Context.mysql.execute(
-            "INSERT INTO bancho_stats (users_osu, multiplayer_games) VALUES (%s, %s)",
-            [online_users, multiplayers_matches],
+            "INSERT INTO bancho_stats (users_osu, multiplayer_games) VALUES (:online_users, :multiplayer_matches)",
+            {"online_users": online_users, "multiplayer_matches": multiplayers_matches},
         )
 
 

@@ -13,11 +13,11 @@ if TYPE_CHECKING:
 # client packet: 32, bancho response: 36/37 (JoinFailed, JoinSuccess)
 @OsuEvent.register_handler(OsuPacketID.Client_MatchJoin)
 async def leave_match(data: bytes, token: "Player"):
-    matchId, password = await PacketResolver.read_mp_join_data(data)
-    match = Context.matches.get(matchId, None)
+    match_id, password = PacketResolver.read_mp_join_data(data)
+    match = Context.matches.get(match_id, None)
 
     if not match:
-        token.enqueue(await PacketBuilder.MatchJoinFailed())
+        token.enqueue(PacketBuilder.MatchJoinFailed())
         return False
 
     await match.join_player(token, password)

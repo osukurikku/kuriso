@@ -76,7 +76,7 @@ def string_to_mods(m: str) -> int:
 
 def humanize(value: int) -> str:
     # pylint: disable=consider-using-f-string
-    return "{:,}".format(round(value)).replace(",", ".")
+    return f"{round(value):,}".replace(",", ".")
 
 
 def random_hash() -> str:
@@ -91,8 +91,8 @@ async def reload_settings() -> bool:
     # reload default channels
     await registrator.load_default_channels()
 
-    main_menu_packet = await PacketBuilder.MainMenuIcon(Context.bancho_settings["menu_icon"])
-    channel_info_end = await PacketBuilder.ChannelListeningEnd()
+    main_menu_packet = PacketBuilder.MainMenuIcon(Context.bancho_settings["menu_icon"])
+    channel_info_end = PacketBuilder.ChannelListeningEnd()
     tasks = []
     for _, channel in Context.channels.items():
         if not channel.temp_channel and channel.can_read:

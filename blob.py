@@ -4,9 +4,9 @@ This file contains context features :sip:
 import os
 from typing import Dict
 
+import databases
 import geoip2.database
 
-from lib import AsyncSQLPoolWrapper
 import aioredis
 import time
 import git
@@ -32,9 +32,9 @@ class Context:
     motd: str = ""
     motd_html: str = ""
 
-    mysql: AsyncSQLPoolWrapper = None
-    redis: aioredis.Redis = None
-    redis_sub: aioredis.Redis = None
+    mysql: databases.Database = None
+    redis: aioredis.client.Redis = None
+    redis_sub: aioredis.client.PubSub = None
 
     bancho_settings: dict = {}
 
@@ -48,7 +48,8 @@ class Context:
 
     stats: Dict[str, prometheus_client.Gauge] = {
         "online_users": prometheus_client.Gauge(
-            "kuriso_online_users", "Counter of online users on kuriso"
+            "kuriso_online_users",
+            "Counter of online users on kuriso",
         ),
         "multiplayer_matches": prometheus_client.Gauge(
             "kuriso_multiplayer_matches",
@@ -60,13 +61,15 @@ class Context:
             ("osu_version",),
         ),
         "devclient_usage": prometheus_client.Gauge(
-            "kuriso_devclient_usage", "Usage of devserver right now", ("host",)
+            "kuriso_devclient_usage",
+            "Usage of devserver right now",
+            ("host",),
         ),
     }
 
     def __new__(cls):
         if not hasattr(cls, "instance"):
-            cls.instance = super(Context, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
         return cls.instance
 
     @classmethod
@@ -75,21 +78,21 @@ class Context:
         repo = git.Repo(search_parent_directories=True)
         cls.commit_id = repo.head.object.hexsha[0:7]
 
-        with open("version", encoding="utf-8", mode="r") as file_ver:
+        with open("version", encoding="utf-8") as file_ver:
             cls.version = file_ver.read()
 
     @classmethod
     async def load_bancho_settings(cls):
         # load primary settings
-        async for setting in cls.mysql.iterall("select * from bancho_settings"):
+        for setting in await cls.mysql.fetch_all("select * from bancho_settings"):
             cls.bancho_settings[setting["name"]] = (
                 setting["value_string"]
                 if bool(setting["value_string"])
                 else setting["value_int"]
             )
 
-        menu_icon = await cls.mysql.fetch(
-            "select file_id, url from main_menu_icons where is_current = 1 limit 1"
+        menu_icon = await cls.mysql.fetch_one(
+            "select file_id, url from main_menu_icons where is_current = 1 limit 1",
         )
         if menu_icon:
             image_url = f"https://i.kurikku.pw/{menu_icon['file_id']}.png"
@@ -97,10 +100,10 @@ class Context:
 
     @classmethod
     def load_motd(cls):
-        with open("kuriso.MOTD", "r", encoding="utf-8") as motd_file:
+        with open("kuriso.MOTD", encoding="utf-8") as motd_file:
             cls.motd = motd_file.read()
 
-        with open("kuriso.HTTP", "r", encoding="utf-8") as motd_file:
+        with open("kuriso.HTTP", encoding="utf-8") as motd_file:
             cls.motd_html = motd_file.read()
 
     @classmethod

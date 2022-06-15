@@ -13,7 +13,7 @@ if TYPE_CHECKING:
 # client packet: 85, bancho response: array with 11
 @OsuEvent.register_handler(OsuPacketID.Client_UserStatsRequest)
 async def request_user_stats(packet_data: bytes, token: "Player"):
-    data = await PacketResolver.read_request_users_stats(packet_data)
+    data = PacketResolver.read_request_users_stats(packet_data)
     if len(data) > 32:
         return False
 
@@ -23,6 +23,6 @@ async def request_user_stats(packet_data: bytes, token: "Player"):
             continue
         searched_player = Context.players.get_token(uid=user)
         if searched_player and not searched_player.is_restricted:
-            token.enqueue(await PacketBuilder.UserStats(searched_player))
+            token.enqueue(PacketBuilder.UserStats(searched_player))
 
     return True

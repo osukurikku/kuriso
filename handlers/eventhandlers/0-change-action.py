@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 
 @OsuEvent.register_handler(OsuPacketID.Client_SendUserStatus)
 async def update_action(packet_data: bytes, p: "Player"):
-    resolved_data = await PacketResolver.read_new_presence(packet_data)
+    resolved_data = PacketResolver.read_new_presence(packet_data)
 
     if GameModes(resolved_data["mode"]) != p.selected_game_mode:
         # okay, we have new gamemode here. We need to send userstats and new user panel
@@ -23,7 +23,7 @@ async def update_action(packet_data: bytes, p: "Player"):
     p.selected_game_mode = GameModes(resolved_data["mode"])
     p.pr_status.update(**resolved_data)
 
-    data = await PacketBuilder.UserStats(p) + await PacketBuilder.UserPresence(p)
+    data = PacketBuilder.UserStats(p) + PacketBuilder.UserPresence(p)
     p.enqueue(data)
     for spec in p.spectators:
         spec.enqueue(data)

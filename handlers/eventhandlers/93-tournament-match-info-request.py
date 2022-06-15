@@ -29,7 +29,7 @@ async def refresh_user_stats(packet_data: bytes, token: "Player"):
         manager_token = manager_obj.token
 
         manager_obj.additional_clients.pop(
-            old_token
+            old_token,
         )  # remove our actual manager form additional clients
         token.token = manager_token  # moving manager token to additional token
         manager_obj.additional_clients[
@@ -37,7 +37,7 @@ async def refresh_user_stats(packet_data: bytes, token: "Player"):
         ] = token  # add this token to additional clients
 
         Context.players.store_by_token.pop(
-            manager_token
+            manager_token,
         )  # remove our additional client from manager accounts
         manager_obj.token = old_token  # assign our pseudo additional client to manager
         Context.players.store_by_token[
@@ -46,9 +46,9 @@ async def refresh_user_stats(packet_data: bytes, token: "Player"):
 
         token = manager_obj  # for next code part
 
-    match_id = await PacketResolver.read_match_id(packet_data)
+    match_id = PacketResolver.read_match_id(packet_data)
     if match_id not in Context.matches:
         return False
 
-    token.enqueue(await PacketBuilder.UpdateMatch(Context.matches.get(match_id), False))
+    token.enqueue(PacketBuilder.UpdateMatch(Context.matches.get(match_id), False))
     return True

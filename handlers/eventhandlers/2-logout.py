@@ -18,5 +18,5 @@ async def logout(_, token: "Player"):
         return
 
     await token.logout()
-    logger.klog(f"[{token.name}] Leaved kuriso!")
+    logger.klog(f"<{token.name}> Leaved kuriso!")
     return True

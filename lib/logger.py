@@ -1,4 +1,5 @@
 import logging
+from typing import Union
 
 PINK = "\033[95m"
 BLUE = "\033[94m"
@@ -42,3 +43,16 @@ def wlog(msg: str):  # warning log
 
 def slog(msg: str):  # success log
     printColored(msg, GREEN)
+
+
+# code taken from:
+# https://github.com/osuAkatsuki/bancho.py/blob/a1a6a233c96af4fa1b7030f8b8900e3728e41f1d/app/logging.py#L153
+TIME_ORDER_SUFFIXES = ["nsec", "μsec", "msec", "sec"]
+
+
+def magnitude_fmt_time(t: Union[int, float]) -> str:  # in nanosec
+    for suffix in TIME_ORDER_SUFFIXES:
+        if t < 1000:
+            break
+        t /= 1000
+    return f"{t:.2f} {suffix}"

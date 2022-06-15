@@ -1,6 +1,4 @@
-from typing import List
-
-from typing_extensions import TypedDict
+from typing import List, TypedDict
 
 from objects.Multiplayer import Slot
 from objects.constants.GameModes import GameModes

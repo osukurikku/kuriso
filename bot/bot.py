@@ -30,7 +30,7 @@ class CrystalBot:
 
     def __new__(cls):
         if not hasattr(cls, "instance"):
-            cls.instance = super(CrystalBot, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
 
         return cls.instance
 
@@ -39,8 +39,9 @@ class CrystalBot:
         if Context.players.get_token(uid=cls.bot_id):
             return False
 
-        bot_name = await Context.mysql.fetch(
-            "select username from users where id = %s", [cls.bot_id]
+        bot_name = await Context.mysql.fetch_one(
+            "select username from users where id = :bot_id",
+            {"bot_id": cls.bot_id},
         )
         if not bot_name:
             return False
@@ -58,11 +59,11 @@ class CrystalBot:
             ]
         )
 
-        uPanel = await PacketBuilder.UserPresence(token)
-        uStats = await PacketBuilder.UserStats(token)
+        u_panel = PacketBuilder.UserPresence(token)
+        u_stats = PacketBuilder.UserStats(token)
         for user in Context.players.get_all_tokens():
-            user.enqueue(uPanel)
-            user.enqueue(uStats)
+            user.enqueue(u_panel)
+            user.enqueue(u_stats)
 
         cls.token = token
         cls.connected_time = int(time.time())
@@ -106,7 +107,9 @@ class CrystalBot:
 
         def wrapper(func: Callable):
             async def wrapper_func(
-                args: List[str], player: "Player", message: "Message"
+                args: List[str],
+                player: "Player",
+                message: "Message",
             ) -> Union[str, bool]:
                 if (player.privileges & need_perms) == need_perms:
                     return await func(args, player, message)
@@ -118,7 +121,7 @@ class CrystalBot:
         return wrapper
 
     @classmethod
-    async def proceed_command(cls, message: "Message") -> Union[bool]:
+    async def proceed_command(cls, message: "Message") -> bool:
         if message.sender == cls.bot_name:
             return False
 
@@ -144,9 +147,8 @@ class CrystalBot:
         if not cmd:
             return False
 
-        comand = cmd
         args = shlex.split(
-            message.body[len(cmd) :].replace("'", "\\'").replace('"', '\\"'),
+            message.body.removeprefix(cmd).replace("'", "\\'").replace('"', '\\"'),
             posix=True,
         )
 
@@ -165,7 +167,7 @@ class CrystalBot:
         try:
             result = await func_command(args, sender, message)
         except Exception as e:
-            logger.elog(f"[Bot] {sender.name} with {comand} crashed {args}")
+            logger.elog(f"[Bot] {sender.name} with {cmd} crashed {args}")
             capture_exception(e)
             traceback.print_exc()
             return await cls.token.send_message(
@@ -174,7 +176,7 @@ class CrystalBot:
                     body="Command crashed, write to KotRik!!!",
                     to=message.sender,
                     client_id=cls.token.id,
-                )
+                ),
             )
 
         if result:
@@ -184,7 +186,7 @@ class CrystalBot:
                     body=result,
                     to=message.to if message.to.startswith("#") else message.sender,
                     client_id=cls.token.id,
-                )
+                ),
             )
         return True
 
@@ -199,5 +201,5 @@ class CrystalBot:
                 body=message,
                 to=to,
                 client_id=cls.token.id,
-            )
+            ),
         )

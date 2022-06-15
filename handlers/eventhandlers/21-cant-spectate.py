@@ -16,7 +16,7 @@ async def cant_spectate(_, token: "Player"):
         logger.elog(f"{token.name} sent that he can't spectate, but he is not spectating...")
         return False  # impossible condition
 
-    packet = await PacketBuilder.CantSpectate(token.id)
+    packet = PacketBuilder.CantSpectate(token.id)
     token.spectating.enqueue(packet)  # send this sweet packet lol
 
     for recv in token.spectating.spectators:

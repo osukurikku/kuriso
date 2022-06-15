@@ -9,7 +9,7 @@ class OsuEvent:
 
     def __new__(cls):
         if not hasattr(cls, "instance"):
-            cls.instance = super(OsuEvent, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
         return cls.instance
 
     @classmethod

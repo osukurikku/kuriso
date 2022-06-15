@@ -1,10 +1,13 @@
 import asyncio
 import logging
+import sys
 import traceback
+
 import aioredis
 
 import prometheus_client
 import sentry_sdk
+from databases import Database
 from sentry_sdk import capture_exception
 from sentry_asgi import SentryMiddleware
 
@@ -23,13 +26,11 @@ from config import Config
 from blob import Context
 from irc import IRCStreamsServer
 
-from lib import AsyncSQLPoolWrapper
+# from lib import AsyncSQLPoolWrapper
 from lib import logger
 from dotenv import load_dotenv, find_dotenv
 
-import nest_asyncio  # fix asyncio loops
-
-nest_asyncio.apply()
+from lib.asyncio_run import asyncio_run
 
 
 async def main():
@@ -45,13 +46,16 @@ async def main():
     app.add_middleware(ProxyHeadersMiddleware)
 
     if Config.config["sentry"]["enabled"]:
-        sentry_sdk.init(dsn=Config.config["sentry"]["url"])
+        sentry_sdk.init(
+            dsn=Config.config["sentry"]["url"],
+            environment="production" if not Config.config["debug"] else "development",
+        )
         app.add_middleware(SentryMiddleware)
 
     # load version
     Context.load_version()
     logger.klog(f"Hey! Starting kuriso! v{Context.version} (commit-id: {Context.commit_id})")
-    with open("kuriso.MOTD", mode="r", encoding="utf-8") as kuriso_hello:
+    with open("kuriso.MOTD", encoding="utf-8") as kuriso_hello:
         logger.printColored(kuriso_hello.read(), logger.YELLOW)
 
     # Load all events & handlers
@@ -60,11 +64,15 @@ async def main():
     # Create Redis connection :sip:
     logger.wlog("[Redis] Trying connection to Redis")
 
-    redis_values = dict(db=Config.config["redis"]["db"], minsize=5, maxsize=10)
+    redis_values = dict(
+        db=Config.config["redis"]["db"],
+        encoding="utf-8",
+        decode_responses=True,
+    )
     if Config.config["redis"]["password"]:
         redis_values["password"] = Config.config["redis"]["password"]
 
-    redis_pool = await aioredis.create_redis_pool(
+    redis_pool = await aioredis.from_url(
         f"redis://{Config.config['redis']['host']}", **redis_values
     )
 
@@ -84,8 +92,8 @@ end
 
 return result
 """
-        await Context.redis.eval(redis_flush_script, args=["peppy:*"])
-        await Context.redis.eval(redis_flush_script, args=["peppy:sessions:*"])
+        await Context.redis.eval(redis_flush_script, 1, *"peppy:*")
+        await Context.redis.eval(redis_flush_script, 1, *"peppy:sessions:*")
     except Exception as e:
         traceback.print_exc()
         capture_exception(e)
@@ -94,18 +102,10 @@ return result
     await Context.redis.set("peppy:version", Context.version)
 
     logger.wlog("[MySQL] Making connection to MySQL Database...")
-    mysql_pool = AsyncSQLPoolWrapper()
-    await mysql_pool.connect(
-        **{
-            "host": Config.config["mysql"]["host"],
-            "user": Config.config["mysql"]["user"],
-            "password": Config.config["mysql"]["password"],
-            "port": Config.config["mysql"]["port"],
-            "db": Config.config["mysql"]["database"],
-            "loop": asyncio.get_event_loop(),
-            "autocommit": True,
-        }
+    mysql_pool = Database(
+        f"mysql://{Config.config['mysql']['user']}:{Config.config['mysql']['password']}@{Config.config['mysql']['host']}:{Config.config['mysql']['port']}/{Config.config['mysql']['database']}?charset=utf-8",
     )
+    await mysql_pool.connect()
     Context.mysql = mysql_pool
     logger.slog("[MySQL] Connection established!")
 
@@ -145,9 +145,8 @@ return result
     scheduler.add_job(loops.add_stats, "interval", seconds=120)
 
     # Setup pub/sub listeners for LETS/old admin panel events
-    event_loop = asyncio.get_event_loop()
-    event_loop.create_task(pubsub_listeners.init())
-    event_loop.create_task(asyncio.start_server(IRCStreamsServer, "127.0.0.1", 6667, loop=loop))
+    asyncio_run(pubsub_listeners.init())
+    asyncio_run(asyncio.start_server(IRCStreamsServer, "127.0.0.1", 6667))
 
     Context.load_motd()
     uvicorn.run(
@@ -177,30 +176,23 @@ def shutdown(original_handler):
         # Stop redis connection
         logger.elog("[Server] Stopping redis pool...")
         if Context.redis:
-            Context.redis.close()
-            await Context.redis.wait_closed()
-
-        # Stop redis sub connection
-        logger.elog("[Server] Stopping redis subscriber pool...")
-        if Context.redis_sub:
-            Context.redis_sub.close()
-            await Context.redis_sub.wait_closed()
+            await Context.redis.close()
 
         # Stop mysql pool connection
         logger.elog("[Server] Stopping mysql pool...")
         if Context.mysql:
-            Context.mysql.pool.close()
-            await Context.mysql.pool.wait_closed()
+            await Context.mysql.disconnect()
 
         logger.elog("[Server] Disposing uvicorn instance...")
 
     def _manager(*args, **kwargs):
         if Context.is_shutdown:
             return
-        event_loop = asyncio.get_event_loop()
+
         Context.is_shutdown = True
-        event_loop.run_until_complete(_shutdown())
+        asyncio_run(_shutdown())
         original_handler(*args, **kwargs)
+        sys.exit(0)
 
     return _manager
 
@@ -209,6 +201,4 @@ orig_handle = Server.handle_exit
 Server.handle_exit = shutdown(orig_handle)
 
 if __name__ == "__main__":
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(main())
-    loop.close()
+    asyncio_run(main())

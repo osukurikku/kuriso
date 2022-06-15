@@ -14,6 +14,6 @@ if TYPE_CHECKING:
 async def request_user_stats(_, token: "Player"):
     for user in Context.players.get_all_tokens(ignore_tournament_clients=True):
         if not user.is_restricted:
-            token.enqueue(await PacketBuilder.UserPresence(user))
+            token.enqueue(PacketBuilder.UserPresence(user))
 
     return True

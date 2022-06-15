@@ -48,7 +48,7 @@ class IRCPlayer(Player):
             action_text="website user",
         )
 
-        self.pr_status: Status = bot_pr
+        self.pr_status = bot_pr
         self.irc = irc
         self.token = self.generate_token()
 
@@ -62,8 +62,9 @@ class IRCPlayer(Player):
 
     async def parse_country(self, *_) -> bool:
         donor_location: str = (
-            await Context.mysql.fetch(
-                "select country from users_stats where id = %s", [self.id]
+            await Context.mysql.fetch_one(
+                "select country from users_stats where id = :id",
+                {"id": self.id},
             )
         )["country"].upper()
         self.country = (
@@ -77,7 +78,8 @@ class IRCPlayer(Player):
     async def logout(self) -> None:
         if not self.is_tourneymode:
             await Context.redis.set(
-                "ripple:online_users", len(Context.players.get_all_tokens(True))
+                "ripple:online_users",
+                len(Context.players.get_all_tokens(True)),
             )
             if self.ip:
                 await userHelper.deleteBanchoSession(self.id, self.ip)
@@ -89,10 +91,6 @@ class IRCPlayer(Player):
 
         if not self.is_tourneymode:
             for p in Context.players.get_all_tokens():
-                if hasattr(p, "irc"):
-                    p.irc.add_queue(f":{str(self.irc)} QUIT :Logged out")
-                    continue
-
                 await p.on_another_user_logout(self)
 
         self.irc.writer.close()
@@ -118,39 +116,39 @@ class IRCPlayer(Player):
             channel: "Channel" = Context.channels.get(chan, None)
             if not channel:
                 logger.klog(
-                    f"[{self.name}] Tried to send message in unknown channel. Ignoring it..."
+                    f"<{self.name}/irc> Tried to send message in unknown channel. Ignoring it...",
                 )
                 return False
 
             self.user_chat_log.append(message)
-            logger.klog(f"{self.name}({self.id}) -> {channel.server_name}: {message.body}")
+            logger.klog(f"{self.name}/irc({self.id}) -> {channel.server_name}: {message.body}")
             await channel.send_message(self.id, message)
             return True
 
         # DM
         receiver = Context.players.get_token(name=message.to.lower().strip().replace(" ", "_"))
         if not receiver:
-            logger.klog(f"[{self.name}] Tried to offline user. Ignoring it...")
+            logger.klog(f"<{self.name}/irc> Tried to offline user. Ignoring it...")
             return False
 
         if receiver.pm_private and self.id not in receiver.friends:
             self.irc.queue += f":{str(self.irc)} PRIVMSG Crystal Hey! {message.to} have private PM! Please don't distribute him right now!"
-            logger.klog(f"[{self.name}] Tried message {message.to} which has private PM.")
+            logger.klog(f"<{self.name}/irc> Tried message {message.to} which has private PM.")
             return False
 
         if self.pm_private and receiver.id not in self.friends:
             self.pm_private = False
             logger.klog(
-                f"[{self.name}] which has private pm send message to non-friend user. PM unlocked"
+                f"<{self.name}/irc> which has private pm send message to non-friend user. PM unlocked",
             )
 
         if receiver.silenced:
-            logger.klog(f"[{self.name}] Tried message {message.to}, but has been silenced.")
+            logger.klog(f"<{self.name}/irc> Tried message {message.to}, but has been silenced.")
             return False
 
         self.user_chat_log.append(message)
         logger.klog(
-            f"#DM {self.name}({self.id}) -> {message.to}({receiver.id}): {message.body}"
+            f"#DM {self.name}/irc({self.id}) -> {message.to}({receiver.id}): {message.body}",
         )
 
         await receiver.on_message(self.id, message)

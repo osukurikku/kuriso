@@ -16,11 +16,11 @@ async def update_password(packet_data: bytes, token: "Player"):
         return False
 
     match = token.match
-    newMatch = await PacketResolver.read_match(packet_data)
-    if not newMatch["password"]:
+    new_match = PacketResolver.read_match(packet_data)
+    if not new_match["password"]:
         match.password = None
     else:
-        match.password = newMatch["password"]
+        match.password = new_match["password"]
 
     await match.update_match()
     return True
