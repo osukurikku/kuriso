@@ -1,17 +1,17 @@
-Kuriso (w.i.p.) - powerful bancho for private osu!servers
+Kuriso - powerful bancho for private osu!servers
 ===
 [![Discord](https://discordapp.com/api/guilds/511199892031668245/widget.png?style=shield)](https://discord.gg/5uA3c76)
 [![GitHub issues](https://img.shields.io/github/issues/osukurikku/kuriso.svg)](https://github.com/osukurikku/kuriso/issues)
 [![license](https://img.shields.io/github/license/osukurikku/kuriso.svg)](https://github.com/osukurikku/kuriso/blob/master/LICENSE)
 [![CodeFactor](https://www.codefactor.io/repository/github/osukurikku/kuriso/badge)](https://www.codefactor.io/repository/github/osukurikku/kuriso)\
 Future bancho of [kurikku.pw](https://kurikku.pw).\
-Written in Python3.6 by [uvicorn](https://github.com/encode/uvicorn) and [starlette](https://github.com/encode/starlette)
+Written in Python3.9 by [uvicorn](https://github.com/encode/uvicorn) and [starlette](https://github.com/encode/starlette)
 
 **Fully compatible with ripple-servers**
 
 Installation
 ---
-Recommend version of python is `3.6.5`, `3.6.6`(most stable and tested versions)
+Recommend version of python is `3.9.10`, `3.9.12`(most stable and tested versions)
 ```bash
 $ python -m pip install -r requirements.txt
 $ mv .env.example .env
