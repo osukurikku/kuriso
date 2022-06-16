@@ -1,3 +1,4 @@
+
 import asyncio
 import time
 
@@ -230,7 +231,7 @@ async def activate_user(
                 "mac": adapters_md5,
                 "unique_id": uninstall_md5,
                 "disk_id": disk_sig_md5,
-                "userid": user_id,
+                "user_id": user_id,
             },
         )
 

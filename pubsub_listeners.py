@@ -92,7 +92,8 @@ async def update_cached_stats(_, message: dict) -> bool:
     if not data.isdigit():
         return False
 
-    if token := Context.players.get_token(uid=data.get("userID")):
+    user_id = int(data)
+    if token := Context.players.get_token(uid=user_id):
         await token.update_stats()
 
     return True

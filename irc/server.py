@@ -314,7 +314,6 @@ async def IRCStreamsServer(reader: asyncio.StreamReader, writer: asyncio.StreamW
                 data = await reader.read(1024)
                 await client.data_received(data)
                 await writer.drain()
-                await asyncio.sleep(0.01)
     except ConnectionResetError:
         pass
     except Exception as e:
