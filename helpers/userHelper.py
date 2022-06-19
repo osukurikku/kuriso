@@ -81,8 +81,7 @@ async def get_username(user_id: int) -> Union[str, None]:
     )
     if not r:
         return None
-
-    return r.get("username", None)
+    return r[0]
 
 
 async def user_have_hardware(user_id: int) -> bool:
