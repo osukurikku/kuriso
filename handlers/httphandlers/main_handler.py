@@ -138,7 +138,7 @@ async def main_handler(request: Request):
             )
             return BanchoResponse(bytes(response))
 
-        user_data["privileges"] = KurikkuPrivileges.Normal.value
+        user_data = await userHelper.get_start_user(loginData[0])
 
     await userHelper.logHardware(user_data["id"], hashes)
 
