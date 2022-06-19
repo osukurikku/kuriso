@@ -79,6 +79,9 @@ async def get_username(user_id: int) -> Union[str, None]:
         "select username from users where id = :id",
         {"id": user_id},
     )
+    if not r:
+        return None
+
     return r.get("username", None)
 
 
@@ -271,7 +274,7 @@ async def activate_user(
 
 async def add_friend(user_id: int, friend_id: int) -> bool:
     await Context.mysql.execute(
-        "INSERT INTO users_relationships (user1, user2) VALUES (%s, %s)",
+        "INSERT INTO users_relationships (user1, user2) VALUES (:user1, :user2)",
         {"user1": user_id, "user2": friend_id},
     )
     return True
