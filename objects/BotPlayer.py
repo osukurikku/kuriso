@@ -103,7 +103,7 @@ class BotPlayer(Player):
 
     async def logout(self) -> None:
         # leave channels
-        for (_, chan) in Context.channels.items():
+        for _, chan in Context.channels.items():
             if self.id in chan.users:
                 await chan.leave_channel(self)
 

@@ -14,7 +14,7 @@ def load_handlers(app: Starlette):
     logger.wlog("[Handlers/Events] Loading handlers & events...")
     paths_to_import = {"handlers": ["httphandlers", "eventhandlers"]}
 
-    for (k, v) in paths_to_import.items():
+    for k, v in paths_to_import.items():
         sys.path.insert(0, k)
         for deep_path in v:
             sys.path.insert(0, f"{k}/{deep_path}")
@@ -27,7 +27,7 @@ def load_handlers(app: Starlette):
                     __import__(os.path.splitext(file)[0], None, None, [""])
 
     handlers = []
-    for (path, path_describe) in HttpEvent.handlers.items():
+    for path, path_describe in HttpEvent.handlers.items():
         logger.slog(f"[Handlers/Events] {path} registered!")
         handlers.append(
             Route(

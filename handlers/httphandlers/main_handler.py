@@ -53,7 +53,7 @@ async def main_handler(request: Request):
         # packets recieve
         with memoryview(await request.body()) as packets:
             raw_bytes = KurisoPacketReader(packets)
-            response = bytes()
+            response = b''
             while not raw_bytes.EOF():
                 packet_id = raw_bytes.read_u_int_16()
                 _ = raw_bytes.read_int_8()  # empty byte
@@ -204,9 +204,11 @@ async def main_handler(request: Request):
         privileges=user_data["privileges"],
         utc_offset=time_offset,
         pm_private=pm_private,
-        silence_end=0
-        if user_data["silence_end"] - int(time.time()) < 0
-        else user_data["silence_end"] - int(time.time()),
+        silence_end=(
+            0
+            if user_data["silence_end"] - int(time.time()) < 0
+            else user_data["silence_end"] - int(time.time())
+        ),
         is_tourneymode=False,
         ip=request.client.host,
     )
@@ -234,7 +236,7 @@ async def main_handler(request: Request):
             player.parse_friends(),
             player.update_stats(),
             player.parse_country(request.client.host),
-        ]
+        ],
     )
 
     if "ppy.sh" in request.url.netloc and not (player.is_admin or player.is_tournament_stuff):
@@ -316,10 +318,10 @@ async def main_handler(request: Request):
             Context.channels["#osu"].join_channel(player),
             Context.channels["#announce"].join_channel(player),
             Context.channels["#english"].join_channel(player),
-        ]
+        ],
     )
 
-    for (_, chan) in Context.channels.items():
+    for _, chan in Context.channels.items():
         if not chan.temp_channel and chan.can_read:
             start_bytes += PacketBuilder.ChannelAvailable(chan)
 

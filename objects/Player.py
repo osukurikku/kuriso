@@ -126,7 +126,7 @@ class Player:
 
         self._match: Optional["Match"] = None
 
-        self.queue = bytes()  # main thing
+        self.queue = b''  # main thing
         self.login_time = int(time.time())
         self.last_packet_unix = int(time.time())
 
@@ -299,7 +299,7 @@ class Player:
             )
 
             self.stats[gm].update(
-                **{**task, **{"leaderboard_rank": int(position) + 1 if position else 0}}
+                **{**task, **{"leaderboard_rank": int(position) + 1 if position else 0}},
             )
 
     async def logout(self) -> None:
@@ -319,7 +319,7 @@ class Player:
             await self.spectating.remove_spectator(self)
 
         # leave channels
-        for (_, chan) in Context.channels.items():
+        for _, chan in Context.channels.items():
             if self.id in chan.users:
                 await chan.leave_channel(self)
 
@@ -534,7 +534,7 @@ class Player:
     def dequeue(self) -> Optional[bytes]:
         if self.queue:
             data = self.queue
-            self.queue = bytes()
+            self.queue = b''
             return data
 
         return b""

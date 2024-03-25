@@ -32,17 +32,17 @@ async def refresh_user_stats(packet_data: bytes, token: "Player"):
             old_token,
         )  # remove our actual manager form additional clients
         token.token = manager_token  # moving manager token to additional token
-        manager_obj.additional_clients[
-            manager_token
-        ] = token  # add this token to additional clients
+        manager_obj.additional_clients[manager_token] = (
+            token  # add this token to additional clients
+        )
 
         Context.players.store_by_token.pop(
             manager_token,
         )  # remove our additional client from manager accounts
         manager_obj.token = old_token  # assign our pseudo additional client to manager
-        Context.players.store_by_token[
-            old_token
-        ] = manager_obj  # store this token, like it should be
+        Context.players.store_by_token[old_token] = (
+            manager_obj  # store this token, like it should be
+        )
 
         token = manager_obj  # for next code part
 

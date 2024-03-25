@@ -85,7 +85,7 @@ class IRCPlayer(Player):
                 await userHelper.deleteBanchoSession(self.id, self.ip)
 
         # leave channels
-        for (_, chan) in Context.channels.items():
+        for _, chan in Context.channels.items():
             if self.id in chan.users:
                 await chan.leave_channel(self)
 

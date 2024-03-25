@@ -166,7 +166,7 @@ class KurisoPacketWriter:
     # 2 - (data, osuType)
     @staticmethod
     def CreateBanchoPacket(
-        pid: Union[int, OsuPacketID], *args: Union[Tuple[Any, int]]
+        pid: Union[int, OsuPacketID], *args: Union[Tuple[Any, int]],
     ) -> bytes:
         # writing packet
         writer = KurisoPacketWriter()

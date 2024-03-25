@@ -40,7 +40,7 @@ async def update_match(data: bytes, token: "Player"):
             new_match["team_type"] == MatchTeamTypes.TagTeamVs
             or new_match["team_type"] == MatchTeamTypes.TeamVs
         ):
-            for (i, slot) in enumerate(match.slots):
+            for i, slot in enumerate(match.slots):
                 if slot.team == SlotTeams.Neutral:
                     slot.team = SlotTeams.Red if i % 2 == 1 else SlotTeams.Blue
         else:
