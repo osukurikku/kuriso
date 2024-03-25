@@ -17,7 +17,7 @@ async def player_failed(_, token: "Player"):
 
     match = token.match
     slot_ind = -1
-    for (ind, slot) in enumerate(match.slots):
+    for ind, slot in enumerate(match.slots):
         if slot.token == token:
             slot_ind = ind
             break

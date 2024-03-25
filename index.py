@@ -73,7 +73,7 @@ async def main():
         redis_values["password"] = Config.config["redis"]["password"]
 
     redis_pool = await aioredis.from_url(
-        f"redis://{Config.config['redis']['host']}", **redis_values
+        f"redis://{Config.config['redis']['host']}", **redis_values,
     )
 
     Context.redis = redis_pool

@@ -417,7 +417,7 @@ async def mp_set(args: List[str], player: "Player", __):
             MatchTeamTypes(match_team_type) == MatchTeamTypes.TagTeamVs
             or match_team_type == MatchTeamTypes.TeamVs
         ):
-            for (i, slot) in enumerate(player.match.slots):
+            for i, slot in enumerate(player.match.slots):
                 if slot.team == SlotTeams.Neutral:
                     slot.team = SlotTeams.Red if i % 2 == 1 else SlotTeams.Blue
         else:
@@ -661,11 +661,11 @@ async def mp_settings(_, player: "Player", __):
         empty = False
         # pylint: disable=consider-using-f-string
         msg += "* [{team}] <{status}> ~ {username}{mods}\n".format(
-            team="red"
-            if slot.team == SlotTeams.Red
-            else "blue"
-            if slot.team == SlotTeams.Blue
-            else "!! no team !!",
+            team=(
+                "red"
+                if slot.team == SlotTeams.Red
+                else "blue" if slot.team == SlotTeams.Blue else "!! no team !!"
+            ),
             status=readable_status,
             username=slot.token.name,
             mods=f" (+ {new_utils.readable_mods(slot.mods)})" if slot.mods > 0 else "",

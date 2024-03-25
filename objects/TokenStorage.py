@@ -39,7 +39,7 @@ class TokenStorage:
         if token:
             if not self.store_by_token.get(token, None):
                 # we can't find token, but probably it's additional client?!
-                for (_, user) in self.store_by_token.items():
+                for _, user in self.store_by_token.items():
                     if hasattr(user, "additional_clients"):
                         if token in user.additional_clients:
                             return user.additional_clients.get(token, None)
@@ -55,7 +55,7 @@ class TokenStorage:
 
     def delete_token(self, token: "Player") -> bool:
         if token.is_tourneymode:
-            for (_, user) in self.store_by_token.items():
+            for _, user in self.store_by_token.items():
                 if hasattr(user, "additional_clients"):
                     if token.token in user.additional_clients:
                         user.additional_clients.pop(token.token)
@@ -84,7 +84,7 @@ class TokenStorage:
         ]  # just return all player instances
         additional_tokens = []
         if not ignore_tournament_clients:
-            for (_, user) in self.store_by_token.items():
+            for _, user in self.store_by_token.items():
                 if hasattr(user, "additional_clients"):
                     additional_tokens.extend(
                         [token for (_, token) in user.additional_clients.items()],

@@ -14,12 +14,12 @@ async def clean_timeouts():
     """
 
     tasks = []
-    for (_, user) in Context.players.store_by_token.items():
+    for _, user in Context.players.store_by_token.items():
         if user.is_bot:
             continue  # ignore bot
 
         if hasattr(user, "additional_clients"):
-            for (_, sub_user) in user.additional_clients.items():
+            for _, sub_user in user.additional_clients.items():
                 if int(time.time()) - sub_user.last_packet_unix > LAST_PACKET_TIMEOUT:
                     logger.slog(f"[Player/{user.name}/subclient] was kicked during timeout")
                     # simulate logout packet

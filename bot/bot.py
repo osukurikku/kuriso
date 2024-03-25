@@ -56,7 +56,7 @@ class CrystalBot:
                 token.parse_friends(),
                 token.update_stats(),
                 token.parse_country(),  # we don't needed ip, we are bots
-            ]
+            ],
         )
 
         u_panel = PacketBuilder.UserPresence(token)
@@ -139,7 +139,7 @@ class CrystalBot:
 
         message.body = message.body.strip()
         cmd, func_command = None, None
-        for (k, func) in cls.commands.items():
+        for k, func in cls.commands.items():
             if message.body.startswith(k):
                 cmd, func_command = k, func
                 break

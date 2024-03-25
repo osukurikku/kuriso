@@ -19,7 +19,7 @@ async def match_score_update(packet_data: bytes, token: "Player"):
 
     match = token.match
     slotInd = -1
-    for (ind, slot) in enumerate(match.slots):
+    for ind, slot in enumerate(match.slots):
         if slot.token == token:
             slotInd = ind
             break

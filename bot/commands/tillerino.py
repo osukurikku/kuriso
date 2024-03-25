@@ -46,6 +46,7 @@ ALLOWED_MODS_MAPPING = {
     "RX": Mods.Relax,
 }
 
+
 # pylint: disable=consider-using-f-string
 async def get_pp_message(
     token: "Player",

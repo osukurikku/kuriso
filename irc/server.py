@@ -23,6 +23,7 @@ if TYPE_CHECKING:
 NAME = "kuriso!irc"
 WHITE_SPACE = re.compile(r"\r?\n")
 
+
 # Custom Bancho IRC exception.
 class BanchoIRCException(Exception):
     """Custom expection."""
@@ -105,9 +106,11 @@ class IRCClient:
             "privileges": start_data["privileges"],
             "utc_offset": 0,
             "pm_private": False,
-            "silence_end": 0
-            if start_data["silence_end"] - int(time.time()) < 0
-            else start_data["silence_end"] - int(time.time()),
+            "silence_end": (
+                0
+                if start_data["silence_end"] - int(time.time()) < 0
+                else start_data["silence_end"] - int(time.time())
+            ),
             "is_tourneymode": True,
             "ip": socket_ip,
             "irc": self,
@@ -146,7 +149,7 @@ class IRCClient:
                 player.parse_friends(),
                 player.update_stats(),
                 player.parse_country(),
-            ]
+            ],
         )
         logger.klog(f"<{start_data['username']}> logged in, through irc!chat")
 
